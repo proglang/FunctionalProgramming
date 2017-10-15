@@ -1,0 +1,425 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Starting Haskell}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \begin{Huge}
+    \begin{center}
+      Let's get started!
+    \end{center}
+  \end{Huge}
+\end{frame}
+
+%----------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{Haskell Demo}
+  \begin{itemize}
+  \item  Let's say we want to buy a game in the USA and we have to
+    convert its price from USD to EUR
+  \item  A \textbf{definition} gives a name to a value
+  \item Names are  case-sensitive, must start with lowercase letter
+  \item Definitions are  put in a text file ending in \texttt{.hs}
+  \end{itemize}
+  \begin{block}{Examples.hs}
+% dollarRate = 1.18215
+\begin{verbatim}
+dollarRate = 1.3671
+\end{verbatim}
+  \end{block}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Using the definition}
+  \begin{itemize}
+  \item Start the Haskell interpreter  GHCi\\
+    \texttt{> stack ghci}
+\begin{verbatim}
+Configuring GHCi with the following packages: 
+GHCi, version 8.0.2: http://www.haskell.org/ghc/  :? for help
+Loaded GHCi configuration from /private/var/folders/t4/sknv38zx3qv7c0lm9xj9nhrc0000gn/T/ghci33367/ghci-script
+Prelude> 
+\end{verbatim}
+  \item Load the file\\
+    \texttt{Prelude> :l Examples.hs}
+\begin{verbatim}
+[1 of 1] Compiling Main             ( Examples.hs, interpreted )
+Ok, modules loaded: Main.
+*Main> 
+\end{verbatim}
+  \item Use the definition
+\begin{verbatim}
+*Main> dollarRate
+1.3671
+*Main> 53 * dollarRate
+72.4563
+\end{verbatim}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{A function to convert EUR to USD}
+\begin{block}{Examples.hs}
+\begin{verbatim}
+dollarRate = 1.3671
+
+-- |convert EUR to USD
+usd euros = euros * dollarRate
+\end{verbatim}
+  \end{block}
+  \begin{itemize}
+  \item line starting with \texttt{--}: comment
+  \item \texttt{usd}: function name (defined)
+  \item \texttt{euros}:  argument name (defined)
+  \item \texttt{euros * dollarRate}: expression to compute the result
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Using the function}
+  \begin{itemize}
+  \item load into GHCi
+    \begin{itemize}
+    \item as before or
+    \item use \texttt{:r} to reload
+    \end{itemize}
+  \end{itemize}
+\begin{verbatim}
+*Main> usd 1
+1.3671
+*Main> usd 73
+99.7983
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Converting back}
+Write a function \texttt{euro} that converts back from USD to EUR!
+\begin{verbatim}
+*Main> euro (usd 73)
+73.0
+*Main> euro (usd 1)
+1.0
+*Main> usd (euro 100)
+100.0
+\end{verbatim}
+\begin{alertblock}<2->{Your turn}
+
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Testing properties}
+  \framesubtitle{Is this function correct?}
+  \begin{block}<+->{A reasonable property of \texttt{euro} and \texttt{usd}}
+\begin{verbatim}
+prop_EuroUSD x = euro (usd x) == x
+\end{verbatim}
+    \texttt{==} is the equality operator
+\begin{verbatim}
+*Main> prop_EuroUSD 79
+True
+*Main> prop_EuroUSD 1
+True
+\end{verbatim}
+  \end{block}
+  \begin{alertblock}<+->{Does it hold generally?}
+    
+  \end{alertblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Aside: Writing Properties}
+  \begin{block}{Convention}
+    Function names beginning with
+    \verb|prop_| are properties we expect to be True 
+  \end{block}
+  \begin{block}{Writing properties in a file}
+    \begin{itemize}
+    \item Tells us how functions should behave 
+    \item Tells us what has been tested 
+    \item Lets us repeat tests after changing a definition 
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Testing}
+  \begin{block}<+->{At the beginning of Examples.hs}
+\begin{verbatim}
+import Test.QuickCheck
+\end{verbatim}
+    A widely used Haskell library for automatic random testing
+  \end{block}
+  \begin{block}<+->{May need to install it first \dots}
+\begin{verbatim}
+stack install QuickCheck
+\end{verbatim}
+  \end{block}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Running tests}
+\begin{verbatim}
+*Main> quickCheck prop_EuroUSD
+*** Failed! Falsifiable (after 10 tests and 1 shrink): 
+7.0
+\end{verbatim}
+  \begin{itemize}
+  \item Runs 100 randomly chosen tests
+  \item Result: The property is wrong!
+  \item It fails for input 7.0
+  \end{itemize}
+  \begin{alertblock}<2->{Check what happens for 7.0!}
+    
+  \end{alertblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{What happens for 7.0}
+\begin{verbatim}
+*Main> usd 7
+9.5697
+*Main> euro 9.5697
+6.999999999999999
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{The Problem: Floating Point Arithmetic}
+  \begin{itemize}
+  \item  There is a tiny difference between the initial and final values 
+\begin{verbatim}
+*Main> euro (usd 7) - 7
+-8.881784197001252e-16
+\end{verbatim}
+  \item Calculations are only performed to about 15 significant
+    figures 
+  \item  The property is wrong! 
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Fixing the problem}
+  \begin{itemize}
+  \item NEVER use equality with floating point numbers!
+  \item  The result should be \emph{nearly} the same 
+  \item  The difference should be small – smaller than 10E-15
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Comparing Values}
+\begin{verbatim}
+*Main> 2<3
+True
+*Main> 3<2
+False
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Defining ``Nearly Equal''}
+  \begin{itemize}
+  \item Can define new operators with names made up of symbols
+  \end{itemize}
+\begin{block}{In Examples.hs}
+\begin{verbatim}
+x ~== y = x - y < 10e-15
+\end{verbatim}
+  \end{block}
+\begin{verbatim}
+*Main> 3 ~== 3.0000001
+True
+*Main> 3 ~== 4
+True
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile,fragile]
+  \frametitle{Defining ``Nearly Equal''}
+  \begin{itemize}
+  \item Can define new operators with names made up of symbols
+  \end{itemize}
+\begin{block}{In Examples.hs}
+\begin{verbatim}
+x ~== y = abs(x - y) < 10e-15 * abs x
+\end{verbatim}
+  \end{block}
+\begin{verbatim}
+*Main> 3 ~== 3.0000001
+True
+*Main> 3 ~== 4
+True
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Fixing the property}
+\begin{block}{In Examples.hs}
+\begin{verbatim}
+prop_EuroUSD' x = euro (usd x) ~== x
+\end{verbatim}
+  \end{block}
+\begin{verbatim}
+*Main> prop_EuroUSD' 3
+True
+*Main> prop_EuroUSD' 56
+True
+*Main> prop_EuroUSD' 7
+True
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Name the price}
+  \begin{block}<+->{Let's define a name for the price of the game we want
+      in Examples.hs}
+\begin{verbatim}
+price = 79
+\end{verbatim}
+  \end{block}
+  \begin{alertblock}<+->{After reload: Ouch!}
+\begin{verbatim}
+*Main> euro price
+
+<interactive>:57:6:
+    Couldn't match expected type `Double' with actual type `Integer'
+    In the first argument of `euro', namely `price'
+    In the expression: euro price
+    In an equation for `it': it = euro price
+\end{verbatim}
+  \end{alertblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Every Value has a type}
+  The \texttt{:i} command prints information about a nae
+\begin{verbatim}
+*Main> :i price
+price :: Integer
+  	-- Defined at ...
+*Main> :i dollarRate
+dollarRate :: Double
+  	-- Defined at ...
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{More types}
+\begin{verbatim}
+*Main> :i True
+data Bool = ... | True 	-- Defined in `GHC.Types'
+*Main> :i False
+data Bool = False | ... 	-- Defined in `GHC.Types'
+*Main> :i euro
+euro :: Double -> Double
+  	-- Defined at...
+*Main> :i prop_EuroUSD'
+prop_EuroUSD' :: Double -> Bool
+  	-- Defined at...
+\end{verbatim}
+  \begin{itemize}
+  \item \texttt{True} and \texttt{False} are \textbf{data constructors}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Types matter}
+  \begin{itemize}
+  \item Types determine how computations are performed
+  \item A type annotation specifies which type to use
+  \end{itemize}
+\begin{verbatim}
+*Main> 123456789*123456789 :: Double
+1.524157875019052e16
+*Main> 123456789*123456789 :: Integer
+15241578750190521
+\end{verbatim}
+  \begin{itemize}
+  \item \texttt{Double}: double precision floating point 
+  \item  \texttt{Integer}: exact computation
+  \item  GHCi must know the type of each expression before computing it.
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Type checking}
+  \begin{itemize}
+  \item  Infers (works out) the type of every expression 
+  \item  Checks that all types match --- before running the program
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Our example}
+\begin{verbatim}
+*Main> :i price
+price :: Integer
+  	-- Defined at...
+*Main> :i euro
+euro :: Double -> Double
+  	-- Defined at...
+*Main> euro price
+
+<interactive>:70:6:
+    Couldn't match expected type `Double' with actual type `Integer'
+    In the first argument of `euro', namely `price'
+    In the expression: euro price
+    In an equation for `it': it = euro price
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Why did it work before?}
+  \begin{itemize}
+  \item Numeric literals are \textbf{overloaded}
+  \item  Giving the number a name fixes its type
+  \end{itemize}
+\begin{verbatim}
+*Main> euro 79
+57.78655548240802
+*Main> 79 :: Integer
+79
+*Main> 79 :: Double
+79.0
+*Main> price :: Integer
+79
+*Main> price :: Double
+
+<interactive>:76:1:
+    Couldn't match expected type `Double' with actual type `Integer'
+    In the expression: price :: Double
+    In an equation for `it': it = price :: Double
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Fixing the problem}
+  A definition can be given a \textbf{type signature} which specifies
+  its type
+\begin{block}{In Examples.hs}
+\begin{verbatim}
+-- |price of the game in USD
+price' :: Double
+price' = 79
+\end{verbatim}
+  \end{block}
+\begin{verbatim}
+*Main> :i price'
+price' :: Double
+  	-- Defined at...
+*Main> euro price'
+57.78655548240802
+\end{verbatim}
+\end{frame}
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

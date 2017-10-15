@@ -1,0 +1,228 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Coordinates}
+  \begin{itemize}
+  \item \textbf{Course hours:}  Mo/We 14-16 Uhr, SR 01 016 (G.-Köhler-Allee 101)
+  \item \textbf{Staff:} Prof.\ Dr.\ Peter Thiemann\\
+\begin{alltt}
+Gebäude 079, Raum 00-015
+Telefon: 0761 203 -8051/-8247
+E-mail: thiemann@cs.uni-freiburg.de
+Web: \href{http://www.informatik.uni-freiburg.de/~thiemann}{http://www.informatik.uni-freiburg.de/~thiemann}
+\end{alltt}
+\item  \textbf{Staff:} Gabriel Radanne, Felix Karg\\
+\begin{alltt}
+Gebäude 079, Raum 00-014
+Telefon: 0761 203 -8053
+E-mail: radanne@cs.uni-freiburg.de
+Web: \href{http://www.informatik.uni-freiburg.de/~radanne}{http://www.informatik.uni-freiburg.de/~radanne}
+\end{alltt}
+  \item\textbf{Homepage:}\\ \footnotesize
+    \href{https://github.com/proglang/FunctionalProgramming2017}{
+      https://github.com/proglang/FunctionalProgramming2017}
+    \\
+    \href{https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2017/}{
+      https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2017/}
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Contents}
+  \begin{itemize}
+  \item Basics of functional programming using Haskell
+  \item Haskell development tools
+  \item Writing Haskell programs
+  \item Using Haskell libraries
+  \item Your first Haskell project
+  \end{itemize}
+\end{frame}
+
+
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{What is Haskell?}
+  \begin{quotation}
+    In September of 1987 a meeting was held at the conference on
+    Functional Programming Languages and Computer Architecture in
+    Portland, Oregon, to discuss an unfortunate situation in the
+    functional programming community: there had come into being more
+    than a dozen non-strict, purely functional programming languages,
+    all similar in expressive power and semantic underpinnings. There
+    was a strong consensus at this meeting that more widespread use
+    of this class of functional languages was being hampered by the
+    lack of a common language. It was decided that a committee should
+    be formed to design such a language, providing faster
+    communication of new ideas, a stable foundation for real
+    applications development, and a vehicle through which others would 
+    be encouraged to use functional languages. 
+  \end{quotation}
+  {\tiny From ``History of Haskell''}
+\end{frame}
+
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{What is Functional Programming?}
+  \begin{block}<+->{A different approach to programming}
+    \begin{LARGE}
+      \begin{center}
+        Functions and values
+        \\[3ex]
+        rather than
+        \\[3ex]
+        Assignments and pointers
+      \end{center}
+    \end{LARGE}
+  \end{block}
+  \begin{alertblock}<+->{It will make you a better programmer}
+    
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Why Haskell?}
+  \begin{itemize}
+  \item Haskell is a very high-level language
+    \\\hfill\textcolor{gray}{(many details taken care
+    of automatically)}. 
+  \item Haskell is expressive and concise
+    \\\hfill\textcolor{gray}{(can achieve a lot with a
+    little effort)}. 
+  \item Haskell is good at handling complex data and combining
+    components. 
+  \item Haskell is a high-productivity language \\\hfill\textcolor{gray}{ (prioritize programmer-time over computer-time)}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Variables}
+  \begin{block}<+->{Functional (Haskell)}
+\begin{verbatim}
+x :: Int
+x = 5
+\end{verbatim}
+    Variable \texttt{x} has value \texttt{5} forever
+  \end{block}
+  \begin{block}<+->{Imperative (Java)}
+\begin{verbatim}
+int x = 5;
+...
+x = x+1;
+\end{verbatim}
+    Variable \texttt{x} can change its content over time
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Functions}
+  \begin{block}<+->{Functional (Haskell)}
+\begin{verbatim}
+f :: Int -> Int -> Int
+f x y = 2*x + y
+
+f 42 16 // always 100
+\end{verbatim}
+    Return value of a function \textbf{only} depends on its inputs
+  \end{block}
+  \begin{block}<+->{Imperative (Java)}
+\begin{verbatim}
+boolean flag;
+static int f (int x, int y) {
+  return flag ? 2*x + y , 2*x - y;
+}
+
+f (42, 16); // who knows?
+\end{verbatim}
+    Return value  depends on non-local variable \texttt{flag}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Laziness}
+  \begin{block}<+->{Haskell}
+\begin{verbatim}
+x = expensiveComputation
+g anotherExpensiveComputation
+\end{verbatim}
+    \begin{itemize}
+    \item The expensive computation will only happen if \texttt{x} is
+      ever used.
+    \item Another expensive computation will only happen if \texttt{g}
+      uses its argument.
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Java}
+\begin{verbatim}
+int x = expensiveComputation;
+g (anotherExpensiveComputation)
+\end{verbatim}
+    \begin{itemize}
+    \item Both expensive computations will happen anyway.
+    \item Laziness can be simulated, but it's complex!
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Many more features that make programs more concise}
+  \begin{itemize}
+  \item Algebraic datatypes
+  \item Polymorphic types
+  \item Parametric overloading
+  \item Type inference
+  \item Monads \& friends (for IO, concurrency, \dots)
+  \item Comprehensions
+  \item Metaprogramming
+  \item Domain specific languages
+  \item \dots
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{References}
+  \begin{itemize}
+  \item Paper by the original developers of Haskell in the conference on History of
+    Programming Languages (HOPL III): \href{A History
+      of Haskell: Being Lazy with
+      Class}{http://dl.acm.org/citation.cfm?id=1238856}
+  \item The Haskell home page: \url{http://www.haskell.org}
+  \item Haskell libraries repository:
+    \url{https://hackage.haskell.org/}
+  \item Haskell Tool Stack: \url{https://docs.haskellstack.org/en/stable/README/}
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+  % \frametitle{Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

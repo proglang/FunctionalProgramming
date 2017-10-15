@@ -1,0 +1,109 @@
+%% -*- coding: utf-8 -*-
+\usetheme{Boadilla} % default
+\useoutertheme{infolines}
+\setbeamertemplate{navigation symbols}{} 
+
+\usepackage{etex}
+\usepackage{alltt}
+\usepackage{pifont}
+\usepackage{color}
+\usepackage[utf8]{inputenc}
+\usepackage{german}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage[final]{pdfpages}
+\usepackage{url}
+\usepackage{arydshln} % dashed lines
+
+\newcommand\cmark{\ding{51}}
+\newcommand\xmark{\ding{55}}
+
+\newcommand{\nat}{\mathbf{N}}
+
+\usepackage[all]{xy}
+
+%% new arrow tip for xy
+\newdir{|>}{!/4.5pt/@{|}*:(1,-.2)@^{>}*:(1,+.2)@_{>}}
+
+\newcommand\cid[1]{\textup{\textbf{#1}}} % class names
+\newcommand\kw[1]{\textup{\textbf{#1}}}  % key words
+\newcommand\tid[1]{\textup{\textsf{#1}}} % type names
+\newcommand\vid[1]{\textup{\texttt{#1}}} % value names
+\newcommand\Mid[1]{\textup{\texttt{#1}}} % method names
+
+\newcommand\TODO[1][]{{\color{red}{\textbf{TODO: #1}}}}
+
+\newcommand\String[1]{\texttt{\dq{}#1\dq{}}}
+
+\newcommand\ClassHead[1]{%
+  \ensuremath{\begin{array}{|l|}
+      \hline
+      \cid{#1}
+      \\\hline
+    \end{array}}}
+\newcommand\AbstractClass[2]{%
+  \ensuremath{\begin{array}{|l|}
+      \hline
+      \cid{\textit{#1}}
+      \\\hline
+      #2
+      \hline
+    \end{array}}}
+\newcommand\Class[2]{%
+  \ensuremath{\begin{array}{|l|}
+      \hline
+      \cid{#1}
+      \\\hline
+      #2
+      \hline
+    \end{array}}}
+\newcommand\Attribute[3][black]{\textcolor{#1}{\Param{#2}{#3}}\\}
+\newcommand\Methods{\hline}
+\newcommand\MethodSig[3]{\Mid{#2} (#3): \,\tid{#1}\\}
+\newcommand\CtorSig[2]{\Mid{#1} (#2)\\}
+\newcommand\AbstractMethodSig[3]{\Mid{\textit{#2}} (#3): \,\tid{#1}\\}
+\newcommand\Param[2]{\vid{#2}:~\tid{#1}}
+
+\lstset{%
+  frame=single,
+  xleftmargin=2pt,
+  stepnumber=1,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\ttfamily\tiny\color[gray]{0.3},
+  belowcaptionskip=\bigskipamount,
+  captionpos=b,
+  escapeinside={*'}{'*},
+  language=java,
+  tabsize=2,
+  emphstyle={\bf},
+  commentstyle=\mdseries\it,
+  stringstyle=\mdseries\rmfamily,
+  showspaces=false,
+  showtabs=false,
+  keywordstyle=\bfseries,
+  columns=fullflexible,
+  basicstyle=\footnotesize\CodeFont,
+  showstringspaces=false,
+  morecomment=[l]\%,
+  rangeprefix=////,
+  includerangemarker=false,
+}
+
+\newcommand\CodeFont{\sffamily}
+
+\definecolor{lightred}{rgb}{0.8,0,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+
+\newcommand\highlight[1]{\textcolor{blue}{\emph{#1}}}
+\newcommand\GenClass[2]{\cid{#1}\texttt{<}\cid{#2}\texttt{>}}
+
+\newcommand\Colored[3]{\alt<#1>{\textcolor{#2}{#3}}{#3}}
+
+\newcommand\nt[1]{\ensuremath{\langle#1\rangle}}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: nil
+%%% End: 
