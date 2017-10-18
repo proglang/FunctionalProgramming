@@ -116,13 +116,10 @@ summerize [_,_,_] = "Three things: ???"
 summerize _   = "Several things."   -- wild card pattern
 \end{verbatim}
   \end{block}
-\end{frame}
-\begin{frame}[fragile]
-  \frametitle{List function with pattern matching}
-  \begin{alertblock}<+->{Explanations}
-    \small
+  \begin{alertblock}<+->{Explanations --- expressions}
     \begin{itemize}
-    \item \texttt{(++)} \textbf{list concatenation}, associates to right because it's more efficient
+    \item  \texttt{(++)} \textbf{list concatenation}
+    \item  \texttt{(++)} associates to right because it's more efficient
       \begin{itemize}
       \item \texttt{ [1,2,3,4,5] ++ ([6,7,8,9] ++ [])} --- 10 copy
         operations
@@ -130,6 +127,14 @@ summerize _   = "Several things."   -- wild card pattern
         \texttt{([1,2,3,4,5] ++ [6,7,8,9]) ++ []} --- 14 copy operations,
         because \texttt{[1,2,3,4,5]} is copied twice
       \end{itemize}
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Pattern matching on lists}
+  \begin{alertblock}<+->{Explanations --- patterns}
+    \small
+    \begin{itemize}
     \item  patterns are checked in sequence
     \item  variables in patterns are bound to the values in
       corresponding position in the argument
@@ -155,7 +160,7 @@ doubles (x:xs) = undefined
   \begin{alertblock}<+->{}
     \begin{itemize}
     \item \texttt{undefined} is a value of any type
-    \item executing it yields a run-time error
+    \item evaluating it yields a run-time error
     \end{itemize}
   \end{alertblock}
 \end{frame}
