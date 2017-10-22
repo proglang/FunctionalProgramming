@@ -1,0 +1,31 @@
+# Haskell Cheatsheet #
+
+- A *definition* gives a name to a value
+- Names are case-sensitive, must start with lowercase letter
+- Definitions are put in a text file ending in .hs
+- Comments start with `--` and extend to the end of the line
+- Function definitions have the form `f x1 x2 ... = e` where
+  - `f` is the name of the function
+  - `x1`, `x2`, ... are the names of the formal parameters
+  - `e` is the body of the function, an expression to compute the result
+- Operators
+  - arithmetic: `+` `-` `*` `/` 
+  - comparison: `==`   `/=`   `<`  `>` etc
+- Automated Testing with QuickCheck
+  - Define a property as a  function `prop_...` of type `T -> Bool`
+  - `import Testing.QuickCheck` -- in the source file
+  - Test by executing `quickCheck prop_...`
+- Floating point arithmetic
+  - Do not test floating point numbers for equality!
+  - Approximately 15 significant decimal digits
+  - Test equality with relative check < 10E-15
+- Types
+   - Every value has a type
+   - Numeric literals are overloaded (can be, e.g., `Integer` or `Double`)
+   - Naming a value fixes its type (according to Haskell's rules)
+   - Argument type of function and actual type of argument must match
+   - Type `Double`: double precision floating point numbers
+   - Type `Integer`: exact computation
+   - Type signature specifies the desired type (overrides Haskell's rules)
+- Function definition by cases and recursion
+  - Paraphrasing the mathematical definition

@@ -1,0 +1,318 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Type definitions}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Type aliases}
+Explaining the meaning of data in comments is bad!
+
+Introduce new, self explaining types.
+\begin{verbatim}
+type Name = String
+type Title = String
+type Year = Int
+type Age = Int
+
+type User = (Name,    Year)
+--           ^ name   ^ Year of birth 
+type Film = (Title, Age)
+--                  ^ fsk           
+type Purchase = (Name, Title, Year) -- <---+
+--             ^ user name ^ item name     ^ date of purchase
+users :: [User]
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Datatypes}
+  \begin{block}{Example scenario}
+    \begin{itemize}
+    \item model a card game (hearts)
+    \item represent the game items!
+    \item define game logic on the representations!
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Intermezzo: The game}
+  \begin{block}<+->{Microsoft Hearts (\href{https://en.wikipedia.org/wiki/Microsoft_Hearts}{Wikipedia link})}
+    \begin{itemize}
+    \item computer game based on card game ``Hearts''
+    \item included in Windows~3.1 through Windows~7
+    \item discontinued
+    \end{itemize}    
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{The game}
+  \begin{block}<+->{Gameplay}
+    \begin{itemize}
+    \item Four players (three simulated)
+    \item Trick-taking game
+    \item Each player plays one card to a trick
+    \item Trick won by highest card of the suit led; no trump
+    \item Suit must be followed
+    \item Heart cannot lead until
+      \begin{itemize}
+      \item either Heart has been broken --- a player played Heart
+      \item or the leading player has only Heart
+      \end{itemize}
+    \item Points are scored by any Hearts (1 point) and the Queen of Spades (13 points) 
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Objective}
+    \begin{itemize}
+    \item Avoid gaining points \textbf{or} gain all 26 points
+    \end{itemize}
+  \end{block}
+  
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Data model for card games}
+  \begin{itemize}
+  \item A card has a \textbf{Suit} and a \textbf{Rank}
+  \item A card beats another card if it has the same suit, but higher rank
+  \item Todo:
+    \begin{itemize}
+    \item represent cards
+    \item define when one card beats another
+    \item define a function that chooses a beating card from a hand of
+      cards, if possible
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Define new data types}
+  \begin{block}{A card has a Suit}
+\begin{verbatim}
+data Suit = Spades | Hearts | Diamonds | Clubs
+\end{verbatim}
+  \end{block}
+  \begin{alertblock}{Explanation}
+    \begin{itemize}
+    \item new type consisting of (exactly) four values
+    \item  \texttt{Suit}: the name of the new type
+    \item \texttt{Spades}, \texttt{Hearts}, \dots: the names of its
+      \textbf{constructors}.
+    \item Type and constructor names must be capitalized
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Printing new data types}
+\begin{verbatim}
+Main> Spades
+
+<interactive>:3:1:
+  No instance for (Show Suit) arising from
+  a use of `print'
+  Possible fix: [...] 
+\end{verbatim}
+
+  \begin{alertblock}{Oops!}
+    \begin{itemize}
+    \item Haskell does not know how to print a \texttt{Suit}
+    \item but we can ask for a default (or write our own printer)
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile,fragile]
+  \frametitle{Printing derived}
+\begin{verbatim}
+data Suit = Spades | Hearts | Diamonds | Clubs
+  deriving (Show) -- makes `Suit' printable
+\end{verbatim}
+Defines a function \texttt{show} for \texttt{Suit}, which is
+automatically called by Haskell's printer
+\begin{verbatim}
+Main> Spades
+Spades
+Main> show Spades
+"Spades"
+Main> :t show 
+show :: Show a => a -> String
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile,fragile]
+  \frametitle{Functions on data types}
+   Each suit has a color:
+\begin{verbatim}
+ data Color = Black | Red
+  deriving (Show)
+\end{verbatim}
+   Define a color function by pattern matching
+\begin{verbatim}
+color :: Suit -> Color
+color = undefined
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile,fragile]
+  \frametitle{More data}
+  A card has a suit and a \textbf{rank}:
+\begin{verbatim}
+data Rank = Numeric Integer | Jack | Queen
+          | King | Ace
+  deriving Show
+\end{verbatim}
+The constructor \texttt{Numeric} is different: it takes an argument.
+\begin{verbatim}
+Main> :t Numeric
+Numeric :: Integer -> Rank
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Comparing ranks}
+\begin{verbatim}
+-- |rankBeats r1 r2
+-- returns True, if r1 beats r2
+rankBeats :: Rank -> Rank -> Bool
+rankBeats r1 r2 = undefined
+\end{verbatim}
+  To continue, we need an ordering on ranks
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Ordering ranks by pattern matching}
+\begin{verbatim}
+-- rankBeats r1 r2 returns True, if r1 beats r2
+rankBeats :: Rank -> Rank -> Bool
+rankBeats _  Ace    = False
+rankBeats Ace _     = True
+rankBeats _ King    = False
+rankBeats King _    = True
+rankBeats _  Queen  = False
+rankBeats Queen _   = True
+rankBeats _ Jack    = False
+rankBeats Jack _    = True
+rankBeats (Numeric n1) (Numeric n2) = n1 > n2
+--          ^^ pattern match on constructor
+--             yields its argument
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Cards, finally}
+  A card has a \texttt{Suit} and a \texttt{Rank}
+\begin{verbatim}
+data Card = Card Rank Suit
+  deriving (Show)
+
+rank :: Card -> Rank
+rank (Card r s) = r
+
+suit :: Card -> Suit
+suit (Card r s) = s
+\end{verbatim}
+  \begin{itemize}
+  \item single constructor with two parameters
+  \item  (in principle, a tuple with a special name)
+  \item \texttt{rank}, \texttt{suit} are \textbf{selector functions}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Comparing Cards}
+  A card \textbf{beats} another card, if it has the same
+  suit, but a higher rank
+\begin{verbatim}
+cardBeats :: Card -> Card -> Bool
+cardBeats givenCard c = suit givenCard == suit c
+                        && rankBeats (rank givenCard)
+                                     (rank c)
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Hand of Cards}
+\begin{verbatim}
+type Hand = [Card]
+
+chooseCard :: Card -> Hand -> Card
+chooseCard givenCard h = undefined
+\end{verbatim}
+  To develop \texttt{chooseCard} refine \texttt{h} by pattern matching
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Choose a card}
+\begin{verbatim}
+type Hand = [Card]
+
+chooseCard :: Card -> Hand -> Card
+chooseCard givenCard [] = undefined -- ???
+chooseCard givenCard (x:xs) = undefined
+\end{verbatim}
+  \begin{itemize}
+  \item What should we do if the hand is empty?
+  \item Avoid by defining only non-empty hands!
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Non-empty hands}
+\begin{verbatim}
+data Hand = Last Card | Next Card Hand
+  deriving (Show, Eq)
+\end{verbatim}
+  \begin{itemize}
+  \item  Recursive datatype definition
+  \item  \texttt{Last Card} is the \textbf{base case}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Get card from non-empty hand}
+  \begin{itemize}
+  \item  A \texttt{Hand} is never empty
+  \item  Thus we can always obtain a card
+  \end{itemize}
+\begin{verbatim}
+topCard :: Hand -> Card
+topCard (Last c)  = c
+topCard (Next c _) = c
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Choosing from non-empty hand}
+\begin{verbatim}
+-- choose a beating card, if possible
+chooseCard :: Card -> Hand -> Card
+chooseCard = undefined
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Choosing from non-empty hand}
+\begin{verbatim}
+-- choose a beating card, if possible
+chooseCard :: Card -> Hand -> Card
+chooseCard gc (Last c) = c -- may beat, or not
+chooseCard gc (Next c h) | cardBeats gc c = c
+                         | otherwise      = chooseCard gc h
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Break Time --- Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
