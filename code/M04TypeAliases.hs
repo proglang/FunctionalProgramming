@@ -11,3 +11,6 @@ type Purchase = (Name, Title, Year) -- <---+
 --             ^ user name ^ item name     ^ date of purchase
 users :: [User]
 users = undefined
+
+useful_function :: (String, Int) -> String
+useful_function (str, i) = take i str
