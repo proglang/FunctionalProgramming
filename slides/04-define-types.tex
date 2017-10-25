@@ -63,7 +63,7 @@ users :: [User]
     \item Four players (three simulated)
     \item Trick-taking game
     \item Each player plays one card to a trick
-    \item Trick won by highest card of the suit led; no trump
+    \item Trick won by highest card of the suit led; no Trump!
     \item Suit must be followed
     \item Heart cannot lead until
       \begin{itemize}
@@ -178,13 +178,22 @@ Numeric :: Integer -> Rank
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Comparing ranks}
+  \begin{block}<+->{Situation}
+    \begin{itemize}
+    \item Let \texttt{r2} be the highest rank on the table
+    \item Let \texttt{r1} be the card played
+    \item Assuming the suits match, does \texttt{r1} get the trick?
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Need an ordering of ranks}
 \begin{verbatim}
 -- |rankBeats r1 r2
 -- returns True, if r1 beats r2
+-- i.e. r1 is strictly greater than r2
 rankBeats :: Rank -> Rank -> Bool
 rankBeats r1 r2 = undefined
 \end{verbatim}
-  To continue, we need an ordering on ranks
+  \end{block}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Ordering ranks by pattern matching}
@@ -203,6 +212,70 @@ rankBeats (Numeric n1) (Numeric n2) = n1 > n2
 --          ^^ pattern match on constructor
 --             yields its argument
 \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Letting Haskell order the ranks}
+  \begin{itemize}
+  \item definition of \texttt{rankBeats} is repetitive
+  \item boilerplate code
+  \item let Haskell generate it for us!
+  \end{itemize}
+  \begin{block}<+->{Deriving an order}
+    \texttt{<=}, \texttt{<} etc are overloaded and can be extended to
+    new types
+\begin{verbatim}
+data Rank = Numeric Integer | Jack | Queen
+          | King | Ace
+  deriving (Show, Ord)
+
+rankBeats' r1 r2 = r1 > r2
+\end{verbatim}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Oops\dots}
+\begin{verbatim}
+M04Cards.hs:17:27: error:
+    • No instance for (Eq Rank)
+        arising from the 'deriving' clause of a data type declaration
+      Possible fix:
+        use a standalone 'deriving instance' declaration,
+          so you can specify the instance context yourself
+    • When deriving the instance for (Ord Rank)
+\end{verbatim}
+  \begin{block}<2->{Explanation}
+    \texttt{Ord} defines \texttt{<} and then
+\begin{verbatim}
+x <= y = x < y || x == y
+\end{verbatim}
+    but how do we compare two ranks for equality?
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Equality of ranks}
+  \begin{itemize}
+  \item could be defined by pattern matching, but
+  \item boilerplate code
+  \item let Haskell generate it for us!
+  \end{itemize}
+  \begin{block}<+->{Deriving equality}
+    \texttt{==}, \texttt{/=} are overloaded and can be extended to
+    new types
+\begin{verbatim}
+data Rank = Numeric Integer | Jack | Queen
+          | King | Ace
+  deriving (Show, Eq, Ord)
+
+rankBeats' r1 r2 = r1 > r2
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Are they the same?}
+    How do we know that \texttt{rankBeats} $=$ \texttt{rankBeats'}?
+    Let's defer that.
+  \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
