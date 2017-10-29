@@ -1,0 +1,369 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Higher-order functions}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Higher-order functions}
+  \begin{itemize}
+  \item Functions are first-class citizens in Haskell
+  \item A function can be
+    \begin{itemize}
+    \item stored in data
+    \item argument of a (\textbf{higher-order}) functions
+    \item returned from a function
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Examples of higher-order functions}
+
+  \begin{block}{Most higher-order functions are polymorphic:}
+\begin{verbatim}
+map :: (a -> b) -> [a] -> [b]
+filter :: (a -> Bool) -> [a] -> [a]
+\end{verbatim}
+  \end{block}
+  \begin{block}{Example uses}
+\begin{verbatim}
+> map even [1..5]
+[False,True,False,True,False]
+> filter even [1..10]
+[2,4,6,8,10]
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Function types}
+  \begin{block}<+->{What's the difference between these types?}
+\begin{verbatim}
+Int -> Int -> Int
+Int -> (Int -> Int)
+(Int -> Int) -> Int
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{How many arguments?}
+\begin{verbatim}
+pick 1 = fst
+pick 2 = snd
+\end{verbatim}
+  \end{block}  
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Curried functions}
+
+\begin{block}{Compare these types}
+\begin{verbatim}
+type T1 = Int -> Int -> Int
+type T2 = (Int, Int) -> Int
+\end{verbatim}
+\begin{itemize}
+\item Both function types take two integers and return one
+\item \texttt{T1} takes the arguments one at a time
+\item \texttt{T2} takes both arguments as a pair
+\end{itemize}
+\end{block}
+\begin{block}{Haskell prefers the type  \texttt{T1}}
+  \begin{itemize}
+  \item A \textbf{curried} type, after logician \href{https://en.wikipedia.org/wiki/Haskell_Curry}{Haskell B. Curry}
+  \item Haskell's namesake
+  \item Predefined functions \texttt{curry} and \texttt{uncurry} map between \texttt{T1} and \texttt{T2}
+  \item (an isomorphism)
+  \end{itemize}
+\end{block}
+\end{frame}
+%----------------------------------------------------------------------
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Designing a higher-order function}
+  \begin{block}<+->{Two functions on lists}
+\begin{verbatim}
+sum []     = 0
+sum (x:xs) = x + sum xs
+
+product []     = 1
+product (x:xs) = x * product xs
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{The common pattern}
+\begin{verbatim}
+f []     = e
+f (x:xs) = x `op` f xs
+\end{verbatim}
+    where
+    \begin{itemize}
+    \item \texttt{e :: b} is a value
+    \item \texttt{op :: a -> b -> b} is a combining function
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{The foldr function}
+  \begin{block}<+->{Abstracting over value and combining function}
+\begin{verbatim}
+foldr' op e []     = e
+foldr' op e (x:xs) = x `op` foldr' op e xs
+\end{verbatim}
+    where
+    \begin{itemize}
+    \item \texttt{e :: b} is a value
+    \item \texttt{op :: a -> b -> b} is a combining function
+    \end{itemize}
+  \end{block}
+  \begin{alertblock}<+->{What's the type of foldr?}
+    \vspace{-\baselineskip}
+  \end{alertblock}
+  \begin{block}<+->{}
+\begin{verbatim}
+foldr' :: (a -> b -> b) -> b -> [a] -> b
+\end{verbatim}
+  \end{block}
+  \begin{alertblock}<+->{Also known as reduce}
+    map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Foldr in action}
+  \begin{block}<+->{sum and product}
+\begin{verbatim}
+sum xs     = foldr (+) 0 xs
+product xs = foldr (*) 1 xs
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{more functions}
+\begin{verbatim}
+or      xs = undefined
+and     xs = undefined
+concat  xs = undefined
+
+maximum (x:xs) = undefined
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Intuition about foldr}
+  \begin{center}
+    \includegraphics{Right-fold-transformation}
+  \end{center}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Foldr puzzles}
+  \begin{block}<+->{f1}
+\begin{verbatim}
+f1 xs = foldr (:) [] xs
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{f2}
+\begin{verbatim}
+f2 xs ys = foldr (:) ys xs
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{f3}
+\begin{verbatim}
+f3 xs = foldr snoc [] xs
+  where snoc x ys = ys++[x]
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{f4}
+\begin{verbatim}
+f4 f xs = foldr fc [] xs
+  where fc x ys = f x:ys
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Transforming functions}
+  \begin{itemize}
+  \item partial application
+  \item operator sections
+  \item function composition
+  \item anonymous functions aka lambda expressions
+  \item eta conversion
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Partial application}
+\begin{verbatim}
+take :: Int -> [a] -> [a]
+take 5 :: [a] -> [a]
+
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr (+) :: Int -> [Int] -> Int
+foldr (+) 0 :: [Int] -> Int
+\end{verbatim}
+  \begin{itemize}
+  \item Partial application $=$ function application with ``too few'' arguments
+  \item Result is a function
+  \item Can be used like any other function
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Operator sections}
+\begin{verbatim}
+(-) :: Int -> Int -> Int
+-- subtract one
+(-1) :: Int -> Int
+-- subtract from one
+(1-) :: Int -> Int
+-- less than 0
+(<0) :: Int -> Bool
+\end{verbatim}
+  can be done with every infix function
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Function composition}
+  \begin{block}{Example}
+    \begin{itemize}
+    \item Remove spaces from string
+\begin{verbatim}
+removeSpaces "abc def \n ghi" = "abcdefghi"
+\end{verbatim}
+    \item In module \texttt{Data.Char}
+\begin{verbatim}
+isSpace :: Char -> Bool
+\end{verbatim}
+    \item yields definition
+\begin{verbatim}
+removeSpaces xs = filter (not . isSpace) xs
+\end{verbatim}
+    \item Operator ``\texttt{.}'' is function composition defined by
+\begin{verbatim}
+(f . g) x = f (g x)
+\end{verbatim}
+    \item What's the type of \texttt{.}?
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Anonymous functions}
+  \begin{itemize}
+  \item<+-> Usual function definition
+\begin{verbatim}
+snoc x ys = ys++[x]
+\end{verbatim}
+  \item<+->
+  Alternative: define \texttt{snoc} using a lambda expression
+\begin{verbatim}
+snoc = \ x ys -> ys++[x]
+\end{verbatim}
+\item<+->
+  Often for function used in one place as in
+\begin{verbatim}
+f3 xs = foldr snoc [] xs
+  where snoc x ys = ys++[x]
+\end{verbatim}
+\item<+-> Equivalently replace \texttt{snoc} by its definition
+\begin{verbatim}
+f3 xs = foldr (\ x ys -> ys++[x]) [] xs
+\end{verbatim}
+\end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Eta conversion}
+  \begin{enumerate}
+  \item Have seen a number of definitions of the form
+\begin{verbatim}
+f x = g x
+\end{verbatim}
+    where \texttt{x} does not occur in \texttt{g}
+  \item 
+    In such cases, the formal parameter \texttt{x} is redundant:
+\begin{verbatim}
+f = g
+\end{verbatim}
+    is an equivalent definition.
+  \item The transformation from (1) to (2) is called \textbf{eta reduction}.
+  \item The typing of an eta-reduced definition is more restricted.
+\end{enumerate}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Examples for eta conversion}
+\begin{verbatim}
+sum = foldr (+) 0
+product = foldr (*) 1
+or = foldr (||) False
+and = foldr (&&) True
+concat = foldr (++) []
+removeSpaces = filter (not . isSpace)
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Exercises}
+\begin{verbatim}
+takeLine :: String -> String
+-- takeLine "abc\ndef\nghi\n" == "abc"
+
+takeWhile' :: (a -> Bool) -> [a] -> [a]
+dropWhile' :: (a -> Bool) -> [a] -> [a]
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Exercises}
+\begin{verbatim}
+lines :: String -> [String]
+-- lines "abc\ndef\nghi\n" == ["abc", "def", "ghi"]
+
+segments' :: (a -> Bool) -> [a] -> [[a]]
+
+words :: String -> [String]
+-- words "abc def  ghi" == ["abc","def","ghi"]
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Exercises}
+  Define a function that counts how many times words occur in a text and displays each word with its count.
+\begin{verbatim}
+wordCounts :: String -> [String]
+\end{verbatim}
+  Example use
+\begin{verbatim}
+*Main> putStr (wordCounts "hello clouds\nhello sky")
+clouds: 1
+hello: 2
+sky: 1
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Break Time --- Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

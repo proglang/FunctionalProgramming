@@ -1,0 +1,206 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{More about lists}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Lists recap}
+  \begin{block}{Zero or more values}
+\begin{verbatim}
+[]   [1]   [True, False]    ["a", "bunch", "of", "flowers"]
+\end{verbatim}
+  \end{block}
+  \begin{block}{All have the same type}
+\begin{verbatim}
+[True, False] -- good
+[1, "two", False] -- bad, type error
+\end{verbatim}
+  \end{block}
+  \begin{block}{Order matters}
+\begin{verbatim}
+[1,2,3] /= [3,2,1]
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{List syntax}
+\begin{verbatim}
+(1 : (2 : (3 : []))) 
+==
+1 : 2 : 3 : [] 
+==
+[1,2,3]
+\end{verbatim}
+  Strings are lists of characters
+\begin{verbatim}
+"Hearts" == ['H','e','a','r','t','s']
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining a list datatype}
+    \begin{block}<+->{The values of type [a] are \dots}
+    \begin{itemize}
+    \item either \texttt{[]}, the empty list
+    \item or \texttt{x:xs} where \texttt{x} has type \texttt{a} and
+      \texttt{xs} has type \texttt{[a]} \\
+      ``\texttt{:}'' is pronounced ``cons''
+    \end{itemize}
+  \end{block}
+\begin{verbatim}
+data List a = ...
+\end{verbatim}
+  \begin{block}<+->{Corresponding definition}
+\begin{verbatim}
+data List a = Nil | Cons a (List a)
+\end{verbatim}
+    \begin{itemize}
+    \item New: \texttt{List} is a parametric datatype with type
+      parameter \texttt{a}
+    \item Many functions on lists are also parametric (i.e., \textbf{polymorphic}) 
+  \end{itemize}
+  \end{block}  
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Polymorphic functions on lists}
+\begin{verbatim}
+length :: [a] -> Int
+(++)   :: [a] -> [a] -> [a]
+concat :: [[a]] -> [a]
+take   :: Int -> [a] -> [a]
+zip    :: [a] -> [b] -> [(a,b)]
+
+map    :: (a -> b)    -> [a] -> [b]
+filter :: (a -> Bool) -> [a] -> [a]
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Prelude functions on lists}
+  \begin{block}<+->{Functions on specific lists}
+\begin{verbatim}
+and, or          :: [Bool] -> Bool
+words, lines     :: String -> [String]
+unwords, unlines :: [String] -> String
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Overloaded functions on lists}
+\begin{verbatim}
+sum, product     :: Num a => [a] -> a
+elem             :: Eq a => a -> [a] -> Bool
+sort             :: Ord a => [a] -> [a]
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Some examples \dots}
+  \begin{itemize}
+  \item append, reverse
+  \item sum, product
+  \item take, drop, splitAt
+  \item zip, unzip
+  \item insert, isort, qsort
+  \item QuickCheck: collect, classify
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Quicksort!}
+\begin{verbatim}
+qsort :: Ord a => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort smaller ++ [x] ++ qsort bigger
+  where
+    smaller = filter (<= x) xs
+    bigger  = filter (> x) xs
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{An unfortunate QuickCheck --- ghci interaction}
+  \begin{block}<+->{Two properties}
+\begin{verbatim}
+prop_take_drop n xs = take n xs ++ drop n xs == xs
+nonprop_take_drop n xs = drop n xs ++ take n xs == xs
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Testing  \dots}
+\begin{verbatim}
+*Main> quickCheck prop_take_drop
++++ OK, passed 100 tests.
+*Main> quickCheck nonprop_take_drop
++++ OK, passed 100 tests.
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Oops! what went wrong?}
+\begin{verbatim}
+prop_take_drop :: Eq a => Int -> [a] -> Bool
+nonprop_take_drop :: Eq a => Int -> [a] -> Bool
+\end{verbatim}
+    \vspace{-\baselineskip}
+    \begin{itemize}
+    \item The properties have polymorphic types, but\dots
+    \item QuickCheck does not work with polymorphic types!
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Ghci ``helps''}
+  \begin{itemize}
+  \item Instead of indicating the problem, ghci chooses a more specific \textbf{default type} 
+  \item In this case, it plugs the unit type for \texttt{a}
+  \item QuickCheck tests
+\begin{verbatim}
+prop_take_drop :: Eq a => Int -> [()] -> Bool
+nonprop_take_drop :: Eq a => Int -> [()] -> Bool
+\end{verbatim}
+  \item Order does not matter when all elements are the same\dots
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Force ghci to be unhelpful}
+  \begin{itemize}
+  \item Use type signatures
+  \item Disable defaulting
+\begin{verbatim}
+*Main> :set -XNoExtendedDefaultRules
+\end{verbatim}
+  \item Restrict types used in defaulting
+\begin{verbatim}
+*Main> default (Integer, Double)
+\end{verbatim}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Break Time --- Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
