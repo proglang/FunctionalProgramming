@@ -72,3 +72,42 @@ jackOfClub = Card Jack Clubs
 
 data Hand = Last Card | Next Card Hand
   deriving (Show)
+
+-- choose a card from the hand that beats the given card if possible
+-- but it does not follow suit!
+chooseCard :: Card -> Hand -> Card
+chooseCard c (Last card) = card
+chooseCard c (Next card hand) =
+    if cardBeats card c
+    then card
+    else chooseCard c hand
+
+exampleHand = Next jackOfClub (Next queenOfHearts (Next  tenOfHearts (Last aceOfSpades)))
+tenOfClubs = Card (Numeric 10) Clubs
+
+-- the Maybe type
+data Maybe' a = Nothing' | Just' a
+
+-- like chooseCard, but follow suit
+chooseCard' :: Card -> Hand -> Card
+chooseCard' c h =
+    chooseCardFollowing c h Nothing
+
+-- | take given card, current hand, and maybe a card of same suit as given card
+chooseCardFollowing :: Card -> Hand -> Maybe Card -> Card
+chooseCardFollowing c (Last card) Nothing = card
+chooseCardFollowing c (Last card) (Just cardSameSuit) =
+    if cardBeats card c
+    then card
+    else cardSameSuit
+chooseCardFollowing c (Next card hand) m =
+    if cardBeats card c
+    then card
+    else if suit c == suit card
+    then chooseCardFollowing c hand (Just card)
+    else chooseCardFollowing c hand m
+
+{- alternative way of writing this:
+    else chooseCardFollowing c hand
+           (if suit c == suit card then Just card else m)
+-}
