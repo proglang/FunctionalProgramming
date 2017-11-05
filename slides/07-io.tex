@@ -1,0 +1,270 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{IO}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Referential transparency and substitutivity}
+  \begin{block}<+->{Remember the first class?}
+    \begin{itemize}
+    \item Every variable and expression has just one value\\
+      \textbf{referential transparency}
+    \item Every variable can be replaced by its definition\\
+      \textbf{substitutivity}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Enables reasoning}
+\begin{verbatim}
+-- sequence of function calls does not matter
+f () + g () == g () + f ()
+-- number of function calls does not matter
+f () + f ( ) == 2 * f ()
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{How does IO fit in?}
+  \begin{alertblock}<+->{Bad example}
+    Suppose we had 
+\begin{verbatim}
+input :: () -> Integer
+\end{verbatim}
+    \begin{itemize}
+    \item<+-> Consider
+\begin{verbatim}
+let x = input () in
+x + x
+\end{verbatim}
+    \item<+-> Expect to read one input and use it twice
+    \item<+-> By substitutivity, this expression must behave like
+\begin{verbatim}
+input () + input ()
+\end{verbatim}
+      which reads two inputs!
+    \item<+-> VERY WRONG!!!
+  \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{The dilemma}
+  \begin{block}<+->{Haskell is a pure language, but IO is a side effect}
+  \end{block}
+  \begin{block}<+->{A contradiction?}
+  \end{block}
+  \begin{block}<+->{No!}
+    \begin{itemize}
+    \item Instead of performing IO operations directly, there is an
+      abstract type of \textbf{IO instructions}, which get executed
+      lazily by the operating system
+    \item Some instructions (e.g., read from a file) return values, so the abstract IO type is parameterized over their type
+    \item Keep in mind: instructions are just values like any other
+  \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Haskell IO}
+
+\begin{block}<+->{The main function}
+  Top-level result of a program is an IO ``instruction''.
+\begin{verbatim}
+main :: IO ()
+main = undefined
+\end{verbatim}
+  \begin{itemize}
+  \item an instruction describes the \textbf{effect} of the program
+  \item effect $=$ IO action, imperative state change, \dots
+  \end{itemize}
+\end{block}
+% \begin{block}<+->{An instruction that returns a result}
+% \begin{verbatim}
+% -- defined in the Prelude
+% readFile :: FileName -> IO String
+% \end{verbatim}
+% \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Kinds of instructions}
+  \begin{block}<+->{Primitive instructions}
+\begin{verbatim}
+-- defined in the Prelude
+putChar   :: Char -> IO ()
+getChar   :: IO Char
+writeFile :: FileName -> String -> IO ()
+readFile  :: FileName -> IO String
+\end{verbatim}
+and many more
+  \end{block}
+  \begin{block}<+->{No op instruction}
+\begin{verbatim}
+return :: a -> IO a
+\end{verbatim}
+    The IO instruction \texttt{return 42} performs no IO, but yields the value 42.
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Combining two instructions}
+  \begin{block}<+->{The bind operator \texttt{>>=}}
+    Intuition:  next instruction may depend on the output of the previous one
+\begin{verbatim}
+(>>=) :: IO a -> (a -> IO b) -> IO b
+\end{verbatim}
+    The instruction \texttt{m >>= f}
+    \begin{itemize}
+    \item executes \texttt{m :: IO a} first
+    \item gets its result \texttt{x :: a}
+    \item applies \texttt{f :: a -> IO b} to the result
+    \item to obtain an instruction \texttt{f x :: IO b} that returns a \texttt{b}
+    \item and executes this instruction to return a \texttt{b}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Example}
+\begin{verbatim}
+readFiles f1 f2 =
+   readFile f1 >>= \xs1 -> readFile f2 
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{More convenient: \texttt{do} notation}
+\begin{verbatim}
+copyFile source target =
+  undefined
+
+doTwice io =
+  undefined
+
+doNot io =
+  undefined
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Translating \texttt{do} notation into \texttt{>>=} operations}
+  \begin{itemize}
+  \item \texttt{do \emph{action}}
+    \\ $\longrightarrow$
+    \\ \texttt{\emph{action}}
+  \item \texttt{do \{ \emph{x} <- \emph{action1}; \emph{instructions} \}}
+    \\ $\longrightarrow$
+    \\ \texttt{\emph{action1} >>= \textbackslash \emph{x} -> \texttt{do \{ \emph{instructions} \}}}
+  \item \texttt{do \{ let \emph{binding}; \emph{instructions} \}}
+    \\ $\longrightarrow$
+    \\ \texttt{let \emph{binding} in do \{  \emph{instructions} \}}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Instructions vs functions}
+  \begin{block}<+->{Functions}
+    behave the same each time they called
+  \end{block}
+  \begin{block}<+->{Instructions}
+    may be interpreted differently each time 
+    they are executed, depending on context    
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Underlying concept: \textbf{Monad}}
+
+  \begin{block}<+->{What's a monad?}
+    \begin{itemize}
+    \item abstract datatype for instructions that produce values
+    \item built-in combination \texttt{>>=}
+    \item abstracts over different interpretations (computations)
+    \end{itemize}
+  \end{block}
+  \begin{alertblock}<+->{IO is a special case of a monad}
+    \begin{itemize}
+    \item one very useful application for monad
+    \item built into Haskell
+    \item but there's more to the concept
+    \item many more instances to come!
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Hands-on task}
+  Define a function
+\begin{verbatim}
+sortFile :: FilePath -> FilePath -> IO ()
+
+-- sortFile inFile outFile 
+-- reads inFile, sorts its lines, and writes the result to outFile
+
+-- recall
+-- sort :: Ord a => [a] -> [a]
+-- lines :: String -> [String]
+-- unlines :: [String] -> String
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Utilities}
+\begin{verbatim}
+sequence :: [IO a] -> IO [a]
+sequence_ :: [IO a] -> IO ()
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Another hands-on task}
+  Define a function
+\begin{verbatim}
+printTable :: [String] -> IO ()
+
+{-
+printTable ["New York", "Rio", "Tokio"]
+outputs
+1: New York
+2: Rio
+3: Tokio
+-} 
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{alertblock}{First meeting with monads}
+  \begin{itemize}
+  \item abstract data type of instructions returning results
+  \item next instruction can depend on previous result
+  \item instructions are just values
+  \item basis for Haskell's standard IO
+  \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Break Time --- Questions?}
+%   \begin{center}
+%     \tikz{\node[scale=15] at (0,0){?};}
+%   \end{center}
+% \end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
