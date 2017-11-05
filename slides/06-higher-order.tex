@@ -30,13 +30,13 @@
 \begin{frame}[fragile]
   \frametitle{Examples of higher-order functions}
 
-  \begin{block}{Most higher-order functions are polymorphic:}
+  \begin{block}<+->{Most higher-order functions are polymorphic}
 \begin{verbatim}
-map :: (a -> b) -> [a] -> [b]
+map    :: (a -> b) -> [a] -> [b]
 filter :: (a -> Bool) -> [a] -> [a]
 \end{verbatim}
   \end{block}
-  \begin{block}{Example uses}
+  \begin{block}<+->{Example uses}
 \begin{verbatim}
 > map even [1..5]
 [False,True,False,True,False]
@@ -44,6 +44,13 @@ filter :: (a -> Bool) -> [a] -> [a]
 [2,4,6,8,10]
 \end{verbatim}
   \end{block}
+  \begin{alertblock}<+->{Haskell elides quantifiers in types}
+    \vspace{-\baselineskip}
+    \begin{eqnarray*}
+      \text{map} & :: & \forall a. \forall b. (a \to b) \to [a] \to [b] \\
+      \text{filter} & :: & \forall a. (a \to \text{Bool}) \to [a] \to [a]
+    \end{eqnarray*}
+  \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -66,7 +73,7 @@ pick 2 = snd
 \begin{frame}[fragile]
   \frametitle{Curried functions}
 
-\begin{block}{Compare these types}
+\begin{block}<+->{Compare these types}
 \begin{verbatim}
 type T1 = Int -> Int -> Int
 type T2 = (Int, Int) -> Int
@@ -77,7 +84,7 @@ type T2 = (Int, Int) -> Int
 \item \texttt{T2} takes both arguments as a pair
 \end{itemize}
 \end{block}
-\begin{block}{Haskell prefers the type  \texttt{T1}}
+\begin{block}<+->{Haskell prefers types like \texttt{T1}}
   \begin{itemize}
   \item A \textbf{curried} type, after logician \href{https://en.wikipedia.org/wiki/Haskell_Curry}{Haskell B. Curry}
   \item Haskell's namesake
@@ -90,6 +97,7 @@ type T2 = (Int, Int) -> Int
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Designing a higher-order function}
+  \onslide<+->{}
   \begin{block}<+->{Two functions on lists}
 \begin{verbatim}
 sum []     = 0
@@ -114,6 +122,7 @@ f (x:xs) = x `op` f xs
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{The foldr function}
+  \framesubtitle{Making the pattern into a higher-order function}
   \begin{block}<+->{Abstracting over value and combining function}
 \begin{verbatim}
 foldr' op e []     = e
@@ -192,6 +201,7 @@ f4 f xs = foldr fc [] xs
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Transforming functions}
+  \framesubtitle{Useful operations on functions}
   \begin{itemize}
   \item partial application
   \item operator sections
@@ -221,13 +231,17 @@ foldr (+) 0 :: [Int] -> Int
 \begin{frame}[fragile]
   \frametitle{Operator sections}
 \begin{verbatim}
+-- subtraction
 (-) :: Int -> Int -> Int
 -- subtract one
-(-1) :: Int -> Int
+(- 1) :: Int -> Int
 -- subtract from one
-(1-) :: Int -> Int
+(1 -) :: Int -> Int
+
 -- less than 0
-(<0) :: Int -> Bool
+(< 0) :: Int -> Bool
+-- greater than 0
+(0 >) :: Int -> Bool
 \end{verbatim}
   can be done with every infix function
 \end{frame}
@@ -236,23 +250,24 @@ foldr (+) 0 :: [Int] -> Int
   \frametitle{Function composition}
   \begin{block}{Example}
     \begin{itemize}
-    \item Remove spaces from string
+    \item<+-> Remove spaces from string as in this
+      example
 \begin{verbatim}
-removeSpaces "abc def \n ghi" = "abcdefghi"
+removeSpaces "abc def \n ghi" == "abcdefghi"
 \end{verbatim}
-    \item In module \texttt{Data.Char}
+    \item<+-> In module \texttt{Data.Char}
 \begin{verbatim}
 isSpace :: Char -> Bool
 \end{verbatim}
-    \item yields definition
+    \item<+-> yields definition
 \begin{verbatim}
 removeSpaces xs = filter (not . isSpace) xs
 \end{verbatim}
-    \item Operator ``\texttt{.}'' is function composition defined by
+    \item<+-> Operator ``\texttt{.}'' is function composition defined by
 \begin{verbatim}
 (f . g) x = f (g x)
 \end{verbatim}
-    \item What's the type of \texttt{.}?
+    \item<+-> What's the type of \texttt{.}?
     \end{itemize}
   \end{block}
 \end{frame}
@@ -265,7 +280,7 @@ removeSpaces xs = filter (not . isSpace) xs
 snoc x ys = ys++[x]
 \end{verbatim}
   \item<+->
-  Alternative: define \texttt{snoc} using a lambda expression
+  Alternative: define \texttt{snoc} using a \href{https://en.wikipedia.org/wiki/Anonymous_function}{lambda expression}
 \begin{verbatim}
 snoc = \ x ys -> ys++[x]
 \end{verbatim}
@@ -285,7 +300,7 @@ f3 xs = foldr (\ x ys -> ys++[x]) [] xs
 \begin{frame}[fragile]
   \frametitle{Eta conversion}
   \begin{enumerate}
-  \item Have seen a number of definitions of the form
+  \item A number of definitions have the form
 \begin{verbatim}
 f x = g x
 \end{verbatim}
@@ -296,13 +311,13 @@ f x = g x
 f = g
 \end{verbatim}
     is an equivalent definition.
-  \item The transformation from (1) to (2) is called \textbf{eta reduction}.
+  \item The transformation from (1) to (2) is called \textbf{eta reduction}.\footnote{Reverse transformation: \textbf{eta expansion}; both directions: \textbf{eta conversion}}
   \item The typing of an eta-reduced definition is more restricted.
 \end{enumerate}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{Examples for eta conversion}
+  \frametitle{Examples for eta-reduced definitions}
 \begin{verbatim}
 sum = foldr (+) 0
 product = foldr (*) 1
@@ -352,13 +367,25 @@ sky: 1
 \end{verbatim}
 \end{frame}
 %----------------------------------------------------------------------
-
 \begin{frame}
-  \frametitle{Break Time --- Questions?}
-  \begin{center}
-    \tikz{\node[scale=15] at (0,0){?};}
-  \end{center}
+  \frametitle{Wrapup}
+  \begin{alertblock}{Higher-order functions}
+  \begin{itemize}
+  \item take functions as parameters,
+  \item often have polymorphic types,
+  % \item Haskell prefers curried function types.
+  \item abstract common patterns (map, filter, foldr),
+  \item enable powerful programming techniques (partial application, operator sections, function composition, anonymous functions, eta conversion).
+  \end{itemize}
+  \end{alertblock}
 \end{frame}
+
+% \begin{frame}
+%   \frametitle{Break Time --- Questions?}
+%   \begin{center}
+%     \tikz{\node[scale=15] at (0,0){?};}
+%   \end{center}
+% \end{frame}
 
 
 \end{document}
