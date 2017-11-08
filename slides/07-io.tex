@@ -158,12 +158,18 @@ doNot io =
 \begin{frame}
   \frametitle{Translating \texttt{do} notation into \texttt{>>=} operations}
   \begin{itemize}
-  \item \texttt{do \emph{action}}
+  \item \texttt{do \emph{lastaction}}
     \\ $\longrightarrow$
-    \\ \texttt{\emph{action}}
+    \\ \texttt{\emph{lastaction}}
+    \\[2ex]
   \item \texttt{do \{ \emph{x} <- \emph{action1}; \emph{instructions} \}}
     \\ $\longrightarrow$
     \\ \texttt{\emph{action1} >>= \textbackslash \emph{x} -> \texttt{do \{ \emph{instructions} \}}}
+    \\[2ex]
+  \item \texttt{do \{ \emph{action1}; \emph{instructions} \}}
+    \\ $\longrightarrow$
+    \\ \texttt{\emph{action1} >> \texttt{do \{ \emph{instructions} \}}}
+    \\[2ex]
   \item \texttt{do \{ let \emph{binding}; \emph{instructions} \}}
     \\ $\longrightarrow$
     \\ \texttt{let \emph{binding} in do \{  \emph{instructions} \}}
