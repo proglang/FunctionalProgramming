@@ -1,0 +1,277 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Type Classes --- Overloading in Haskell}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Overloading}
+  \begin{block}<+->{Remember previous classes?}
+    We were able to use
+    \begin{itemize}
+    \item equality \texttt{==} and ordering \texttt{<} with many different types
+    \item arithmetic operations with many different types
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Overloading}
+    The \textbf{same operator} can be used to execute \textbf{different code} at \textbf{many different types}. 
+  \end{block}
+  \onslide<+->{Contrast with }
+  \begin{block}<+->{Parametric polymorphism}
+    The \textbf{same code} can execute at \textbf{many different types}.
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Haskell integrates overloading with polymorphism}
+  \begin{block}<+->{Restricted polymorphism}
+    \begin{itemize}
+    \item Some functions work on parametric types, but are restricted to specific instances
+    \item Types contain type variables and \textbf{constraints}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Examples}
+\begin{verbatim}
+-- elem x xs : is x an element of list xs?
+-- type a must have equality
+elem :: Eq a => a -> [a] -> Bool
+-- insert x xs : insert x into sorted list xs
+-- type a must have comparison
+insert :: Ord a => a -> [a] -> [a]
+-- square x : compute the square of x
+-- type a has numeric operations
+square :: Num a => a -> a
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Type classes}
+  \begin{itemize}
+  \item Each constraint mentions a \textbf{type class}\\
+    like \texttt{Eq}, \texttt{Ord}, \texttt{Num}, \dots
+  \item A type class specifies a set of operations for a type\\
+    e.g.\ \texttt{Eq} requires \texttt{==} and \texttt{/=}
+  \item Type classes form a hierarchy\\
+    e.g.\ \texttt{Ord a => Eq a}
+  \item Many classes are predefined, but you can roll your own
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Classes and Instances}
+  \begin{itemize}
+  \item A class declaration \textbf{only} specifies a signature (i.e., the class members and their types)
+\begin{verbatim}
+class Num a where
+  (+), (*), (-) :: a -> a -> a
+  negate, abs, signum :: a -> a
+  fromInteger :: Integer -> a
+\end{verbatim}
+  \item An instance declaration specifies that a type belongs to a class by giving definitions for all class members
+\begin{verbatim}
+instance Num Int where ...
+instance Num Integer where ...
+instance Num Double where ...
+instance Num Float where ...
+\end{verbatim}
+  \item This info can be obtained from GHCI by
+\begin{verbatim}
+:i Num 
+\end{verbatim}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Equality}
+  \begin{block}<+->{The type class \texttt{Eq}}
+\begin{verbatim}
+class Eq a where
+  (==), (/=) :: a -> a -> Bool
+  x /= y = not (x == y)         -- default definition
+\end{verbatim}
+    An instance must only provide \texttt{(==)}.
+  \end{block}
+  \begin{block}<+->{Instances of \texttt{Eq}}
+\begin{verbatim}
+instance Eq Int -- Defined in ‘GHC.Classes’
+instance Eq Float -- Defined in ‘GHC.Classes’
+instance Eq Double -- Defined in ‘GHC.Classes’
+instance Eq Char -- Defined in ‘GHC.Classes’
+instance Eq Bool -- Defined in ‘GHC.Classes’
+{- and many more -}
+\end{verbatim}
+  \end{block}
+  \begin{alertblock}<+->{Question}
+    Does equality make sense at every type?
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining \texttt{Eq} for pairs}
+  \begin{block}<+->{When are two pairs equal?}
+  \end{block}
+  \begin{block}<+->{Solution}
+\begin{verbatim}
+instance (Eq a, Eq b) => Eq (a, b) where
+  (a1, b1) == (a2, b2) = a1 == a2 && b1 == b2
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Is this definition recursive?}
+  \end{block}
+  \begin{alertblock}<+->{NO!}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining \texttt{Eq} for lists}
+  \begin{block}<+->{When are two lists equal?}
+  \end{block}
+  \begin{block}<+->{Solution}
+\begin{verbatim}
+instance Eq a => Eq [a] where
+  [] == [] = True
+  (x:xs) == (y:ys) = x == y && xs == ys
+  _ == _ = False
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Is this definition recursive?}
+  \end{block}
+  \begin{alertblock}<+->{YES!}
+    The equality \texttt{xs == ys}.
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Handwriting vs deriving an instance}
+  \begin{block}<+->{Remember the Hearts game}
+\begin{verbatim}
+data Color = Black | Red
+  deriving (Show)
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Define your own equality}
+\begin{verbatim}
+instance Eq Color where
+  Black == Black = True
+  Red == Red = True
+  _ == _ = False
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Same result as deriving \texttt{Eq}}
+\begin{verbatim}
+data Color = Black | Red
+  deriving (Show, Eq)
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Further useful classes}
+  \begin{block}<+->{Show and Read}
+\begin{verbatim}
+class Show a where
+  show :: a -> String
+  {- ... -}
+
+class Read a where
+  read :: String -> a
+  {- ... -}
+\end{verbatim}
+    \begin{itemize}
+    \item Predefined for most built-in types
+    \item Derivable for most datatype definitions
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{The \texttt{Ord} class (derivable)}
+\begin{verbatim}
+class Eq a => Ord a where
+  compare :: a -> a -> Ordering
+  (<) :: a -> a -> Bool
+  (<=) :: a -> a -> Bool
+  (>) :: a -> a -> Bool
+  (>=) :: a -> a -> Bool
+  max :: a -> a -> a
+  min :: a -> a -> a
+
+data Ordering = LT | EQ | GT 	-- Defined in ‘GHC.Types’
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{More classes for you to investigate}
+  \begin{itemize}
+  \item \texttt{Enum} (derivable)
+  \item \texttt{Bounded} (derivable)
+  \end{itemize}
+\begin{verbatim}
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Ambiguity}
+\onslide<+->{Some combinations of overloaded functions can lead to ambiguity}
+\begin{verbatim}
+f x = read (show x)
+g x = show (read x)
+\end{verbatim}
+\begin{block}<+->{What are types of \texttt{f} and \texttt{g}?}
+\end{block}
+\begin{block}<+->{Solution}
+\begin{verbatim}
+f :: (Read a, Show b) => b -> a
+g :: String -> String
+\end{verbatim}
+\end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Further pitfalls / features}
+  \begin{itemize}
+  \item Definitions without arguments and without type signatures are not overloaded (monomorphism restriction)
+  \item Numeric literals are overloaded at type \texttt{Num a => a}
+  \item Haskell has a \textbf{defaulting} mechanism that resolves violations of the monomorphism restriction 
+  \item Caveat: GHCi behaves differently than code in a file
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{alertblock}{Type classes}
+  \begin{itemize}
+  \item provides a signature for an abstract data type
+  \item instances provide implementations at unrelated types
+  \item many classes are predefined and derivable
+  \item pervasively used in Haskell / some pitfalls
+  \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Break Time --- Questions?}
+%   \begin{center}
+%     \tikz{\node[scale=15] at (0,0){?};}
+%   \end{center}
+% \end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
