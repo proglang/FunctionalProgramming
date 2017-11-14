@@ -1,0 +1,272 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Test data generators}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{An application of type classes an monads}
+  \begin{block}<+->{Remember QuickCheck for testing}
+    \begin{itemize}
+    \item Automatic generation of test cases to test properties specified by the programmer
+    \item So far restricted to properties on predefined types
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{But really\dots}
+    Test data can be generated for the instances of a type class \texttt{Arbitrary} (defined by QuickCheck) 
+  \end{block}
+  \begin{block}<+->{To extend the scope of QuickCheck\dots}
+    \begin{itemize}
+    \item we only need to write new instance of \texttt{Arbitrary}!
+    \item (require the IO monad)
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{An example}
+\begin{verbatim}
+prop_binomi :: Integer -> Integer -> Bool
+prop_binomi a b = (a + b) ^ 2 == a ^ 2 + 2 * a * b + b ^ 2
+\end{verbatim}
+  can be checked
+\begin{verbatim}
+Main> quickCheck prop_binomi
++++ OK, passed 100 tests.
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Arbitrary and Gen}
+  \begin{block}<+->{Type class \texttt{Arbitrary}}
+\begin{verbatim}
+class Arbitrary a where
+  arbitrary :: Gen a -- generate values of type a
+  shrink :: a -> [a] -- shrink values of type a
+\end{verbatim}
+    Type \texttt{Gen a}: instructions for creating a random value of type \texttt{a} (a monad)
+  \end{block}
+  \begin{block}<+->{Functions for sampling a random generator}
+\begin{verbatim}
+sample   :: Show a => Gen a -> IO ()
+sample'  :: Gen a -> IO [a]
+generate :: Gen a -> IO a
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Sampling test data}
+  Remember \texttt{sample'  :: Gen a -> IO [a]}
+  \footnotesize
+  \begin{itemize}[<+->]
+  \item \texttt{Main> sample' arbitrary}
+  \item \texttt{[(),(),(),(),(),(),(),(),(),(),()]}
+  \item \texttt{Main> sample' (arbitrary :: Gen Bool)}
+  \item \texttt{[True,False,False,False,False,True,True,False,False,True,False]}
+  \item \texttt{Main> sample' (arbitrary :: Gen Int)}
+  \item \texttt{[0,2,0,6,5,2,-12,9,-15,-2,20]}
+  \item \texttt{Main> sample' (arbitrary :: Gen Int)}
+  \item \texttt{[0,-1,0,5,3,-1,-11,-8,14,-10,-19]}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Building generators}
+\begin{verbatim}
+elements  :: [a] -> Gen a
+oneof     :: [Gen a] -> Gen a
+frequency :: [(Int,Gen a)] -> Gen a
+listOf    :: Gen a -> Gen [a]
+vectorOf  :: Int -> Gen a -> Gen [a]
+choose    :: Random a => (a,a) -> Gen a
+\end{verbatim}
+  \begin{itemize}
+  \item \texttt{Random} is a predefined class for generating random data
+  \item (some experiments)
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Generating a Suit}
+\begin{verbatim}
+data Suit = Spades | Hearts | Diamonds | Clubs
+     deriving (Show, Eq)
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Generating a Rank}
+\begin{verbatim}
+data Rank = Numeric Integer | Jack | Queen
+          | King | Ace
+          deriving (Show, Eq, Ord)
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Generating a card}
+\begin{verbatim}
+data Card = Card { rank :: Rank, suit :: Suit }
+     deriving (Show)
+\end{verbatim}
+\begin{itemize}
+\item need to combine a generator for \texttt{Rank} and one for \texttt{Suit}
+\item no provision in the QuickCheck library, but \dots
+\end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{\texttt{Gen} is a monad}
+  \begin{itemize}
+  \item \texttt{Gen a} is the type of instructions to generate random values of type \texttt{a}
+  \item \texttt{IO a} is the type of instructions for IO operations with result \texttt{a}
+  \item Both are monads $\Rightarrow$ use bind \texttt{>>=} to combine generators
+  \item Alternatively, the \texttt{do} notation can be used with \texttt{Gen}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Examples}
+  Generate 
+  \begin{itemize}
+  \item \texttt{Card}
+  \item constant, twice
+  \item even integers, non-negative integers
+  \item \texttt{Hand}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Task: Check the generator}
+  \begin{itemize}
+  \item<+-> \texttt{Rank} contains useless values
+  \item<.-> does its generator \texttt{rRank} only yield useful values?
+  \end{itemize}
+  \begin{block}<+->{Test it!}
+\begin{verbatim}
+validRank :: Rank -> Bool
+validRank (Numeric n) = 2 <= n && n <= 10
+validRank _ = True
+\end{verbatim}
+\begin{verbatim}
+prop_all_validRank = forAll rRank validRank
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Checking properties of test data}
+\begin{verbatim}
+prop_all_valid_rank_collect r = collect r (validRank r)
+\end{verbatim}
+  \begin{itemize}
+  \item \texttt{collect x} does not change the test
+  \item collects values of \texttt{x} and creates a histogram
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Task}
+  \begin{itemize}
+  \item Define a property that yields a histogram of generated \texttt{Hand}s
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Testing properties of \texttt{insert}}
+  \onslide<+->{}
+  \begin{block}<+->{Example}
+  \begin{itemize}
+  \item \texttt{insert x xs} inserts a value \texttt{x} in an ordered list \texttt{xs}
+  \item the output should be ordered again (along with other properties)
+  \item how do we test that?
+  \end{itemize}
+\end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{First attempt}
+\begin{verbatim}
+prop_insert_1 :: Integer -> [Integer] -> Bool
+prop_insert_1 x xs = isOrdered (insert x xs)
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Second attempt}
+\begin{verbatim}
+prop_insert_2 :: Integer -> [Integer] -> Property
+prop_insert_2 x xs = isOrdered xs ==> isOrdered (insert x xs)
+\end{verbatim}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Third attempt}
+  \begin{block}<+->{A dedicated generator for sorted lists}
+\begin{verbatim}
+orderedList :: (Arbitrary a, Ord a) => Gen [a]
+\end{verbatim}
+    (How would you implement this generator?)
+  \end{block}
+  \begin{block}<+->{Usage}
+\begin{verbatim}
+prop_insert_3 x =
+    forAll orderedList (\xs->isOrdered (insert x xs))
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Fourth attempt}
+  \begin{block}<+->{A dedicated generator for sorted lists (defined by QuickCheck)}
+\begin{verbatim}
+data OrderedList a = Ordered [a]
+
+instance (Ord a,Arbitrary a)
+         => Arbitrary (OrderedList a) where
+  arbitrary = orderedList
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Usage}
+\begin{verbatim}
+prop_insert_4 x (Ordered xs) = isOrdered (insert x xs)
+\end{verbatim}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{alertblock}{Roll your own test data generators}
+  \begin{itemize}
+  \item populate the class \texttt{Arbitrary} with the types you want to generate
+  \item generating managed by monad \texttt{Gen}
+  \item conditional test generation
+  \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Break Time --- Questions?}
+%   \begin{center}
+%     \tikz{\node[scale=15] at (0,0){?};}
+%   \end{center}
+% \end{frame}
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
