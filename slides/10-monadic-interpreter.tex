@@ -1,0 +1,362 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle
+{Interpreters and Monads}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{Outline}
+%  \tableofcontents
+  % You might wish to add the option [pausesections]
+%\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{A simple expression language}
+\begin{block}{Definition}
+\begin{verbatim}
+data Term  = Con Integer
+           | Bin Term Op Term  
+             deriving (Eq, Show)
+           
+data Op    = Add | Sub | Mul | Div
+             deriving (Eq, Show)
+\end{verbatim}  
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{A simple interpreter}
+\begin{block}{Evaluation}
+\begin{verbatim}
+eval              :: Term -> Integer
+eval (Con n)      =  n
+eval (Bin t op u) =  sys op (eval t) (eval u)
+
+sys Add       =  (+)         
+sys Sub       =  (-)
+sys Mul       =  (*)         
+sys Div       =  div
+\end{verbatim}  
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Extending the interpreter}
+  \begin{block}{Possible extensions}
+    \begin{itemize}
+    \item Error handling
+    \item Counting evaluation steps
+    \item Variables, state
+    \item Output
+    \end{itemize}
+    \dots{} but without changing the structure of the interpreter!
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interpreter with error handling}
+  \begin{block}{Exception}
+\begin{verbatim}
+data Exception a =  Raise  String
+                 |  Return a
+
+eval              :: Term -> Exception Integer
+eval (Con n)      = Return n
+eval (Bin t op u) = case eval t of
+                     Raise  s -> Raise s
+                     Return v -> case eval u of
+                      Raise  s -> Raise s
+                      Return w ->
+                        if (op == Div && w == 0)
+                        then  
+                          Raise "div by zero"
+                        else                                  
+                          Return (sys op v w)
+\end{verbatim}
+\end{block}     
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{Monads to the rescue!}
+\begin{block}{The type class Monad}
+\begin{verbatim}
+class Monad m where
+  (>>=)  :: m a -> (a -> m b) -> m b
+  return :: a -> m a
+  fail   :: String -> m a
+\end{verbatim}
+  Here, \texttt{m} is a variable that can stand for \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}.
+\end{block}
+\end{frame}     
+
+
+\begin{frame}[fragile]
+  \frametitle{Monadic evaluator}
+  \begin{alertblock}{The identity monad}
+\begin{verbatim}
+newtype Id a = Id a
+
+instance Monad Id where
+    return x = Id x
+    x >>= f  = let Id y = x in f y
+\end{verbatim}  
+\end{alertblock}
+
+\begin{exampleblock}{Monadic interpreter}
+\begin{verbatim}
+eval              :: Term -> Id Integer
+eval (Con n)      =  return n
+eval (Bin t op u) =  eval t  >>= \v ->
+                     eval u  >>= \w ->
+                     return (sys op v w)
+\end{verbatim}  
+\end{exampleblock}
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{Monadic interpreter with error handling}
+  \begin{alertblock}{Exeception}
+\begin{verbatim}
+instance Monad Exception where
+  return a = Return a
+  m >>= f  = case m of 
+               Raise  s -> Raise s
+               Return v -> f v
+  fail s   = Raise s
+\end{verbatim}  
+\end{alertblock}
+
+\begin{exampleblock}{Interpreter}
+\begin{verbatim}
+eval             :: Term -> Exception Integer
+eval (Con n)      = return n
+eval (Bin t op u) = eval t  >>= \v ->
+                    eval u  >>= \w ->
+                    if (op == Div && w == 0) 
+                     then fail "div by zero"
+                    else return (sys op v w)
+\end{verbatim}  
+\end{exampleblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Interpreter with tracing}
+  \begin{block}{Trace}
+\begin{verbatim}
+newtype Trace a = Trace (a, String)
+
+eval :: Term -> Trace Integer
+eval e@(Con n)      = Trace (n, trace e n)
+eval e@(Bin t op u) = 
+   let Trace (v, x) = eval t in
+   let Trace (w, y) = eval u in
+   let r = sys op v w in
+   Trace (r, x ++ y ++ trace e r)
+
+trace t n = "eval (" ++ show t ++ ") = "
+              ++ show n ++ "\n"
+\end{verbatim}  
+\end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Monadic interpreter with tracing I}
+  \begin{alertblock}{Trace}
+\begin{verbatim}
+instance Monad Trace where
+  return a = (a, "")
+  m >>= f  = let Trace (a, x) = m in
+             let Trace (b, y) = f a in
+             Trace (b, x ++ y)
+
+output   :: String -> Trace ()
+output s  = Trace ((), s)
+\end{verbatim}  
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Monadic interpreter with tracing II}
+ \begin{exampleblock}{Evaluation}
+\begin{verbatim}
+eval :: Term -> Trace Integer
+eval e@(Con n) = output (trace e n) >>
+                 return n
+eval e@(Bin t op u) = eval t >>= \v ->
+                      eval u >>= \w ->
+                      let r = sys op v w in
+                      output (trace e r) >>
+                      return r
+\end{verbatim}
+\end{exampleblock}      
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Interpreter with reduction count}\small
+  \begin{block}{Count}
+\begin{verbatim}
+type Count a =  Int -> (a, Int)
+
+eval              :: Term -> Count Integer
+eval (Con n)      = \i -> (n, i)
+eval (Bin t op u) = \i -> let (v, j) = eval t i in    
+                          let (w, k) = eval u j in
+                           (sys op v w, k + 1)
+\end{verbatim} 
+\end{block}
+\end{frame}            
+
+
+\begin{frame}[fragile]
+  \frametitle{Monadic interpreter with reduction count}
+  \framesubtitle{The state monad}
+  \begin{alertblock}{State}
+\begin{verbatim}
+data ST s a = ST (s -> (a, s))
+exST (ST sas) = sas
+
+instance Monad (ST s) where
+  return a = ST (\s -> (a, s))
+  m >>= f  = ST (\s -> let (a, s') = exST m s in
+                       exST (f a) s')
+
+type Count a = ST Int a
+
+incr :: Count ()
+incr =  ST (\i -> ((), i + 1))
+\end{verbatim} 
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Monadic interpreter with reduction count}
+  \framesubtitle{Implementation}
+\begin{exampleblock}{Evaluation}
+\begin{verbatim}
+eval :: Term -> Count Integer
+eval (Con n)      =  return n
+eval (Bin t op u) =  eval t >>= \v ->
+                     eval u >>= \w ->
+                     incr   >>
+                     return (sys op v w)
+\end{verbatim} 
+\end{exampleblock}
+\end{frame}            
+
+\begin{frame}[fragile]
+  \frametitle{Typical monads}
+  \begin{block}{Already used}
+  \begin{itemize}       
+  \item Identity monad
+  \item Exception monad
+  \item State monad
+  \item Writer monad
+  \end{itemize} 
+  \end{block}   
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Not every type constructor can be a monad}
+  \framesubtitle{Monad laws}
+  \begin{alertblock}{return is a left unit}
+\begin{verbatim}
+return x >>= f        == f x
+\end{verbatim}
+  \end{alertblock}
+  \begin{alertblock}{return is a right unit}
+\begin{verbatim}
+m >>= return          == m
+\end{verbatim}
+  \end{alertblock}
+  \begin{alertblock}{bind is associative}
+\begin{verbatim}
+m1 >>= \x -> (m2 >>= f) == (m1 >>= \x -> m2) >>= f
+\end{verbatim}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The Maybe monad}
+  \begin{block}{More useful than you think}
+                \begin{itemize}         
+                        \item Computation that may or may not return a result
+                        \item Database queries, dictionary operations, \dots
+                \end{itemize}   
+                \end{block}     
+\pause
+\begin{block}{Definition (predefined)}
+\begin{verbatim}
+data Maybe a = Nothing | Just a
+
+instance Monad Maybe where
+    return x       = Just x
+    
+    Nothing  >>= f = Nothing
+    (Just x) >>= f = f x
+\end{verbatim}  
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{The List monad}
+  \begin{block}{Useful for}
+                \begin{itemize}         
+                        \item Handling multiple results
+                        \item Backtracking
+                \end{itemize}   
+                \end{block}     
+\pause
+\begin{block}{Definition}
+\begin{verbatim}
+instance Monad [] where
+    return x = [x]
+    m >>= f  = concatMap f m
+\end{verbatim}  
+\end{block}
+where 
+\begin{verbatim}
+concatMap :: (a -> [b]) -> [a] -> [b]
+concatMap = undefined
+\end{verbatim}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{The IO Monade}
+  \begin{block}{Required for}
+  \begin{itemize}
+        \item any kind of I/O
+        \item side effecting operation
+        \item implementation is machine dependent
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Challenges}
+  \begin{itemize}[<+->]
+  \item what if there are multiple effects?
+  \item need to combine monads
+  \item sequence matters (e.g., exception and state)
+  \item some monads do not combine at all
+  \item BUT we can go for something weaker
+  \end{itemize}
+  
+\end{frame}
+
+
+\end{document}
+
+
