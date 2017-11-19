@@ -1,0 +1,281 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle
+{Parsing}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{Outline}
+%  \tableofcontents
+  % You might wish to add the option [pausesections]
+%\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Recall the expression language}
+\begin{block}<+->{Definition}
+\begin{verbatim}
+data Term  = Con Integer
+           | Bin Term Op Term  
+             deriving (Eq, Show)
+           
+data Op    = Add | Sub | Mul | Div
+             deriving (Eq, Show)
+\end{verbatim}
+\end{block}
+\begin{alertblock}<+->{Parsing expressions}
+  \begin{itemize}
+  \item Read a string like \texttt{\dq 3+42/6\dq}
+  \item Recognize it as a valid term
+  \item Return \texttt{Bin (Con 3) Add (Bin (Con 42) Div (Con 6))} 
+  \end{itemize}
+\end{alertblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Parsing}
+\begin{block}{The type of a simple parser}
+\begin{verbatim}
+type Parser token result = [token] -> [(result, [token])]
+\end{verbatim}  
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Combinator parsing}
+  \begin{block}{Primitive parsers}
+\begin{verbatim}
+pempty :: Parser t r
+succeed :: r -> Parser t r
+satisfy :: (t -> Bool) -> Parser t t
+msatisfy :: (t -> Maybe a) -> Parser t a
+lit :: Eq t => t -> Parser t t
+\end{verbatim}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Combinator parsing II}
+  \begin{block}{Combination of parsers}
+\begin{verbatim}
+palt :: Parser t r -> Parser t r -> Parser t r
+pseq :: Parser t (s -> r) -> Parser t s -> Parser t r
+pmap :: (s -> r) -> Parser t s -> Parser t r
+\end{verbatim}
+\end{block}     
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{A taste of compiler construction}
+\begin{block}{A lexer}
+ A lexer partitions the incoming list of
+ characters into a list of tokens. A token is either a single symbol, 
+ an identifier, or a number. Whitespace characters are removed.
+\end{block}
+\end{frame}     
+
+
+\begin{frame}[fragile]
+  \frametitle{Underlying concepts}
+  \begin{alertblock}{Parsers have a rich structure}
+    \begin{itemize}
+    \item many concepts from category theory can be mapped to programming concepts
+    \item parsing illustrates many of these concepts
+    \end{itemize}
+  \end{alertblock}
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{Functors}
+  \begin{alertblock}{The functor class}
+\begin{verbatim}
+class Functor f where
+  fmap :: (a -> b) -> (f a -> f b)
+\end{verbatim}  
+\end{alertblock}
+
+\begin{exampleblock}{Instances}
+  List, Maybe, IO, \dots
+\end{exampleblock}
+\begin{alertblock}{Functorial laws}
+\begin{verbatim}
+fmap id_a == id_f_a
+fmap (f . g) == fmap f . fmap g
+\end{verbatim}
+\end{alertblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Parsing is \dots}
+  \begin{block}{A functor}
+    Check the functorial laws!
+  \end{block}
+  \begin{block}{A monad}
+    Check the monad laws!
+  \end{block}
+  \begin{alertblock}{Consequence}
+    Can use \texttt{do} notation for parsing!
+  \end{alertblock}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+  \begin{alertblock}{Example 1: sequencing computation}
+\begin{verbatim}
+sequence :: [IO a] -> IO [a]
+sequence []       = return []
+sequence (io:ios) = do x <- io
+                       xs <- sequence ios
+                       return (x:xs)
+\end{verbatim}  
+  \end{alertblock}
+  \begin{alertblock}{Alternative way}
+\begin{verbatim}
+sequence []       = return []
+sequence (io:ios) = return (:) `ap` io `ap` sequence ios
+
+return :: Monad m => a -> m a
+ap     :: Monad m => m (a -> b) -> m a -> m b
+\end{verbatim}
+  \end{alertblock}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+ \frametitle{Applicative}
+ \begin{exampleblock}{Example 2: transposition}
+\begin{verbatim}
+transpose :: [[a]] -> [[a]]
+transpose [] = repeat []
+transpose (xs:xss) = zipWith (:) xs (transpose xss)
+\end{verbatim}
+ \end{exampleblock}
+ \begin{alertblock}{Rewrite}
+\begin{verbatim}
+transpose []       = repeat []
+transpose (xs:xss) = repeat (:) `zapp` xs `zapp` transpose xss
+
+zapp :: [a -> b] -> [a] -> [b]
+zapp fs xs = zipWith ($) fs xs
+\end{verbatim}
+ \end{alertblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Applicative Interpreter}
+  \begin{block}{Standard interpretation}
+\begin{verbatim}
+data Exp v
+  = Var v
+  | Val Int
+  | Add (Exp v) (Exp v)
+
+eval :: Exp v -> Env v -> Int
+eval (Var v) env = fetch v env
+eval (Val i) env = i
+eval (Add e1 e2) env = eval e1 env + eval e2 env
+
+type Env v = v -> Int
+fetch :: v -> Env v -> Int
+fetch v env = env v
+\end{verbatim} 
+\end{block}
+\end{frame}            
+
+
+\begin{frame}[fragile]
+  \frametitle{Applicative Interpreter}
+  \begin{alertblock}{Alternative implementation}
+\begin{verbatim}
+eval' :: Exp v -> Env v -> Int
+eval' (Var v) = fetch v
+eval' (Val i) = const i
+eval' (Add e1 e2) = const (+) `ess` (eval' e1) `ess` (eval' e2)
+
+ess a b c = (a c) (b c)
+\end{verbatim} 
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+\begin{exampleblock}{Extract the common structure}
+\begin{verbatim}
+class Functor f => Applicative f where
+  pure  :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+\end{verbatim} 
+\end{exampleblock}
+\end{frame}            
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+  \begin{block}{Laws}
+  \begin{itemize}       
+  \item Identity
+\begin{verbatim}
+pure id <*> v == v
+\end{verbatim}
+  \item Composition
+\begin{verbatim}
+pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+\end{verbatim}
+  \item Homomorphism
+\begin{verbatim}
+pure f <*> pure x = pure (f x)
+\end{verbatim}
+  \item Interchange
+\begin{verbatim}
+u <*> pure y = pure ($ y) <*> u
+\end{verbatim}
+  \end{itemize} 
+  \end{block}   
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parsers are Applicative!}
+  \begin{alertblock}{}
+\begin{verbatim}
+instance Applicative (Parser' token) where
+  pure = return
+  (<*>) = ap
+
+instance Alternative (Parser' token) where
+  empty = mzero
+  (<|>) = mplus
+\end{verbatim}
+  \end{alertblock}
+\end{frame}
+
+
+
+
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{itemize}[<+->]
+  \item what if there are multiple applicatives?
+  \item they just compose (unlike monads)
+  \item applicative do notation
+  \item applicatives cannot express dependency
+  \item enable more clever parsers
+  \end{itemize}
+  
+\end{frame}
+
+
+\end{document}
+
+
