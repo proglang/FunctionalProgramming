@@ -173,7 +173,7 @@ trace t n = "eval (" ++ show t ++ ") = "
 
 
 \begin{frame}[fragile]
-  \frametitle{Monadic interpreter with tracing I}
+  \frametitle{A monad for tracing}
   \begin{alertblock}{Trace}
 \begin{verbatim}
 instance Monad Trace where
@@ -189,7 +189,7 @@ output s  = Trace ((), s)
 \end{frame}
 
 \begin{frame}[fragile]
- \frametitle{Monadic interpreter with tracing II}
+ \frametitle{Monadic interpreter with tracing}
  \begin{exampleblock}{Evaluation}
 \begin{verbatim}
 eval :: Term -> Trace Integer
@@ -221,7 +221,7 @@ eval (Bin t op u) = \i -> let (v, j) = eval t i in
 
 
 \begin{frame}[fragile]
-  \frametitle{Monadic interpreter with reduction count}
+  \frametitle{A monad for counting}
   \framesubtitle{The state monad}
   \begin{alertblock}{State}
 \begin{verbatim}
@@ -319,7 +319,7 @@ instance Monad Maybe where
                 \end{itemize}   
                 \end{block}     
 \pause
-\begin{block}{Definition}
+\begin{block}{Definition (predefined)}
 \begin{verbatim}
 instance Monad [] where
     return x = [x]
@@ -334,7 +334,7 @@ concatMap = undefined
 \end{frame}             
 
 \begin{frame}[fragile]
-  \frametitle{The IO Monade}
+  \frametitle{The IO Monad}
   \begin{block}{Required for}
   \begin{itemize}
         \item any kind of I/O
