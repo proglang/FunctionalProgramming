@@ -235,7 +235,7 @@ data OrderedList a = Ordered [a]
 
 instance (Ord a,Arbitrary a)
          => Arbitrary (OrderedList a) where
-  arbitrary = orderedList
+  arbitrary = orderedList >>= (return . Ordered)
 \end{verbatim}
   \end{block}
   \begin{block}<+->{Usage}
