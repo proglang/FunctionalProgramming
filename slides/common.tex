@@ -15,6 +15,10 @@
 \usepackage[final]{pdfpages}
 \usepackage{url}
 \usepackage{arydshln} % dashed lines
+\usepackage{tikz}
+
+\DeclareUnicodeCharacter{3BB}{\ensuremath{\lambda}}
+
 
 \newcommand\cmark{\ding{51}}
 \newcommand\xmark{\ding{55}}
@@ -103,6 +107,34 @@
 \newcommand\Colored[3]{\alt<#1>{\textcolor{#2}{#3}}{#3}}
 
 \newcommand\nt[1]{\ensuremath{\langle#1\rangle}}
+
+\newcommand{\free}{\operatorname{free}}
+\newcommand{\bound}{\operatorname{bound}}
+\newcommand{\var}{\operatorname{var}}
+\newcommand\VSPBLS{\vspace{-\baselineskip}}
+
+\newcommand\IF{\textit{IF}}
+\newcommand\TRUE{\textit{TRUE}}
+\newcommand\FALSE{\textit{FALSE}}
+
+\newcommand\IFZ{\textit{IF0}}
+\newcommand\ZERO{\textit{ZERO}}
+\newcommand\SUCC{\textit{SUCC}}
+\newcommand\ADD{\textit{ADD}}
+\newcommand\SUB{\textit{SUB}}
+\newcommand\MULT{\textit{MULT}}
+\newcommand\DIV{\textit{DIV}}
+
+\newcommand\PAIR{\textit{PAIR}}
+\newcommand\FST{\textit{FST}}
+\newcommand\SND{\textit{SND}}
+
+\newcommand\CASE{\textit{CASE}}
+\newcommand\LEFT{\textit{LEFT}}
+\newcommand\RIGHT{\textit{RIGHT}}
+
+\newcommand\Encode[1]{\lceil#1\rceil}
+\newcommand\Reduce{\stackrel\ast\rightarrow_\beta}
 
 %%% Local Variables: 
 %%% mode: latex
