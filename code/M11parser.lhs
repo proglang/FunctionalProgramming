@@ -616,9 +616,24 @@ to parse
    T -> Number
    T -> '(' E ')'
 
-parserT = 
-   pure L <* lIdent "let" <*> pIdent <* lSymbol '=' <*> parserE <* lIdent "in" <*> parserE
-   <|> pure Ident <*> satisfy isIdentToken
-   <|> pure Number <*> satisfy isNumberToken
-   <|> lSymbol '(' *> parserE <* lSymbol ')'
+> parseT = 
+>   pure L <* keyword "let"
+>          <*> ident
+>          <* symbol '='
+>          <*> Parser' parserE
+>          <* keyword "in"
+>          <*> Parser' parserE
+>   <|>
+>   pure V <*> pSatisfy mIdentToken
+>   <|>
+>   pure N <*> pSatisfy mNumberToken
+>   <|>
+>   symbol '(' *> Parser' parserE <* symbol ')'
+
+> keyword = Parser' . lit . Ident
+> symbol = Parser' . lit . Symbol
+> ident = Parser' pIdent
+> pSatisfy = Parser' . msatisfy
+> 
+
 
