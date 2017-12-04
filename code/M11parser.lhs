@@ -569,6 +569,7 @@ transpose (xs:xss) = repeat (:) `zapp` xs `zapp` transpose xss
 > eval' (Val i) = const i
 > eval' (Add e1 e2) = const (+) `ess` (eval' e1) `ess` (eval' e2)
 
+> -- A reader monad
 > type En v a = Env v -> a
 
 > ess :: En v (a -> b) -> En v a -> En v b
@@ -588,11 +589,32 @@ class Functor f => Applicative f where
 - Identity
 pure id <*> v == v
 - composition
-pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+((pure (.) <*> u) <*> v) <*> w = u <*> (v <*> w)
 - homomorphism
 pure f <*> pure x = pure (f x)
 - interchange
 u <*> pure y = pure ($ y) <*> u
+
+composition:
+
+pure (.) :: f ((b -> c) -> (a -> b) -> (a -> c))
+u :: f (b -> c)
+pure (.) <*> u :: f ((a-> b) -> (a -> c))
+v :: f (a -> b)
+w :: f a
+
+v <*> w :: f b
+u <*> (v <*> w) :: f c
+
+
+
+
+
+
+
+
+
+
 
 ** further derived members of Applicative
 (*>) :: f a -> f b -> f b
@@ -609,6 +631,20 @@ fa <* fb = fmap const fa <*> fb
 >   empty = mzero
 >   (<|>) = mplus
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 can use the applicative notation for parsers:
 to parse
    T -> "let" Ident "=" E "in" E 
@@ -620,15 +656,25 @@ to parse
 >   pure L <* keyword "let"
 >          <*> ident
 >          <* symbol '='
->          <*> Parser' parserE
+>          <*> parseE
 >          <* keyword "in"
->          <*> Parser' parserE
+>          <*> parseE
 >   <|>
 >   pure V <*> pSatisfy mIdentToken
 >   <|>
 >   pure N <*> pSatisfy mNumberToken
 >   <|>
->   symbol '(' *> Parser' parserE <* symbol ')'
+>   symbol '(' *> parseE <* symbol ')'
+
+> parseE' :: Parser' Token [E]
+> parseE' =
+>   pure (:) <* symbol '+' <*> parseT <*> parseE'
+>   <|>
+>   pure []
+
+> parseE :: Parser' Token E
+> parseE =
+>   pure build_term <*> parseT <*> parseE'
 
 > keyword = Parser' . lit . Ident
 > symbol = Parser' . lit . Symbol
