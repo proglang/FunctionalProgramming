@@ -114,7 +114,7 @@
       ((\lambda x.M)\,N) & \rightarrow_{\beta} M[x\mapsto N]
       && \quad\text{Beta reduction (\textcolor{red}{function application})}
       \\
-      (\lambda x.(M\,N)) & \rightarrow_{\eta} M \quad
+      (\lambda x.(M\,x)) & \rightarrow_{\eta} M \quad
       & x\not\in\free(M) & \quad \text{Eta reduction}
     \end{alignat*}
   \end{block}
@@ -320,7 +320,7 @@
 \end{alertblock}
 \begin{alertblock}<+->{Multiplication}\VSPBLS
   \begin{align*}
-    \MULT & = \lambda . \lambda n. \lambda f. \lambda x. m\, (n\, f)\, x
+    \MULT & = \lambda m . \lambda n. \lambda f. \lambda x. m\, (n\, f)\, x
   \end{align*}
 \end{alertblock}
 \end{frame}
@@ -331,7 +331,7 @@
     $\IFZ$ such that
     \begin{itemize}
     \item $\IFZ~\Encode 0~M~N \Reduce M$
-    \item $\IFZ~\Encode n~M~N \Reduce M$ if $n\ne 0$
+    \item $\IFZ~\Encode n~M~N \Reduce N$ if $n\ne 0$
     \end{itemize}
   \end{exampleblock}
   \begin{alertblock}<+->{Testing for zero}\VSPBLS
