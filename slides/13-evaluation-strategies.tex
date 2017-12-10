@@ -1,0 +1,414 @@
+%% -*- coding: utf-8 -*-
+\documentclass[pdftex,aspectratio=169]{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle
+{Evaluation and Typing}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{Outline}
+%  \tableofcontents
+  % You might wish to add the option [pausesections]
+%\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Results of computations}
+\begin{block}<+->{Normal forms}
+  \begin{itemize}
+  \item expensive to compute
+  \item rarely needed for evaluation
+  \item key to expense: evaluation under lambda
+  \end{itemize}
+\end{block}
+\begin{block}<+->{Definition: Weak head-normal form}
+  A pure lambda term is in \textbf{weak head-normal form} (or a \textbf{value}) iff it
+  has the form  
+  \begin{displaymath}
+    V ::= \lambda x.M
+  \end{displaymath}
+  All other terms are \emph{non-values}.
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Deterministic Evaluation}
+  \begin{block}<+->{Definition}
+    A \textbf{reduction strategy} is a function that assigns to each closed, non-value lambda term the position of the next reduction. 
+  \end{block}
+  \begin{block}<+->{Reduction strategy: Call-by-name (related to Haskell)}
+    \begin{displaymath}
+    \begin{array}{c}
+      (\lambda x.M)~N \rightarrow_{\beta} M[x \mapsto N]
+    \end{array}
+    \qquad
+    \begin{array}{c}
+      M \rightarrow_\beta M'
+      \\\hline
+      (M~N) \rightarrow_\beta (M'~N)
+    \end{array}
+  \end{displaymath}
+\end{block}
+\begin{block}<+->{Reduction strategy: Call-by-value (based on $\beta$-value reduction)}
+  \begin{displaymath}
+    \begin{array}{c}
+      (\lambda x.M)~\textcolor{red}{V} \rightarrow_{\beta V} M[x \mapsto \textcolor{red}{V}]
+    \end{array}
+    \qquad
+    \begin{array}{c}
+      M \rightarrow_{\beta V} M'
+      \\\hline
+      (M~N) \rightarrow_{\beta V} (M'~N)
+    \end{array}
+    \qquad
+    \begin{array}{c}
+      N \rightarrow_{\beta V} N'
+      \\\hline
+      (\textcolor{red}{V}~N) \rightarrow_{\beta V} (\textcolor{red}{V}~N')
+    \end{array}
+  \end{displaymath}
+\end{block}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Evaluation in Functional Programming Languages}
+  \begin{block}{Evaluation of closed terms}
+    \begin{itemize}[<+->]
+    \item Reduction is restricted to \textbf{closed terms} and stops at weak head-normal forms.
+    \item Consequence: substitution need not rename variables!
+    \item Substitution can be avoided by implementation tricks
+    \item Datatypes are not encoded, but added to the calculus
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Applied Lambda Calculus}
+  \begin{block}{Syntax}
+    Add constants as values to the pure lambda calculus
+    \begin{align*}
+      L, M, N &::= x \mid \lambda x.M \mid M\, N \mid C\\
+      C    &::= \TRUE \mid \FALSE \mid \IF 
+           \mid 0 \mid 1 \mid \dots \mid \SUCC \mid \dots 
+           \mid \PAIR \mid \FST \mid \SND \\
+      V,W  &::=  \lambda x.M \mid C
+           \mid \IF\,V \mid  \IF\,V\,M %\mid +\,V \mid -\,V
+           \mid \PAIR\, M \mid \PAIR\, M\, N
+    \end{align*}
+  \end{block}
+  \begin{block}{Semantics (call-by-name)}
+    $\beta$ reduction and \textbf{$\delta$ reduction rules} for the constants
+    \begin{align*}
+      (\lambda x.M)\,N \rightarrow M[x \mapsto N]
+      &&
+      \IF\,\TRUE\,M\,N \rightarrow M
+      &&
+      \IF\,\FALSE\,M\,N \rightarrow N
+      \\
+      &&
+      \FST\,(\PAIR\,M\,N) \rightarrow M
+      &&
+      \SND\,(\PAIR\,M\,N) \rightarrow N
+    \end{align*}
+  \end{block}
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{Handling Constants}
+  \begin{block}<+->{Context rule for constants}%\VSPBLS
+    \begin{displaymath}
+      \begin{array}{c}
+        N \rightarrow_x N'
+        \qquad V \in \{ \IF, \FST, \SND, \SUCC \}
+        \\\hline
+        (V~N) \rightarrow_x (V~N')
+      \end{array}
+    \end{displaymath}
+  \end{block}
+  
+  
+  \begin{block}<+->{New source of errors: stuck terms}
+    \begin{itemize}
+    \item Pure lambda calculus: closed term is either value or can reduce
+    \item Applied lambda calculus: there are closed non-value terms that cannot be reduced
+      \begin{itemize}
+      \item $\TRUE\,V$ 
+      \item $\IF\,(\lambda x.M)$
+      \item $\FST\,(\lambda x.M)$
+      \item $\IF\,(\PAIR\, M\, N)$
+      \item $\dots$
+      \end{itemize}
+    \item These terms are \textbf{stuck terms}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \fontsize{1.5cm}{1.6cm}\selectfont\centering{}%
+  Typing
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typing rules out stuck terms }
+  \begin{alertblock}<+->{What is a typing?}
+    \begin{itemize}
+    \item Typing $M:T$ is a relation between terms and types
+    \item Typing characterizes terms with a certain behavior
+  \end{itemize}
+  \end{alertblock}
+  \begin{alertblock}<+->{\textbf{Simple types} for the applied lambda calculus}
+    \begin{align*}
+      T &::= T \to T \mid \Nat \mid \Bool \mid \Pair\,T\,T
+    \end{align*}
+    \begin{block}{Intended Behavior}
+      If $M:T$, then $M$ is not stuck.
+    \end{block}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simple Types}
+  \begin{alertblock}<+->{Definition: Typing assumption (environment)}
+    $A ::= \cdot \mid A, x:T$ if $x\notin A$
+    \qquad
+    specifies typing assumption for variables
+  \end{alertblock}
+  \begin{alertblock}<+->{Definition: Typing judgment}
+    $A \vdash M : T$
+    \qquad
+    ``under typing assumption $A$, term $M$ has type $T$''
+  \end{alertblock}
+  \begin{block}<+->{Definition: Typing rules --- lambda calculus with numbers}
+    \begin{mathpar}
+    \inferrule[Var]{}{\Tenv, x:T, \Tenv' \vdash x : T}
+
+    \inferrule[Lam]{
+      \Tenv, x : T \vdash M : T'
+    }{
+      \Tenv \vdash \Lam{x} M : \Tfun{T}{T'}}
+    
+    \inferrule[App]{
+      \Tenv \vdash M : \Tfun{T}{T'} \\
+      \Tenv \vdash N : T
+    }{
+      \Tenv \vdash \App{M}{N} : T'
+    }
+
+    \\
+    \inferrule[Num]{}{\Tenv \vdash  n : \Nat}
+
+    \inferrule[Succ]{\Tenv \vdash M : \Nat}{\Tenv \vdash \Succ M :
+      \Nat
+    }
+  \end{mathpar}
+  \end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{More typing rules}
+  \begin{alertblock}<+->{Definition: Typing rules --- boolean fragment}
+    \begin{mathpar}
+      \inferrule[TRUE]{}{\Tenv \vdash \TRUE : \Bool}
+
+      \inferrule[FALSE]{}{\Tenv \vdash \FALSE : \Bool}
+
+      \inferrule[IF]{
+        \Tenv \vdash L : \Bool \\
+        \Tenv \vdash M : T \\
+        \Tenv \vdash N : T
+      }{\Tenv \vdash \IF\,L\,M\,N : T}
+    \end{mathpar}
+  \end{alertblock}
+\begin{block}<+->{Definition: Typing rules --- pairs}
+  \begin{mathpar}
+    \inferrule[PAIR]{
+      \Tenv \vdash M : T \\
+      \Tenv \vdash N : T'
+    }{
+      \Tenv \vdash \PAIR\,M\,N : \Pair\,T\,T'
+    }
+
+    \inferrule[FST]{
+      \Tenv \vdash M : \Pair\,T\,T'
+    }{
+      \Tenv \vdash \FST\,M : T
+    }
+
+    \inferrule[SND]{
+      \Tenv \vdash M : \Pair\,T\,T'
+    }{
+      \Tenv \vdash \SND\,M : T'
+    }
+  \end{mathpar}
+\end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example Inference Tree}
+  \begin{mathpar}
+    \infer{
+      \infer{
+        \infer{
+          \infer{}{ \dots \vdash f : \Tfun\alpha\alpha
+            \\
+            \infer{
+              \infer{}{\dots \vdash f : \Tfun\alpha\alpha \\
+              \infer{}{\dots \vdash x : \alpha}}
+            }{
+            \dots \vdash \App{f}x : \alpha}
+          }
+        }{
+          f : \Tfun\alpha\alpha, x : \alpha \vdash \App{f} (\App{f}
+          x) : \alpha
+        }
+      }{
+      f : \Tfun\alpha\alpha \vdash \Lam x \App{f} (\App{f} x) : \Tfun\alpha\alpha}
+    }{\cdot \vdash \Lam{f}\Lam x \App{f} (\App{f} x) : \Tfun{(\Tfun\alpha\alpha)}{\Tfun\alpha\alpha}}
+  \end{mathpar}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Type Soundness}
+  \vspace{-\baselineskip}
+  \begin{block}{Type Preservation}
+    If $\cdot \vdash M : T$ and $M \rightarrow N$, then $\cdot
+    \vdash N : T$.
+  \end{block}
+  Proof by induction on $M \rightarrow N$.
+  \begin{block}{Progress}
+    If $\cdot \vdash M : T$, then either $M$ is
+    a value or there exists $M'$ such that $M \rightarrow M'$.
+  \end{block}
+  Proof by induction on $\Tenv \vdash M : T$.
+  \begin{block}{Type Soundness}
+    If $\cdot\vdash M : T$, then either
+    \begin{enumerate}
+    \item exists $V$ such that $M \rightarrow^* V$ or
+    \item for each $N$, such that $M \rightarrow^* N$ there exists
+      $N'$ such that $N\rightarrow N'$.
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \Huge
+  \begin{center}
+    {Type Inference for the Simply-Typed Lambda Calculus}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Type Inference for the Simply-Typed Lambda Calculus (STLC)}
+  \begin{block}{Typing Problems}
+    \begin{itemize}
+    \item Type checking: Given environment $\Tenv$, a term $M$ and a
+      type $T$, is $\Tenv \vdash M : T$ derivable?
+    \item Type inference: Given a term $M$, are there $\Tenv$ and $T$ such
+      that $\Tenv\vdash M : T$ is derivable?
+    \end{itemize}
+  \end{block}
+  \begin{block}<2->{Typing Problems for STLC}
+    \begin{itemize}
+    \item Type checking and type inference are decidable for STLC
+    \item Moreover, for each typable $M$ there is a \emph{principal typing}
+      $\Tenv\vdash M:T$ such that any other typing is a
+      substitution instance of the principal typing.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Prerequisites for Type Inference for STLC}
+  \framesubtitle{Unification}
+  Let $\calE$ be a set of equations on types.
+  \begin{block}{Unifiers and Most General Unifiers}
+    \begin{itemize}
+    \item A substitution $S$ is a \emph{unifier of $\calE$} if,
+      for each $T \doteq T'\in \calE$, it holds that $ST
+      = ST'$.
+    \item 
+      A substitution $S$ is a \emph{most general unifier of
+        $\calE$} if $S$ is a unifier of $\calE$ and for every
+      other unifier $S'$ of $\calE$, there is a substitution
+      $U$ such that $S' = U \circ S$.
+    \end{itemize}
+  \end{block}
+  \begin{block}<2->{Unification}
+    There is an algorithm $\calU$ that, on input $\calE$, either returns a
+    most general unifier of $\calE$ or fails if none exists.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Principal Type Inference for STLC}
+  %\vspace{-\baselineskip}
+  \small
+  The algorithm (due to John Mitchell) transforms a term into a principal typing judgment for
+  the term or fails if no typing exists.
+  \begin{displaymath}
+    \begin{array}{lcl}
+      \calP (x) &=& \mathbf{return}\ \Encode{x:\alpha \vdash x : \alpha} \\
+      \calP (\Lam{x} M) &=&
+      \mathbf{let}\ \Encode{\Tenv \vdash M : T} \gets \calP (M) \ \mathbf{in}\\
+      && \mathbf{if}\ x:T_x \in\Tenv\ \mathbf{then\ return}\ \Encode{\Tenv_x
+      \vdash \Lam{x}M : T_x \to T} \\
+      && \mathbf{else}\ \mathbf{choose}\ \alpha\notin\var{\Tenv,T}\
+      \mathbf{in} \\
+      &&\qquad \mathbf{return}\ \Encode{\Tenv \vdash \Lam{x}M : \alpha\to T} \\
+      \calP (\App{M_0}{M_1}) &=&
+      \mathbf{let}\ \Encode{\Tenv_0\vdash M_0 : T_0} \gets \calP (M_0)\ \mathbf{in} \\
+      && \mathbf{let}\ \Encode{\Tenv_1\vdash M_1 : T_1} \gets \calP (M_1)\
+      \mathbf{in} \\
+      && \mathbf{with\ disjoint\ type\ variables\ in\ } (\Tenv_0,
+      T_0)\ \mathbf{and}\ (\Tenv_1, T_1) \\
+      && \mathbf{choose}\ \alpha\notin \var{\Tenv_0,\Tenv_1,
+        T_0,T_1}\ \mathbf{in} \\
+      && \mathbf{let}\ S \gets \calU (\Tenv_0 \doteq \Tenv_1, T_0
+      \doteq T_1 \to \alpha)\
+      \mathbf{in} \\
+      && \mathbf{return}\ \Encode{S\Tenv_0 \cup S\Tenv_1 \vdash
+      \App{e_0}{M_1} : S\alpha} \\
+      \calP (n) &=& \mathbf{return}\ \Encode{\cdot \vdash 
+      n : \Nat} \\
+      \calP (\Succ M) &=& \mathbf{let}\ \Encode{\Tenv \vdash M : T} \gets
+      \calP (M)\ \mathbf{in} \\
+      && \mathbf{let}\ S \gets \calU (T\doteq\Nat)\ \mathbf{in} \\\
+      && \mathbf{return}\ \Encode{S\Tenv \vdash \Succ M: \Nat} 
+    \end{array}
+  \end{displaymath}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Properties of Type Inference}
+  \begin{block}{Soundness}
+    If $\calP (M) = \Encode{\Tenv \vdash M: T}$, then $\Tenv \vdash M: T$ is derivable.
+  \end{block}
+  \begin{block}{Completeness}
+    If $\Tenv \vdash M : T$ is derivable, then $\calP (M)$ succeeds with result $\Encode{\Tenv' \vdash M': T'}$ such that $\Tenv = S\Tenv'$ and $T = S T'$ for some substitution $S$. 
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{itemize}
+  \item Call-by-name and call-by-value are deterministic evaluation strategies that are more efficient than full $\beta$ reduction
+  \item Applied lambda calculus contains constants that encode operations on datatypes
+  \item Applied lambda calculus can have stuck terms
+  \item Simple types avoid stuck terms
+  \item Type checking and type inference for simple types is decidable
+  \item There is a sound and complete algorithm for type inference for simple types
+  \end{itemize}
+\end{frame}
+\end{document}
+
+

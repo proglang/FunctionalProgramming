@@ -16,6 +16,7 @@
 \usepackage{url}
 \usepackage{arydshln} % dashed lines
 \usepackage{tikz}
+\usepackage{mathpartir}
 
 \DeclareUnicodeCharacter{3BB}{\ensuremath{\lambda}}
 
@@ -135,6 +136,20 @@
 
 \newcommand\Encode[1]{\lceil#1\rceil}
 \newcommand\Reduce{\stackrel\ast\rightarrow_\beta}
+
+\newcommand\Nat{\textit{Nat}}
+\newcommand\Bool{\textit{Bool}}
+\newcommand\Pair{\textit{Pair}}
+\newcommand\Tfun[1]{#1\to}
+
+\newcommand\Tenv{A}
+\newcommand\Lam[1]{\lambda#1.}
+\newcommand\App[1]{#1\,}
+\newcommand\Succ{\textit{SUCC}\,}
+
+\newcommand\calE{\mathcal{E}}
+\newcommand\calU{\mathcal{U}}
+\newcommand\calP{\mathcal{P}}
 
 %%% Local Variables: 
 %%% mode: latex
