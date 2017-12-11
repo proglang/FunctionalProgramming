@@ -366,7 +366,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Variants (Either)}
+  \frametitle{Variants (data Either a b = Left a $\mid$ Right b)}
   \begin{exampleblock}<+->{Specification}
     Wanted: lambda terms $\LEFT$, $\RIGHT$, $\CASE$ such that
     \begin{itemize}
@@ -382,9 +382,34 @@
     \end{align*}
   \end{alertblock}
 \end{frame}
+
+\begin{frame}
+  \frametitle{Constructor and case for Haskell data}
+  \begin{block}{Scott encoding of data types}
+    Suppose a datatype $D$ is defined with constructors
+    $K_1, \dots, K_m$ where constructor $j$ takes $n_j$ arguments.
+    \begin{align*}
+      \Encode{K_j} &= \lambda x_1 \dots x_{n_j}. \lambda c_1 \dots
+                     c_m. c_j x_1 \dots x_{n_j}
+      \\
+      \CASE_D &= \lambda v. \lambda c_1 \dots c_m. v c_1 \dots c_m
+      \\
+                   &=_\eta \lambda v.v
+    \end{align*}
+    That is, the encoding of the constructor \textbf{is} the $\CASE_D$
+    operation.
+    \begin{itemize}
+    \item Pair is the special case with one constructor and two
+      arguments
+    \item Either is the special case with two constructors of one
+      argument each
+    \end{itemize}
+  \end{block}
+\end{frame}
+
 \begin{frame}
   \frametitle{Recursion}
-  \begin{alertblock}<+->{Fixpoint theorem}
+  \begin{alertblock}<+->{Fixpoint theorem (see Barendregt, The Lambda Calculus)}
     Every lambda term has a fixpoint:
 
     For every $M$ there is some $N$ such that
@@ -398,7 +423,7 @@
       Y := \lambda f.(\lambda x.f~(x~x))~(\lambda x.f~(x~x)).
     \end{displaymath}
   \end{exampleblock}
-  \begin{block}{Remark}
+  \begin{block}<+->{Remark}
     $Y$ is Curry's \textbf{fixpoint combinator}. There are infinitely
     many more fixpoint combinators with various properties.
   \end{block}
