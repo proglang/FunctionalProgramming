@@ -35,7 +35,7 @@
   \begin{displaymath}
     V ::= \lambda x.M
   \end{displaymath}
-  All other terms are \emph{non-values}.
+  All other terms are \textbf{non-values}.
 \end{block}
 \end{frame}             
 
@@ -319,7 +319,7 @@
   \begin{block}<2->{Typing Problems for STLC}
     \begin{itemize}
     \item Type checking and type inference are decidable for STLC
-    \item Moreover, for each typable $M$ there is a \emph{principal typing}
+    \item Moreover, for each typable $M$ there is a \textbf{principal typing}
       $\Tenv\vdash M:T$ such that any other typing is a
       substitution instance of the principal typing.
     \end{itemize}
@@ -333,11 +333,11 @@
   Let $\calE$ be a set of equations on types.
   \begin{block}{Unifiers and Most General Unifiers}
     \begin{itemize}
-    \item A substitution $S$ is a \emph{unifier of $\calE$} if,
+    \item A substitution $S$ is a \textbf{unifier of $\calE$} if,
       for each $T \doteq T'\in \calE$, it holds that $ST
       = ST'$.
     \item 
-      A substitution $S$ is a \emph{most general unifier of
+      A substitution $S$ is a \textbf{most general unifier of
         $\calE$} if $S$ is a unifier of $\calE$ and for every
       other unifier $S'$ of $\calE$, there is a substitution
       $U$ such that $S' = U \circ S$.
@@ -360,9 +360,9 @@
       \calP (x) &=& \mathbf{return}\ \Encode{x:\alpha \vdash x : \alpha} \\
       \calP (\Lam{x} M) &=&
       \mathbf{let}\ \Encode{\Tenv \vdash M : T} \gets \calP (M) \ \mathbf{in}\\
-      && \mathbf{if}\ x:T_x \in\Tenv\ \mathbf{then\ return}\ \Encode{\Tenv_x
+      && \mathbf{if}\ \Tenv = \Tenv', x:T_x \ \mathbf{then\ return}\ \Encode{\Tenv'
       \vdash \Lam{x}M : T_x \to T} \\
-      && \mathbf{else}\ \mathbf{choose}\ \alpha\notin\var{\Tenv,T}\
+      && \mathbf{else}\ \mathbf{choose}\ \alpha\notin\var{(\Tenv,T)}\
       \mathbf{in} \\
       &&\qquad \mathbf{return}\ \Encode{\Tenv \vdash \Lam{x}M : \alpha\to T} \\
       \calP (\App{M_0}{M_1}) &=&
@@ -371,13 +371,13 @@
       \mathbf{in} \\
       && \mathbf{with\ disjoint\ type\ variables\ in\ } (\Tenv_0,
       T_0)\ \mathbf{and}\ (\Tenv_1, T_1) \\
-      && \mathbf{choose}\ \alpha\notin \var{\Tenv_0,\Tenv_1,
-        T_0,T_1}\ \mathbf{in} \\
+      && \mathbf{choose}\ \alpha\notin \var{(\Tenv_0,\Tenv_1,
+        T_0,T_1)}\ \mathbf{in} \\
       && \mathbf{let}\ S \gets \calU (\Tenv_0 \doteq \Tenv_1, T_0
       \doteq T_1 \to \alpha)\
       \mathbf{in} \\
       && \mathbf{return}\ \Encode{S\Tenv_0 \cup S\Tenv_1 \vdash
-      \App{e_0}{M_1} : S\alpha} \\
+      \App{M_0}{M_1} : S\alpha} \\
       \calP (n) &=& \mathbf{return}\ \Encode{\cdot \vdash 
       n : \Nat} \\
       \calP (\Succ M) &=& \mathbf{let}\ \Encode{\Tenv \vdash M : T} \gets
