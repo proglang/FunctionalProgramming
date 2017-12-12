@@ -1,0 +1,281 @@
+%% -*- coding: utf-8 -*-
+\documentclass[pdftex,aspectratio=169]{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle
+{Polymorphic Types}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{Outline}
+%  \tableofcontents
+  % You might wish to add the option [pausesections]
+%\end{frame}
+
+
+\section{ML-Style Polymorphic Types}
+\begin{frame}
+  \frametitle{ML-Style Polymorphic Types}
+  \begin{itemize}
+  \item Simple types are restrictive and offer insufficient modularity
+  \item Example: 
+    \begin{displaymath}
+      \App{(\Lam{i} \App{(\App{i} (\Lam{y}\Succ y))} (\App{i}42))} (\Lam{x}x)
+    \end{displaymath}
+    \begin{itemize}
+    \item $\Lam{x}x : \alpha\to\alpha$
+    \item $\App{i}42$ requires $i : \Nat \to \beta$
+    \item $\App{i} (\Lam{y}\Succ y)$ requires $i : (\Nat\to\Nat) \to \gamma$
+    \item Unification of the assumption on $i$ fails: term has no
+      simple type
+    \item However, term evaluates without error
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Applied Mini-ML}
+  \vspace{-\baselineskip}
+  \begin{block}{Syntax}
+    %\vspace{-1.5\baselineskip}
+    \begin{displaymath}
+      \begin{array}{rlcl}
+        \mathsf{Exp} \ni & e,f & ::= & x \mid \Lam{x}e \mid \App{f}e
+        \mid \Let{x}{e}f \mid n \mid \Succ e \\
+        \mathsf{Val} \ni & v & ::= & \Lam{x}e \mid n
+      \end{array}
+    \end{displaymath}
+  \vspace{-1\baselineskip}
+  \end{block}
+  \begin{block}{Evaluation (Call-by-Value)}
+    % \vspace{-1.5\baselineskip}\small
+    \begin{mathpar}
+      \inferrule[Beta-V]{}{\App{(\Lam{x}e)}{v} \rightarrow_v e[x \mapsto v]}
+
+      \inferrule[AppL]{f \rightarrow_v f'}{ \App{f}{e} \rightarrow_v \App{f'}{e}}
+
+      \inferrule[VAppR]{e \rightarrow_v e'}{ \App{v}{e} \rightarrow_v \App{v}{e'}}
+
+      \inferrule[LetL]{e \rightarrow_v e'}{\Let{x}{e}f \rightarrow_v
+        \Let{x}{e'}f}
+
+      \inferrule[Beta-Let]{}{\Let{x}{v}e \rightarrow_v e[x \mapsto v]}
+
+      \inferrule[SuccL]{e \rightarrow_v e'}{ \Succ{e} \rightarrow_v \Succ{e'}}
+
+      \inferrule[Delta]{e \rightarrow_\delta e'}{ e \rightarrow_v {e'}}
+    \end{mathpar}
+    \vspace{-1\baselineskip}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Types for Applied Mini-ML}
+  \begin{block}{Syntax of Types}
+    \begin{displaymath}
+      \begin{array}{lcll}
+        \tau & ::= & \alpha \mid \tau \to \tau \mid \Nat &
+        \textrm{Types}\\\color{red}
+        \sigma & ::= & \color{red} \tau \mid \forall \alpha. \sigma & 
+        \color{red}\textrm{Type Schemes}\\
+        \Tenv & ::= & \cdot \mid \Tenv, x:\color{red}\sigma &
+        \textrm{Type Environments}
+      \end{array}
+    \end{displaymath}
+  \end{block}
+  A type scheme  $\forall\alpha.\sigma$ \dots
+  \begin{itemize}
+  \item \emph{binds} type variable $\alpha$
+  \item can be \emph{instantiated} by substituting a type for $\alpha$
+    in $\sigma$
+  \item only appears in the type environment
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Operations on Type Schemes}
+  \begin{block}<+->{Generic Instance}
+    $\sigma = \forall\alpha_1\dots\alpha_m.\tau$ has a \textbf{generic
+      instance}
+    $\sigma' = \forall\beta_1\dots\beta_n.\tau'$, written as 
+    $\sigma \succeq \sigma'$, if for all $i$, $\beta_i\notin
+    \EFV{\sigma}$ and there is a substitution $S$ with
+    $\Dom{S} \subseteq \{\alpha_1,\dots,\alpha_m\}$ such that $\tau' = S\tau$.
+  \end{block}
+  \begin{exampleblock}{Examples}\VSPBLS
+    \begin{align*}
+      \forall\alpha.\alpha\to\alpha &\succeq \Nat\to\Nat
+      &
+        \forall\alpha\beta.\alpha\to\beta\to\alpha
+      & \succeq \forall \alpha. \alpha\to\alpha\to \alpha
+    \end{align*}
+  \end{exampleblock}
+  \begin{block}<+->{Generalization}
+    \begin{displaymath}
+      \GEN (\Tenv , \tau ) = \forall \alpha_1 \dots \alpha_m. \tau
+    \end{displaymath}
+    where $\{ \alpha_1,\dots, \alpha_m \} = \EFV{\tau} \setminus \EFV{\Tenv}$.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inference Rules for Mini-ML}
+  \vspace{-\baselineskip}
+  \begin{mathpar}
+    \inferrule[Var]{\color{red}\sigma \succeq \tau}{\Tenv, x:\sigma \vdash x : \tau}
+
+    \inferrule[Lam]{
+      \Tenv, x : \tau \vdash e : \tau'
+    }{
+      \Tenv \vdash \Lam{x} e : \Tfun{\tau}{\tau'}}
+    
+    \inferrule[App]{
+      \Tenv \vdash e : \Tfun{\tau}{\tau'} \\
+      \Tenv \vdash f : \tau
+    }{
+      \Tenv \vdash \App{e}{f} : \tau'
+    }
+
+    \color{red}
+    \inferrule[Let]{
+      \Tenv \vdash e : \tau \\
+      \Tenv, x : \GEN (\Tenv, \tau) \vdash f : \tau'
+    }{
+      \Tenv \vdash \Let{x}{e}{f} : \tau'
+    }
+    \color{black}
+    \\
+    \inferrule[Num]{}{\Tenv \vdash n : \Nat}
+
+    \inferrule[Succ]{\Tenv \vdash e : \Nat}{\Tenv \vdash \Succ e :
+      \Nat
+    }
+  \end{mathpar}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Example Revisited}
+  \begin{displaymath}
+    \Let{i}{\Lam{x}x} \App{(\App{i} (\Lam{y}\Succ y))} (\App{i}42)
+  \end{displaymath}
+  \begin{itemize}
+  \item  $\Lam{x}x : \alpha\to\alpha$
+  \item Generalized binding:  $i : \forall \alpha. \alpha \to\alpha$
+  \item $\App{i}42$ using instance $\forall \alpha. \alpha \to\alpha \succeq \Nat\to\Nat$
+  \item $\App{i} (\Lam{y}\Succ y)$ using instance $\forall \alpha. \alpha \to\alpha \succeq (\Nat \to\Nat) \to
+    (\Nat \to\Nat)$
+  \item Type checking succeeds
+  \item Type checking the uses of $i$ is better decoupled from $i$'s
+    definition $\Rightarrow$ modularity improved
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Properties}
+  \begin{itemize}
+  \item Type soundness
+  \item Decidable type checking and type inference (upcoming)
+  \item Basis for type system of ML, Haskell, and other languages
+  \item Numerous extensions
+  \end{itemize}
+\end{frame}
+
+\section{Type Inference for Mini-ML}
+\begin{frame}
+    \Huge
+  \begin{center}
+    {Type Inference for Mini-ML}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Type Inference for Mini-ML}
+  The algorithm $\calW (\Tenv; e)$ transforms a type environment
+  $\Tenv$ and a  term $e$ into a pair $(S, \tau)$ of a
+  substitution and a type (or fails if no typing exists).
+
+  This algorithm is the traditional Hindley-Milner type inference algorithm.
+
+  See: Milner, Robin (1978). A Theory of Type Polymorphism in Programming. JCSS, 17: 348–375
+\end{frame}
+
+\begin{frame}
+  \frametitle{Mini-ML Type Inference Algorithm, Part I}
+  %\vspace{-2\baselineskip}
+  \begin{displaymath}
+    \begin{array}{lcl}
+      \calW (\Tenv ; x) &=& \mathbf{let}\
+      \forall\alpha_1\dots\alpha_m.\tau = \Tenv (x) \\
+      && \beta_1\dots\beta_m \gets \mathbf{fresh} \\
+      && \mathbf{return}\ (\mathit{ID}, \tau[\alpha_i\mapsto\beta_i])
+      \\
+      \calW (\Tenv ; \Lam{x}e) &=&
+      \beta \gets \mathbf{fresh} \\
+      &&  (S, \tau) \gets \calW (\Tenv, x: \beta; e) \\
+      && \mathbf{return}\ (S, S\beta \to \tau)
+      \\
+      \calW (\Tenv; \App{e_0}{e_1}) &=&
+      (S_0, \tau_0) \gets \calW (\Tenv ; e_0) \\
+      && (S_1, \tau_1) \gets \calW (S_0\Tenv ; e_1)\\
+      &&\beta \gets \mathbf{fresh}\\
+      &&T \gets \calU (S_1\tau_0 \doteq \tau_1\to \beta)\\
+      &&\mathbf{return}\ (T \circ S_1 \circ S_0, T\beta)
+      \\
+      \calW (\Tenv; \Let{x}{e_0}{e_1}) &=&
+      (S_0, \tau_0) \gets \calW (\Tenv ; e_0)\\
+      && \mathbf{let}\ \sigma = \GEN (S_0\Tenv, \tau_0) \\
+      && (S_1, \tau_1) \gets \calW (S_0\Tenv, x :\sigma; e_1) \\
+      &&\mathbf{return}\ (S_1\circ S_0, \tau_1) \\
+    \end{array}
+  \end{displaymath}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Mini-ML Type Inference Algorithm, Part II}
+ \begin{displaymath}
+   \begin{array}{lcl}
+      \calW (\Tenv ;  n) &=&
+      \mathbf{return}\ (\mathit{ID}, \Nat) \\
+      \calW (\Tenv ; \Succ e) &=&
+      (S, \tau) \gets \calW (\Tenv ; e) \\
+      &&\mathbf{let}\ T \gets \calU (\tau\doteq\Nat)\ \mathbf{in} \\
+      &&\mathbf{return}\ (T \circ S, \Nat)
+   \end{array}
+ \end{displaymath}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Properties of Type Inference for Mini-ML}
+  \begin{block}{Soundness}
+    If $\calW (\Tenv; e) = \mathbf{return}\ (S, \tau)$, then $S\Tenv \implies e : \tau$.
+  \end{block}
+  \begin{block}{Completeness}
+    If $S\Tenv \vdash e : \tau'$, then $\calW (\Tenv ; e) =
+    \mathbf{return}\ (T, \tau)$ such that $S = S'\circ T$ and $\tau'= S'\tau$.
+  \end{block}
+  \begin{block}{Principal types}
+    Completeness implies that $\calW$ computes \textbf{principal types} because all other types of the same term are instances of the computed type.
+  \end{block}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{itemize}
+  \item ML polymorphism is based on type schemes
+  \item Type checking and inference is decidable
+  \item Type inference yields a principal type
+  \end{itemize}
+\end{frame}
+\end{document}
+
+
