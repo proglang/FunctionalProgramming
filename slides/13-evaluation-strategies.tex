@@ -106,16 +106,16 @@
   \begin{block}{Semantics (call-by-name)}
     $\beta$ reduction and \textbf{$\delta$ reduction rules} for the constants
     \begin{align*}
-      (\lambda x.M)\,N \rightarrow M[x \mapsto N]
+      (\lambda x.M)\,N \rightarrow_\beta M[x \mapsto N]
       &&
-      \IF\,\TRUE\,M\,N \rightarrow M
+      \IF\,\TRUE\,M\,N \rightarrow_\delta M
       &&
-      \IF\,\FALSE\,M\,N \rightarrow N
+      \IF\,\FALSE\,M\,N \rightarrow_\delta N
       \\
       &&
-      \FST\,(\PAIR\,M\,N) \rightarrow M
+      \FST\,(\PAIR\,M\,N) \rightarrow_\delta M
       &&
-      \SND\,(\PAIR\,M\,N) \rightarrow N
+      \SND\,(\PAIR\,M\,N) \rightarrow_\delta N
     \end{align*}
   \end{block}
 \end{frame}             
@@ -141,9 +141,9 @@
     \item Applied lambda calculus: there are closed non-value terms that cannot be reduced
       \begin{itemize}
       \item $\TRUE\,V$ 
-      \item $\IF\,(\lambda x.M)$
+      \item $\IF\,(\lambda x.L)\, M\, N$
       \item $\FST\,(\lambda x.M)$
-      \item $\IF\,(\PAIR\, M\, N)$
+      \item $\IF\,(\PAIR\, M\, N)\, M'\, N'$
       \item $\dots$
       \end{itemize}
     \item These terms are \textbf{stuck terms}
@@ -360,7 +360,7 @@
       \calP (x) &=& \mathbf{return}\ \Encode{x:\alpha \vdash x : \alpha} \\
       \calP (\Lam{x} M) &=&
       \mathbf{let}\ \Encode{\Tenv \vdash M : T} \gets \calP (M) \ \mathbf{in}\\
-      && \mathbf{if}\ \Tenv = \Tenv', x:T_x \ \mathbf{then\ return}\ \Encode{\Tenv'
+      && \mathbf{if}\ \Tenv\ \mathbf{has\ form}\ \Tenv', x:T_x \ \mathbf{then\ return}\ \Encode{\Tenv'
       \vdash \Lam{x}M : T_x \to T} \\
       && \mathbf{else}\ \mathbf{choose}\ \alpha\notin\var{(\Tenv,T)}\
       \mathbf{in} \\
@@ -394,7 +394,7 @@
     If $\calP (M) = \Encode{\Tenv \vdash M: T}$, then $\Tenv \vdash M: T$ is derivable.
   \end{block}
   \begin{block}{Completeness}
-    If $\Tenv \vdash M : T$ is derivable, then $\calP (M)$ succeeds with result $\Encode{\Tenv' \vdash M': T'}$ such that $\Tenv = S\Tenv'$ and $T = S T'$ for some substitution $S$. 
+    If $\Tenv \vdash M : T$ is derivable, then $\calP (M)$ succeeds with result $\Encode{\Tenv' \vdash M: T'}$ such that $\Tenv = S\Tenv'$ and $T = S T'$ for some substitution $S$. 
   \end{block}
 \end{frame}
 
