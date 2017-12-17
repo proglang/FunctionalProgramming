@@ -23,21 +23,26 @@
 \section{ML-Style Polymorphic Types}
 \begin{frame}
   \frametitle{ML-Style Polymorphic Types}
-  \begin{itemize}
-  \item Simple types are restrictive and offer insufficient modularity
-  \item Example: 
+  \begin{block}<+->{Simple Types}
+    restrictive, insufficient modularity
+  \end{block}
+  \begin{exampleblock}<.->{Example}
     \begin{displaymath}
       \App{(\Lam{i} \App{(\App{i} (\Lam{y}\Succ y))} (\App{i}42))} (\Lam{x}x)
     \end{displaymath}
+    \VSPBLS
     \begin{itemize}
-    \item $\Lam{x}x : \alpha\to\alpha$
+    \item Simple typing derives $\cdot \vdash \Lam{x}x : \alpha\to\alpha$
     \item $\App{i}42$ requires $i : \Nat \to \beta$
     \item $\App{i} (\Lam{y}\Succ y)$ requires $i : (\Nat\to\Nat) \to \gamma$
-    \item Unification of the assumption on $i$ fails: term has no
+    \item Unification of the assumptions on $i$ fails: term has no
       simple type
     \item However, term evaluates without error
     \end{itemize}
-  \end{itemize}
+  \end{exampleblock}
+  \begin{alertblock}<+->{Approach: Parametric polymorphism $\Lam xx : \textcolor{black}{\forall \alpha}.\alpha\to\alpha$}
+    
+  \end{alertblock}
 \end{frame}
 
 \begin{frame}
@@ -90,12 +95,13 @@
       \end{array}
     \end{displaymath}
   \end{block}
-  A type scheme  $\forall\alpha.\sigma$ \dots
+  A \textbf{type scheme  $\forall\alpha.\sigma$} \dots
   \begin{itemize}
   \item \emph{binds} type variable $\alpha$
   \item can be \emph{instantiated} by substituting a type for $\alpha$
     in $\sigma$
   \item only appears in the type environment
+  \item restricts introduction of type variables to toplevel!
   \end{itemize}
 \end{frame}
 
@@ -109,12 +115,16 @@
     \EFV{\sigma}$ and there is a substitution $S$ with
     $\Dom{S} \subseteq \{\alpha_1,\dots,\alpha_m\}$ such that $\tau' = S\tau$.
   \end{block}
-  \begin{exampleblock}{Examples}\VSPBLS
+  \begin{exampleblock}<+->{Examples}\VSPBLS
     \begin{align*}
       \forall\alpha.\alpha\to\alpha &\succeq \Nat\to\Nat
       &
         \forall\alpha\beta.\alpha\to\beta\to\alpha
       & \succeq \forall \alpha. \alpha\to\alpha\to \alpha
+      \\
+      \forall\alpha.\alpha\to\beta\to\alpha & \succeq \beta\to\beta\to\beta
+      &
+      \forall\alpha.\alpha\to\beta\to\alpha & \succeq \Nat\to\beta\to\Nat'
     \end{align*}
   \end{exampleblock}
   \begin{block}<+->{Generalization}
@@ -122,11 +132,14 @@
       \GEN (\Tenv , \tau ) = \forall \alpha_1 \dots \alpha_m. \tau
     \end{displaymath}
     where $\{ \alpha_1,\dots, \alpha_m \} = \EFV{\tau} \setminus \EFV{\Tenv}$.
+    \qquad
+    $\alpha_1,\dots,\alpha_m$ are \textbf{generic variables} in $\tau$.
   \end{block}
 \end{frame}
 
 \begin{frame}
   \frametitle{Inference Rules for Mini-ML}
+  \framesubtitle{syntax-directed}
   \vspace{-\baselineskip}
   \begin{mathpar}
     \inferrule[Var]{\color{red}\sigma \succeq \tau}{\Tenv, x:\sigma \vdash x : \tau}
@@ -167,7 +180,8 @@
     \Let{i}{\Lam{x}x} \App{(\App{i} (\Lam{y}\Succ y))} (\App{i}42)
   \end{displaymath}
   \begin{itemize}
-  \item  $\Lam{x}x : \alpha\to\alpha$
+  \item $\cdot\vdash\Lam{x}x : \alpha\to\alpha$
+  \item $\GEN (\cdot, \alpha\to\alpha) =\forall \alpha. \alpha \to\alpha$
   \item Generalized binding:  $i : \forall \alpha. \alpha \to\alpha$
   \item $\App{i}42$ using instance $\forall \alpha. \alpha \to\alpha \succeq \Nat\to\Nat$
   \item $\App{i} (\Lam{y}\Succ y)$ using instance $\forall \alpha. \alpha \to\alpha \succeq (\Nat \to\Nat) \to
@@ -198,13 +212,20 @@
 
 \begin{frame}
   \frametitle{Type Inference for Mini-ML}
-  The algorithm $\calW (\Tenv; e)$ transforms a type environment
-  $\Tenv$ and a  term $e$ into a pair $(S, \tau)$ of a
-  substitution and a type (or fails if no typing exists).
+  \begin{block}<+->{Hindley-Milner Type Inference Algorithm $\calW (\Tenv; e)$}
+    transforms a type environment
+    $\Tenv$ and a  term $e$ into a pair $(S, \tau)$ of a
+    substitution and a type (or fails if no typing exists).
 
-  This algorithm is the traditional Hindley-Milner type inference algorithm.
-
-  See: Milner, Robin (1978). A Theory of Type Polymorphism in Programming. JCSS, 17: 348–375
+    See: Milner, Robin (1978). A Theory of Type Polymorphism in Programming. JCSS, 17: 348–375
+  \end{block}
+  \begin{block}<+->{Notation}
+    \begin{itemize}
+    \item $\mathbf{fresh}$ creates one or more fresh type variables, which are not yet in use
+    \item $\mathit{ID}$ the identity substitution
+    \item $S$ and $U$ range over type substitutions
+    \end{itemize}
+  \end{block}
 \end{frame}
 
 \begin{frame}
@@ -226,8 +247,8 @@
       (S_0, \tau_0) \gets \calW (\Tenv ; e_0) \\
       && (S_1, \tau_1) \gets \calW (S_0\Tenv ; e_1)\\
       &&\beta \gets \mathbf{fresh}\\
-      &&T \gets \calU (S_1\tau_0 \doteq \tau_1\to \beta)\\
-      &&\mathbf{return}\ (T \circ S_1 \circ S_0, T\beta)
+      &&U \gets \calU (S_1\tau_0 \doteq \tau_1\to \beta)\\
+      &&\mathbf{return}\ (U \circ S_1 \circ S_0, U\beta)
       \\
       \calW (\Tenv; \Let{x}{e_0}{e_1}) &=&
       (S_0, \tau_0) \gets \calW (\Tenv ; e_0)\\
@@ -246,8 +267,8 @@
       \mathbf{return}\ (\mathit{ID}, \Nat) \\
       \calW (\Tenv ; \Succ e) &=&
       (S, \tau) \gets \calW (\Tenv ; e) \\
-      &&\mathbf{let}\ T \gets \calU (\tau\doteq\Nat)\ \mathbf{in} \\
-      &&\mathbf{return}\ (T \circ S, \Nat)
+      &&\mathbf{let}\ U \gets \calU (\tau\doteq\Nat)\ \mathbf{in} \\
+      &&\mathbf{return}\ (U \circ S, \Nat)
    \end{array}
  \end{displaymath}
 \end{frame}
@@ -256,7 +277,7 @@
 \begin{frame}
   \frametitle{Properties of Type Inference for Mini-ML}
   \begin{block}{Soundness}
-    If $\calW (\Tenv; e) = \mathbf{return}\ (S, \tau)$, then $S\Tenv \implies e : \tau$.
+    If $\calW (\Tenv; e) = \mathbf{return}\ (S, \tau)$, then $S\Tenv \vdash e : \tau$.
   \end{block}
   \begin{block}{Completeness}
     If $S\Tenv \vdash e : \tau'$, then $\calW (\Tenv ; e) =
