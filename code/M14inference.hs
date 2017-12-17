@@ -1,6 +1,7 @@
 module M14inference where
 
 import Control.Monad
+import Data.List (union, (\\))
 
 type TyVar = String
 type TyCon = String
@@ -31,7 +32,7 @@ applySubstAss :: Subst -> Ass -> Ass
 applySubstAss subst = 
   map g
   where
-    g (x, (tvs, ty)) = (x, (tvs, applySubst subst ty))
+    g (x, Forall tvs τ) = (x, Forall tvs (applySubst subst τ))
   -- requires that dom subst \cap tvs = \emptyset
 
   
@@ -55,7 +56,8 @@ unifyList subst (ty1:tys1) (ty2:tys2) =
 unifyList _ _ _ =
   fail "tycon arity mismatch (should not happen)"
 
--- monad for HM type inference
+-- Monad for HM type inference
+-- combination of two monads:
 -- * fresh variable generation: state monad
 -- * error messages: Either monad
 
@@ -123,40 +125,54 @@ data Exp
   | ExNum Integer
   | ExSuc Exp
 
-type Scheme = ([TyVar], Type)
+data Scheme = Forall [TyVar] Type
 
 type Ass = [(ExVar, Scheme)]
 
+freetv :: Type -> [TyVar]
+freetv (TyVar tv) = [tv]
+freetv (TyApp tc tys) = foldr union [] $ map freetv tys
+
+freetvAss :: Ass -> [TyVar]
+freetvAss = foldr union [] . map freetvAssEntry
+
+freetvAssEntry :: (ExVar, Scheme) -> [TyVar]
+freetvAssEntry = freetvScheme . snd
+
+freetvScheme :: Scheme -> [TyVar]
+freetvScheme (Forall gtvs ty) = freetv ty \\ gtvs
+
 gen :: Ass -> Type -> Scheme
-gen ass t =
-  undefined
+gen ass ty =
+  let fvt = freetv ty
+      fva = freetvAss ass
+  in  Forall (fvt \\ fva) ty
 
 infer :: Ass -> Exp -> HM (Subst, Type)
 infer ass (ExVar x) =
-  do (alphas, tx) <- mlookup x ass
-     betas <- freshList alphas
-     let genSubst = zip alphas $ map TyVar betas
+  do Forall αs tx <- mlookup x ass
+     βs <- freshList αs
+     let genSubst = zip αs $ map TyVar βs
      return (idSubst, applySubst genSubst tx)
 infer ass (ExLam x e) =
-  do beta <- fresh
-     (subst, te) <- infer ((x, ([], TyVar beta)) : ass) e
-     return (subst, TyApp "->" [applySubst subst (TyVar beta), te])
-infer ass (ExApp f e) =
-  do (subst0, tf) <- infer ass f
-     (subst1, te) <- infer (applySubstAss subst0 ass) e
-     beta <- fresh
-     usubst <- unify (applySubst subst1 tf) (TyApp "->" [te, TyVar beta])
+  do β <- fresh
+     (subst, τ) <- infer ((x, Forall [] (TyVar β)) : ass) e
+     return (subst, TyApp "->" [applySubst subst (TyVar β), τ])
+infer ass (ExApp e0 e1) =
+  do (subst0, τ0) <- infer ass e0
+     (subst1, τ1) <- infer (applySubstAss subst0 ass) e1
+     β <- fresh
+     usubst <- unify (applySubst subst1 τ0) (TyApp "->" [τ1, TyVar β])
      return ( composeSubst usubst (composeSubst subst1 subst0)
-            , applySubst usubst (TyVar beta))
+            , applySubst usubst (TyVar β))
 infer ass (ExLet x e0 e1) =
-  do (subst0, t0) <- infer ass e0
-     let sigma = gen (applySubstAss subst0 ass) t0
-     (subst1, t1) <- infer ((x, sigma) : ass) e1
-     return (composeSubst subst1 subst0, t1)
+  do (subst0, τ0) <- infer ass e0
+     let σ = gen (applySubstAss subst0 ass) τ0
+     (subst1, τ1) <- infer ((x, σ) : ass) e1
+     return (composeSubst subst1 subst0, τ1)
 infer ass (ExNum n) =
   return (idSubst, TyApp "Nat" [])
 infer ass (ExSuc e) =
-  do (subst, t) <- infer ass e
-     usubst <- unify t (TyApp "Nat" [])
+  do (subst, τ) <- infer ass e
+     usubst <- unify τ (TyApp "Nat" [])
      return (composeSubst usubst subst, TyApp "Nat" [])
-
