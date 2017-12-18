@@ -11,6 +11,15 @@ data Type
   | TyApp TyCon [Type]
   deriving (Show)
 
+-- example types
+tyNat = TyApp "Nat" []
+tyFun τ1 τ2 = TyApp "->" [τ1, τ2]
+tyList τ = TyApp "[]" [τ]
+
+tyAlpha = TyVar "a"
+tyBeta  = TyVar "b"
+
+-- substitutions represented as lists of pairs
 type Subst = [(TyVar, Type)]
 
 idSubst :: Subst
@@ -35,13 +44,16 @@ applySubstAss subst =
     g (x, Forall tvs τ) = (x, Forall tvs (applySubst subst τ))
   -- requires that dom subst \cap tvs = \emptyset
 
-  
+
+-- unification
 unify :: Monad m => Type -> Type -> m Subst
 unify (TyVar x) (TyVar y)
   | x == y = return idSubst
   | x <  y = return [(x, TyVar y)]
   | otherwise = return [(y, TyVar x)]
-unify (TyVar x) ty = return [(x, ty)]
+unify (TyVar x) ty
+  | x `elem` freetv ty = fail $ (x ++ " occurs in " ++ show ty)
+  | otherwise = return [(x, ty)]
 unify ty (TyVar y) = return [(y, ty)]
 unify ty1@(TyApp tc1 tys1) ty2@(TyApp tc2 tys2)
   | tc1 /= tc2 || length tys1 /= length tys2 = fail $ "failing to unify " ++ show ty1 ++ " with " ++ show ty2
@@ -52,9 +64,40 @@ unifyList subst [] [] =
   return subst
 unifyList subst (ty1:tys1) (ty2:tys2) =
   do subst1 <- unify (applySubst subst ty1) (applySubst subst ty2)
-     unifyList subst1 tys1 tys2
+     unifyList (composeSubst subst1 subst) tys1 tys2
 unifyList _ _ _ =
   fail "tycon arity mismatch (should not happen)"
+
+data UError a
+  = ULeft String
+  | URight a
+
+instance Monad UError where
+  return a = URight a
+  m >>= f  = case m of
+               ULeft s -> ULeft s
+               URight a -> f a
+  fail s = ULeft s
+
+instance Functor UError where
+  fmap f ua = case ua of
+                ULeft s -> ULeft s
+                URight a -> URight (f a)
+
+instance Applicative UError where
+  pure a = URight a
+  ua <*> ub = case ua of
+                ULeft s -> ULeft s
+                URight f ->
+                  case ub of
+                    ULeft s -> ULeft s
+                    URight b -> URight (f b)
+
+
+
+
+
+
 
 -- Monad for HM type inference
 -- combination of two monads:
@@ -147,6 +190,11 @@ gen ass ty =
   let fvt = freetv ty
       fva = freetvAss ass
   in  Forall (fvt \\ fva) ty
+
+
+
+
+
 
 infer :: Ass -> Exp -> HM (Subst, Type)
 infer ass (ExVar x) =
