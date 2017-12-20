@@ -22,28 +22,43 @@ tyBeta  = TyVar "b"
 -- substitutions represented as lists of pairs
 type Subst = [(TyVar, Type)]
 
+-- domain of substitution
+domSubst :: Subst -> [TyVar]
+domSubst = map fst
+
+-- identity substitution
 idSubst :: Subst
 idSubst = []
 
+-- apply a substitution to a type
 applySubst :: Subst -> Type -> Type
 applySubst subst (TyVar x) 
   | Just ty <- lookup x subst = ty
   | otherwise = TyVar x
 applySubst subst (TyApp tc tys) = TyApp tc $ map (applySubst subst) tys
-                           
+
+-- compose substitutions
 composeSubst :: Subst -> Subst -> Subst
 composeSubst s1 s0 =
-  map g s0 ++ s1
+  map g s0 ++ filter p s1
   where
     g (tv, ty) = (tv, applySubst s1 ty)
+    p (tv, ty) = not $ tv `elem` domS0
+    domS0 = domSubst s0
 
+-- apply a substitution to a type scheme
+applySubstScheme :: Subst -> Scheme -> Scheme
+applySubstScheme subst (Forall tvs τ) = 
+  Forall tvs (applySubst subst' τ)
+  -- requires that dom subst \cap tvs = \emptyset
+  where
+    subst' = filter p subst
+    p (α, τ) = not (α `elem` tvs)
+
+-- apply a substitution to a type assumption
 applySubstAss :: Subst -> Ass -> Ass
 applySubstAss subst = 
-  map g
-  where
-    g (x, Forall tvs τ) = (x, Forall tvs (applySubst subst τ))
-  -- requires that dom subst \cap tvs = \emptyset
-
+  map $ \ (x, σ) -> (x, applySubstScheme subst σ)
 
 -- unification
 unify :: Monad m => Type -> Type -> m Subst
@@ -52,12 +67,16 @@ unify (TyVar x) (TyVar y)
   | x <  y = return [(x, TyVar y)]
   | otherwise = return [(y, TyVar x)]
 unify (TyVar x) ty
-  | x `elem` freetv ty = fail $ (x ++ " occurs in " ++ show ty)
-  | otherwise = return [(x, ty)]
+  | x `elem` freetv ty =
+      fail $ (x ++ " occurs in " ++ show ty)
+  | otherwise =
+      return [(x, ty)]
 unify ty (TyVar y) = return [(y, ty)]
 unify ty1@(TyApp tc1 tys1) ty2@(TyApp tc2 tys2)
-  | tc1 /= tc2 || length tys1 /= length tys2 = fail $ "failing to unify " ++ show ty1 ++ " with " ++ show ty2
-  | otherwise  = unifyList idSubst tys1 tys2
+  | tc1 /= tc2 || length tys1 /= length tys2 =
+      fail $ "failing to unify " ++ show ty1 ++ " with " ++ show ty2
+  | otherwise  =
+      unifyList idSubst tys1 tys2
 
 unifyList :: Monad m => Subst -> [Type] -> [Type] -> m Subst
 unifyList subst [] [] =
@@ -68,9 +87,11 @@ unifyList subst (ty1:tys1) (ty2:tys2) =
 unifyList _ _ _ =
   fail "tycon arity mismatch (should not happen)"
 
+-- monad for reporting error messages
+-- Haskell forces us to define instances of Functor and Applicative
 data UError a
-  = ULeft String
-  | URight a
+  = ULeft String                -- error message
+  | URight a                    -- returned result
 
 instance Monad UError where
   return a = URight a
@@ -86,12 +107,25 @@ instance Functor UError where
 
 instance Applicative UError where
   pure a = URight a
-  ua <*> ub = case ua of
+  uf <*> ub = case uf of
                 ULeft s -> ULeft s
                 URight f ->
                   case ub of
                     ULeft s -> ULeft s
                     URight b -> URight (f b)
+
+-- examples for unification
+uex1, uex2, uex3, uex4, uex5, uex6, uex7, uex8 :: Monad m => m Subst
+uex1 = unify tyAlpha tyAlpha
+uex2 = unify tyAlpha tyBeta
+uex3 = unify tyAlpha tyNat
+uex4 = unify tyNat tyBeta
+uex5 = unify tyNat (tyFun tyBeta tyBeta) -- error
+uex6 = unify tyBeta (tyFun tyBeta tyBeta) -- error
+uex7 = unify (tyFun tyAlpha (tyFun tyBeta tyAlpha)) (tyFun (TyVar "γ") (TyVar "δ"))
+uex8 = unify (tyFun tyAlpha             tyBeta)
+             (tyFun (tyFun tyNat tyNat) tyAlpha)
+
 
 
 
@@ -129,6 +163,7 @@ instance Applicative HM where
                     Right (y, s'') ->
                       Right (x y, s'')
        )
+
 instance Monad HM where
   return x =
     HM (\s -> Right (x, s))
@@ -140,24 +175,33 @@ instance Monad HM where
   fail msg =
     HM (\s -> Left msg)
 
+-- run the HM monad
+runHM :: HM a -> Either String a
+runHM hma =
+  case exHM hma HMState { count = 0 } of
+    Left m -> Left m
+    Right (x, s) -> Right x
+
+-- lookup a value in an association list
 mlookup :: (Monad m, Eq a) => a -> [(a, b)] -> m b
 mlookup x xys =
   case lookup x xys of
     Nothing -> fail "mlookup failed"
     Just y -> return y
 
+-- generate a fresh type variable
 fresh :: HM TyVar
 fresh =
   HM (\s -> 
         let s' = s { count = count s + 1 }
-            tv = 't' : show (count s')
+            tv = 'a' : show (count s')
         in  Right (tv, s'))
 
+-- generate a list of fresh type variables
 freshList :: [x] -> HM [TyVar]
 freshList = mapM (const fresh)
 
--- mini-ml
-
+-- mini-ml syntax
 type ExVar = String
 
 data Exp
@@ -168,23 +212,26 @@ data Exp
   | ExNum Integer
   | ExSuc Exp
 
+-- type schemes
 data Scheme = Forall [TyVar] Type
 
+-- type assumptions
 type Ass = [(ExVar, Scheme)]
 
+-- free variables in a type
 freetv :: Type -> [TyVar]
 freetv (TyVar tv) = [tv]
 freetv (TyApp tc tys) = foldr union [] $ map freetv tys
 
+-- fv in a type assumption
 freetvAss :: Ass -> [TyVar]
-freetvAss = foldr union [] . map freetvAssEntry
+freetvAss = foldr union [] . map (freetvScheme . snd)
 
-freetvAssEntry :: (ExVar, Scheme) -> [TyVar]
-freetvAssEntry = freetvScheme . snd
-
+-- fv in a type scheme
 freetvScheme :: Scheme -> [TyVar]
 freetvScheme (Forall gtvs ty) = freetv ty \\ gtvs
 
+-- the gen function
 gen :: Ass -> Type -> Scheme
 gen ass ty =
   let fvt = freetv ty
@@ -193,9 +240,7 @@ gen ass ty =
 
 
 
-
-
-
+-- algorithm W
 infer :: Ass -> Exp -> HM (Subst, Type)
 infer ass (ExVar x) =
   do Forall αs tx <- mlookup x ass
@@ -224,3 +269,43 @@ infer ass (ExSuc e) =
   do (subst, τ) <- infer ass e
      usubst <- unify τ (TyApp "Nat" [])
      return (composeSubst usubst subst, TyApp "Nat" [])
+
+-- examples
+iex1 = ExLam "x" (ExVar "x")
+iex2 = ExLam "x" (ExLam "y" (ExVar "x"))
+iex3 = ExLet "i" iex1 (ExApp (ExVar "i") (ExNum 42))
+iex4 = ExLet "i" iex1 (ExApp (ExVar "i") (ExVar "i"))
+
+ass1 = [("map", Forall ["a", "b"] (tyFun (tyFun tyAlpha tyBeta) (tyFun (TyApp "[]" [tyAlpha]) (TyApp "[]" [tyBeta]))))
+       ,("p", Forall [] (tyFun (tyNat) (TyApp "Bool" [])))]
+
+
+
+
+
+
+
+-- try to define HM on top of UError
+
+data HM' a
+  = HM' { exHM' :: HMState -> UError (a, HMState) }
+
+instance Functor HM' where
+  fmap f hma =
+    HM' (\s -> fmap (f # id) $ exHM' hma s)
+
+(#) :: (a1 -> b1) -> (a2 -> b2) -> (a1, a2) -> (b1, b2)
+(f1 # f2) (a1, a2) = (f1 a1, f2 a2)
+
+instance Applicative HM' where
+  pure x =
+    HM' (\s -> pure (x, s))
+  ax <*> ay =
+    undefined
+
+instance Monad HM' where
+  return x =
+    HM' (\s -> return (x, s))
+  m >>= f =
+    HM' (\s -> exHM' m s >>= \(x, s') -> exHM' (f x) s')
+
