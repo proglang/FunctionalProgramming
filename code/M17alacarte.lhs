@@ -31,23 +31,38 @@ These functions extend automatically to all types as long as they are defined on
 This definition can be read as defining a type Exp0 such that
 Exp0 = Int0 Int | Add0 Exp0 Exp0
 or (if we discard the constructor names)
+
 Exp0 = Int + Exp0 x Exp0
 
 A functor that describes the structure of Exp0 is expressed as a data type with an additional type parameter.
 It abstracts over the recursive uses of Exp0.
 
-> data ExpF x = IntF Int | AddF x x
+> data ExpF x
+>   = IntF Int
+>   | AddF x x
+>   -- Regard this as a signature with a constant and a binary operator.
+>   -- to add a unary operator:
+>   | NegF x
+
+
+
+ExpF :: * -> * 
 
 > instance Functor ExpF where
 >   fmap g (IntF i)     = IntF i
 >   fmap g (AddF x1 x2) = AddF (g x1) (g x2)
+>   fmap g (NegF x)     = NegF (g x)
 
 To obtain a data type isomorphic to the original one, we introduce a
 "fixpoint at the type level":
 
+> fix f = f (fix f)
+
+
 > data Mu f = In (f (Mu f))
 
 Here, f :: * -> * does *not* stand for a type, but for a type function!
+BTW: Mu :: (* -> *) -> *
 
 Now we can construct a type which behaves like (is  "isomorphic" to) Exp0:
 
@@ -61,16 +76,30 @@ Exp1
 
 Same as Exp0, except for the additional In constructor!
 
+Exp0 = Int0 Int | Add0 Exp0 Exp0
+
+
+
+
+
+
+
+
+
 ** Defining operations
 
 A description of an operation on one level of a functor f :: * -> *,
-an "f-algebra":
+an "f-algebra" (for Functor f):
 
 > type Algebra f a = f a -> a
 
+f :: * -> *
+a :: * 
+
 > evalExpAlg :: Algebra ExpF Int
 > evalExpAlg (IntF i) = i
-> evalExpAlg (AddF i1 i2) = i1 + i2
+> evalExpAlg (AddF x1 x2) = x1 + x2
+> evalExpAlg (NegF x) = -x
 
 This definition is *not* recursive!
 
@@ -97,8 +126,19 @@ Application of the construction to Exp1.
 Using a different algebra reinterprets the Exp1 data type.
 
 > sizeExpAlg :: Algebra ExpF Int
-> sizeExpAlg (IntF i) = undefined
-> sizeExpAlg (AddF x y) = undefined
+> sizeExpAlg (IntF i) = 1
+> sizeExpAlg (AddF x y) = 1 + x + y
+> sizeExpAlg (NegF x) = 1 + x
+>
+> size1 = foldMu sizeExpAlg
+
+> one' = In $ IntF 1
+> two' = In $ AddF one' one'
+
+> prAlg :: Algebra ExpF String
+> prAlg (IntF i) = show i
+> prAlg (AddF x1 x2) = '(' : x1 ++ " + " ++ x2 ++ ")"
+> prAlg (NegF x) = '(' : '-' : x ++ ")"
 
 Convenience.
 Using the injection In is tedious: use smart constructors instead
@@ -145,6 +185,12 @@ functors.
 > data Add e = Add e e
 > type AddExpr = Mu Add
 
+> ccc :: ConstExpr
+> ccc = In $ Val 1
+>
+> aaa :: AddExpr
+> aaa = In $ Add aaa aaa
+
 To combine the two functors, we need to take their "coproduct" on the
 level of functors:
 
@@ -152,7 +198,20 @@ level of functors:
 > data (f :+: g) e = Inl (f e) | Inr (g e)
 > type AddConstExpr = Mu (Val :+: Add)
 
+f :: * -> *
+g :: * -> *
+e :: *
+
+
 What would an example expression look like?
+
+> cst' :: Int -> AddConstExpr
+> cst' n = In $ Inl $ Val n
+>
+> add' :: AddConstExpr -> AddConstExpr -> AddConstExpr
+> add' e1 e2 = In $ Inr $ Add e1 e2
+
+
 
 ** Evaluation
 
@@ -179,6 +238,12 @@ Here are some specific examples.
 > instance Eval Add where
 >   evalAlgebra (Add x y) = x + y
 
+
+
+
+
+
+
 What about the combined case?
 
 > instance (Eval f, Eval g) => Eval ((:+:) f g) where
@@ -198,6 +263,27 @@ Writing
 In (Inl (Val 17))
 In (Inr (Add (In (Inl (Val 17))) (In (Inl (Val 4)))))
 is quite unreadable.
+
+> data Neg e = Neg e
+>   deriving Functor
+>
+> instance Eval Neg where
+>   -- evalAlgebra :: Neg Int -> Int
+>   evalAlgebra (Neg x) = -x
+
+> type AddConstNegExpr = Mu (Val :+: (Add :+: Neg))
+> ttt :: AddConstNegExpr
+> ttt = In (Inr (Inr (Neg (In (Inl (Val 5))))))
+> 
+
+
+
+
+
+
+
+
+
 
 How about using smart constructors like the following?
 
