@@ -1,0 +1,289 @@
+%% -*- coding: utf-8 -*-
+\documentclass[pdftex,aspectratio=169]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{beramono}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\author[Gabriel Radanne]{Dr. Gabriel Radanne}
+\subtitle
+{GADT: Generalize Algebraic DataType}
+
+\setbeamercovered{transparent=15}
+
+\renewcommand\CodeFont{\ttfamily}
+\lstset{%
+  frame=none,
+  language=Haskell,
+  escapeinside={--$}{$}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interpreters, again}
+  \begin{block}{Language definition}
+    \begin{lstlisting}
+data Term  = I Integer
+           | Add Term Term
+             deriving (Eq, Show)
+  \end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interpreters, again}
+  \begin{block}{Evaluation}
+    \begin{lstlisting}
+eval             :: Term -> Integer
+eval (I n)        = n
+eval (Add t op u) = eval t + eval u
+  \end{lstlisting}
+\end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{A language with multiple types}
+  \begin{block}{Language definition}
+    \begin{lstlisting}
+data Term  = I Integer
+           | B Bool
+           | Add Term Term
+           | Eq Term Term
+             deriving (Eq, Show)
+  \end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A language with multiple types}
+  \begin{block}{Evaluation}
+    \begin{lstlisting}
+type Value = Int Integer | Bool Bool
+             deriving Show
+      
+eval           :: Term -> Value
+eval (I n)      = Int n
+eval (B b)      = Bool b
+eval (Add t t') = case (eval t, eval t') of
+                    (Int i, Int i2) -> Int (i + i2)
+eval (Eq t t')  = case (eval t, eval t') of
+                    (Int i, Int i2) -> Bool (i == i2)
+                    (Bool i, Bool i2) -> Bool (i == i2)
+  \end{lstlisting}
+\end{block}
+\end{frame}
+
+\begin{frame}{Issues with our interpreter}
+  \begin{itemize}[<+->]
+\item The interpreter can fail.
+\item We need to consider failures manually.
+\item The more value with have in our language, the more complicated it becomes.
+\item The Haskell type system does not help us.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{GADTs to the rescue!}
+
+  \begin{block}{Algebraic Data Type}
+    \begin{lstlisting}
+data Maybe a =
+    Nothing
+  | Just a
+\end{lstlisting}
+
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{GADTs to the rescue!}
+
+  \begin{block}{Generalized Algebraic Data Type}
+    \begin{lstlisting}
+{-# LANGUAGE GADTs #-}
+
+data Maybe a where
+  Nothing :: Maybe a
+  Just :: a -> Maybe a
+\end{lstlisting}
+
+  \end{block}\pause
+We now also specify the return type!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Language definition with GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+data Term =
+    I Integer
+  | B Bool
+  | Add Term Term
+  | Eq Term Term      
+    \end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Language definition with GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+data Term where
+  I :: Integer -> Term
+  B :: Bool -> Term
+  Add :: Term -> Term -> Term
+  Eq :: Term -> Term -> Term   
+    \end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Language definition with GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+data Term a where
+  I :: Integer -> Term Integer
+  B :: Bool -> Term Bool
+  Add :: Term (?) -> Term (?) -> Term (?)
+  Eq :: Term (?) -> Term (?) -> Term (?)
+    \end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Language definition with GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+data Term a where
+  I :: Integer -> Term Integer
+  B :: Bool -> Term Bool
+  Add :: Term Integer -> Term Integer -> Term Integer
+  Eq :: Term (?) -> Term (?) -> Term (?)
+    \end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Language definition with GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+data Term a where
+  I :: Integer -> Term Integer
+  B :: Bool -> Term Bool
+  Add :: Term Integer -> Term Integer -> Term Integer
+  Eq :: (Eq a) => Term a -> Term a -> Term Bool
+    \end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Evaluation for GADTs}
+  \begin{block}{}
+    \begin{lstlisting}
+eval :: Term a -> a -- This type annotation is mandatory
+eval (I i) = i --$\pause$
+eval (B b) = b --$\pause$
+eval (Add t t') = eval t + eval t' --$\pause$
+eval (Eq t t') = eval t == eval t' --$\pause$
+    \end{lstlisting}
+  \end{block}\pause
+
+  We call this kind of interpreters ``tag-less''.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{What about functions?}
+
+  We want to add functions to our language.\pause
+
+  \begin{block}{First try}
+    \begin{lstlisting}
+data FExp a where
+  Var :: FExp a
+  Lam :: FExp b -> FExp (a -> b)
+  App :: FExp (a -> b) -> FExp a -> FExp b      
+    \end{lstlisting}
+  \end{block}\pause
+
+  This doesn't work: not enough type information for variables and lambdas.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Existential Types}
+
+  In the definition of \lstinline{App}, \lstinline{a} is present inside the types, but not in the result. This is an \emph{existential} type.
+  \begin{block}{}
+    \begin{lstlisting}
+  App :: FExp (a -> b) -> FExp a -> FExp b      
+    \end{lstlisting}
+  \end{block}\pause
+  Demo!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Back to functions!}
+  \begin{block}{Type definition}
+  \begin{lstlisting}
+data FExp e a where
+  App :: FExp e (a -> b) -> FExp e a -> FExp e b --$\pause$
+  Lam :: FExp (a, e) b -> FExp e (a -> b) --$\pause$
+  Var :: Nat e a -> FExp e a
+
+data Nat e a where
+  Zero :: Nat (a, b) a
+  Succ :: Nat e a -> Nat (b, e) a
+\end{lstlisting}
+\end{block}\pause
+Demo!
+\end{frame}
+
+\begin{frame}{Origin of GADTs}
+  \begin{itemize}
+  \item<1-> Young extension to HM type systems.\\
+    Invented by 3 different groups:
+    \begin{itemize}
+    \item Augustsson \& Petersson (1994): Silly Type Families
+    \item Cheney \& Hinze (2003): First-Class Phantom Types.
+    \item Xi, Chen \& Chen (2003): Guarded Recursive Datatype Constructors.
+    \end{itemize}
+  \item<2-> Type \emph{checking} is decidable.
+  \item<3-> Type \emph{inference} is undecidable.
+  \item<4-> Pattern matching is quite more complicated.
+  \end{itemize}
+  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Wrapping up}
+  \begin{itemize}[<+->]
+  \item GADTs allows to express more properties in types:
+    \begin{itemize}
+    \item 
+    \end{itemize}
+  \item We leverage Haskell's type system.
+  \item GADTs do not solve \emph{all} the problems.
+    For example, you can try to write a function of type
+    \begin{lstlisting}
+      parse :: String -> Expr a
+    \end{lstlisting}
+    \pause
+    Fortunately, we can combine GADTs with other Haskell features such as Type classes and Type families.
+  \item GADTs become very complex when the domain grows!
+  \end{itemize}
+\end{frame}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

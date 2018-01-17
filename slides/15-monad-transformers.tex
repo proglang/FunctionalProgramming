@@ -1,0 +1,257 @@
+%% -*- coding: utf-8 -*-
+\documentclass[pdftex,aspectratio=169]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{beramono}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\author[Gabriel Radanne]{Dr. Gabriel Radanne}
+\subtitle
+{Monad Transformers}
+
+
+\renewcommand\CodeFont{\ttfamily}
+\lstset{%
+  frame=none,
+  language=Haskell
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Reminder: Monad}
+  \begin{block}{Definition of a Monad -- Lecture 7}
+    \begin{itemize}
+    \item abstract datatype for instructions that produce values
+    \item built-in combination \lstinline{>>=}
+    \item abstracts over different interpretations (computations)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Monad definition}
+  \begin{block}{The type class Monad}
+\begin{lstlisting}
+class Monad m where
+  (>>=)  :: m a -> (a -> m b) -> m b
+  return :: a -> m a
+  fail   :: String -> m a
+\end{lstlisting}
+
+with the following laws:
+\begin{itemize}
+\item \lstinline{return x >>= f == f x}
+\item \lstinline{m >>= return == m}
+\item \lstinline{(m >>= f) >>= g == m >>= (\x -> f x >>= g)}
+\end{itemize}
+
+\end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What about Composition?}
+  \begin{itemize}[<+->]
+  \item Applicatives compose (as seen in the lecture on parsing).
+  \item Monads do not necessarily compose.
+  \item We sometimes want to use multiples monads at once!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Why combine monads}
+  Lecture 10: Monadic interpreters.
+
+  Interpreters can have many features:
+  \begin{itemize}
+  \item Failure (\lstinline{Maybe}).
+  \item Keeping some state (\lstinline{State}).
+  \item Reading from the environment (\lstinline{Reader}).
+  \item \dots
+  \end{itemize}
+
+  To implement an interpreter, we need to combine all these monads!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Let's combine Monads! -- State alone}
+
+  \begin{block}{The State monad}
+\begin{lstlisting}
+data ST s a = ST (s -> (a, s))
+runST (ST sas) = sas
+
+instance Monad (ST s) where
+  return a = ST (\s -> (a, s))
+  m >>= f  = ST (\s ->
+                     let (a, s') = runST m s in
+                     runST (f a) s')
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Let's combine Monads! -- Maybe+State}
+  \begin{block}{The MaybeState monad}
+      \begin{lstlisting}
+data MaybeState s a = MS { runMS :: s -> Maybe (a, s) }
+
+....
+
+instance Monad (MST s) where
+  return a = MST (\s -> Just (a, s))
+  ms >>= f  = MST (\s -> case runMST ms s of
+                          Nothing -> Nothing
+                          Just (a,s') -> runMST (f a) s')
+      \end{lstlisting}
+    \end{block}
+    \pause
+    We would have to write this again for each combination!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Alternative solution: Monad transformers}
+
+  Monad transformers offer a better solution:
+  \begin{block}{}
+\begin{lstlisting}
+class MonadTrans t where
+  lift :: Monad m => m a -> t m a
+\end{lstlisting}
+
+\end{block}
+
+A monad transformer \lstinline{t} takes a monad \lstinline{m} and yield a new monad
+\lstinline{(t m)}.
+
+\lstinline{lift} allows to lift a computation from the underlying monad to the new monad.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\texttt{MaybeT}}
+  \begin{block}{Definition}
+\begin{lstlisting}
+newtype MaybeT m a = MaybeT { runMaybeT :: m (Maybe a) }
+
+instance (Monad m) => Monad (MaybeT m) where
+  return = MaybeT . return . Just
+  (MaybeT mmx) >>= f = MaybeT $ do
+    mx <- mmx
+    case mx of
+      Nothing -> return Nothing
+      Just x  -> runMaybeT (f x)
+
+instance MonadTrans MaybeT where
+  lift mx = MaybeT $ do { x <- mx ; return $ Just x }
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A simple usage of MaybeT}
+  We can recover the ``normal'' monad by applying to \lstinline{Identity}.
+  \begin{block}{}
+  \begin{lstlisting}
+type MaybeLike = MaybeT Identity
+  \end{lstlisting}
+\end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{\texttt{StateT}}
+  \begin{block}{Definition}
+\begin{lstlisting}
+newtype StateT s m a = StateT { runStateT :: s -> m (a,s) }
+
+instance (Monad m) => Monad (StateT m) where
+  return a = StateT $ \s -> return (a, s)
+  m >>= f  = StateT $ \s -> do
+      (a, s') <- runStateT m s
+      runStateT (f a) s'
+
+instance MonadTrans StateT where
+  lift ma = StateT $ \s -> do { a <- ma ; return (a, s) }
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Let's combine Monads with transformers!}
+
+  Demo!
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{\texttt{ReaderT}}
+  \begin{block}{Definition}
+\begin{lstlisting}
+newtype ReaderT r m a = ReaderT { runReaderT :: r -> m a }
+
+ask :: (Monad m) => ReaderT r m r
+ask = ReaderT return
+
+instance Monad m => Monad (ReaderT r m) where
+    return  = lift . return
+    m >>= k = ReaderT $ \r -> do
+                 a <- runReaderT m r
+                 runReaderT (k a) r
+
+instance MonadTrans (ReaderT r) where
+    lift m = ReaderT (const m)
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Back to interpreters}
+
+  \begin{block}{During lecture 10, a monadic interpreter for:}
+    \begin{lstlisting}
+data Term  = Con Integer
+           | Bin Term Op Term
+             deriving (Eq, Show)
+
+data Op    = Add | Sub | Mul | Div
+             deriving (Eq, Show)
+    \end{lstlisting}
+  \end{block}
+  \pause
+  Different interpreters with various features:
+  \begin{itemize}
+  \item Failure
+  \item Counting instructions
+  \item Traces
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Key points}
+  \begin{itemize}[<+->]
+  \item Monads do not always compose ...
+  \item But monad transformers help.
+  \item Order is important!
+  \item You should not overdo it.
+  \item It's all in the \lstinline{mtl} library.
+  \end{itemize}
+\end{frame}
+
+\end{document}
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
