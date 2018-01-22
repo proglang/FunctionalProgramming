@@ -26,7 +26,9 @@ These functions extend automatically to all types as long as they are defined on
 
 ** Example definition
 
-> data Exp0 = Int0 Int | Add0 Exp0 Exp0
+> data Exp0
+>   = Int0 Int
+>   | Add0 Exp0 Exp0
 
 This definition can be read as defining a type Exp0 such that
 Exp0 = Int0 Int | Add0 Exp0 Exp0
@@ -274,7 +276,7 @@ is quite unreadable.
 > type AddConstNegExpr = Mu (Val :+: (Add :+: Neg))
 > ttt :: AddConstNegExpr
 > ttt = In (Inr (Inr (Neg (In (Inl (Val 5))))))
-> 
+
 
 
 
@@ -319,9 +321,9 @@ may give rise to ambiguities.
 Otherwise, we may find the primitive functor either on the left or on
 the right.
 
-> instance f :<: (f :+: g) where
+> instance f :<: (f :+: g) where {-I2-}
 >   inj = Inl
-> instance (f :<: g) => f :<: (h :+: g) where
+> instance (f :<: g) => f :<: (h :+: g) where {-I3-}
 >   inj = Inr . inj
 
 This definition is not really declarative. It requires that primitive
@@ -363,6 +365,23 @@ Now for the lackmus test. Let's add new features to the AST.
 > mul :: (Mul :<: f) => Mu f -> Mu f -> Mu f
 > mul x y = inject (Mul x y)
 
+
+add (val 1) (val 2) :: (Val :<: f, Add :<: f) => Mu f
+
+f = Val :+: (Add :+: Neg)
+
+type checker tries to prove:
+(Val :<: (Val :+: (Add :+: Neg)))
+by {-I2-}
+inj = Inl
+
+(Add :<: (Val :+: (Add :+: Neg)))
+by {-I3-}
+(Add :<: (Add :+: Neg))
+by {-I2-}
+inj = Inr . Inl
+
+
 ** Extension II
 
 Adding new functions may be done either by defining more algebras and
@@ -395,6 +414,8 @@ It remains to define instances of Render for each functor.
 >   render (Inl x) = render x
 >   render (Inr y) = render y
 
+> instance Render Neg where
+>   render (Neg x) = '-':pretty x
 
 ** An application to free monads
 
@@ -417,6 +438,8 @@ h :: a -> b
 result :: Term f a -> Term f b
 t :: f (Term f a)
 
+ftf :: f (Term f a)
+
 > thenTerm :: Functor f => Term f a -> (a -> Term f b) -> Term f b
 > thenTerm (Pure a) g = g a
 > thenTerm (Impure ftfa) g = Impure (fmap (`thenTerm` g) ftfa)
@@ -424,6 +447,10 @@ t :: f (Term f a)
 > instance Functor f => Applicative (Term f) where
 >   pure a = Pure a
 >   ag <*> ax = ag `thenTerm` \g -> ax `thenTerm` \x -> Pure $ g x
+
+ag :: f (a -> b)
+ax :: f a
+ag <*> ax :: f b
 
 > instance Functor f => Monad (Term f) where
 >   return a = Pure a
@@ -435,6 +462,19 @@ not. But some well-known monads may be constructed as free monads:
 > data Zero a
 > data One a = One
 > data Const e a = Const e
+
+data Term f a
+   = Pure a
+   | Impure (f (Term f a))
+
+TermZero a = Pure a
+
+TermOne a = Pure a | ImpureOne
+
+Term (Const e) a = Pure a | Impure (Const e (Term (Const e) a))
+
+
+
 
 data TermConst a e = Pure a | ImpureConst e
 ... Either, error monad 
