@@ -17,17 +17,20 @@ See also http://www.cs.uu.nl/wiki/GenericProgramming/EMGM
 
 What is generic (polytypic) programming?
 
-The quest to define functions that work uniformly on all datatypes
-*including those that are yet to be defined in the future*.
-Typical examples are pretty printers, parsers, size functions,
-equality, and so on.
-In fact, Haskell's deriving mechanism is a piece of generic
-programming, but it is hardwired in the Haskell compiler. Here, we are
-interested in user-definable generic programs.
+Generic programming attempts to define functions that work uniformly
+on all datatypes *including those that are yet to be defined in the
+future*.  Typical examples are pretty printers, parsers, size
+functions, equality, compression, serialization, and so on.  In fact,
+Haskell's deriving mechanism is a piece of generic programming, but it
+is hardwired in the Haskell compiler. Here, we are interested in
+user-definable generic programs.
+
+
+
 
 ** Example: Data Compression
 
-The idea is to map arbitrary values to sequences of bits.
+A data compression function maps arbitrary values to sequences of bits.
 
 > type Bin = [Bit]
 > data Bit = O | I deriving Show
@@ -38,19 +41,13 @@ type by a bit string of length n. The goal of this exercise is to lift
 the bits function from just enums to a function showBin that works on
 all types (excluding function types).
 
-To do so it is sufficient to define showBin for all primitive types
+We will see that it is sufficient to define showBin for all primitive types
 and for the elementary type constructors: the unit type, the sum type,
 and the product type.
 
 > data Unit = Unit
 > data Plus a b = Inl a | Inr b
 > data Pair a b = Pair { outl :: a, outr :: b }
-
-To get from the actual type to these constructors requires an
-isomorphism that maps a type into its elementary representation and
-back.
-
-> data Iso a b = Iso { fromData :: b -> a, toData :: a -> b }
 
 The type signature of the generic function is (unusually) specified by
 a data definition. 
@@ -78,19 +75,52 @@ Generic where the members return a suitable representation.
 >   int      = ShowBin (\i -> bits 16 i)
 >   view iso = \r -> ShowBin (\x -> showBin' r (fromData iso x))
 
+The last definition refers to an isomorphism iso that maps a type into
+its elementary representation and back. It is required to represent
+the actual type in terms of the primitive types and type constructors.
+
+> data Iso a b = Iso { fromData :: b -> a, toData :: a -> b }
+
+
 ** Tasks
 *** generic comparison :: a -> a -> Ordering
 *** readBin :: Bin -> a, which is an inverse to showBin
 
+> newtype ReadBin a = ReadBin { readBin' :: Bin -> (a, Bin) }
+
+> instance Generic ReadBin where
+>   unit         = ReadBin (\bs -> (Unit, bs))
+>   plus rbl rbr = ReadBin (\(b:bs) -> case b of O -> let (vl, bs') = readBin' rbl bs in (Inl vl, bs')
+>                                                I -> let (vr, bs') = readBin' rbr bs in (Inr vr, bs'))
+>   pair rbl rbr = ReadBin (\bs -> let (vl, bsl) = readBin' rbl bs
+>                                      (vr, bsr) = readBin' rbr bsl
+>                                  in  (Pair vl vr, bsr))
+>   char         = ReadBin (unbits 7)
+>   int          = ReadBin (unbits 16)
+>
+>   view iso     = \r -> ReadBin (\bs -> let (gt, bs') = readBin' r bs in (toData iso gt, bs'))
+>
+> unbits :: Enum a => Int -> Bin -> (a, Bin)
+> unbits n bs = let (v, bs') = unbitsInt n bs in (toEnum v, bs')
+>
+> unbitsInt :: Int -> Bin -> (Int, Bin)
+> unbitsInt n (I:bs) | n > 0 = let (v, bs') = unbitsInt (n-1) bs in (2^(n-1) + v, bs')
+> unbitsInt n (O:bs) | n > 0 = unbitsInt (n-1) bs
+> unbitsInt n bs | n == 0 = (0, bs)
+
+
 ** Representing a type
 
-Consider a typical datatype
+For example, consider a typical datatype of binary trees:
 
 > data Tree a = Leaf a | Fork (Tree a) (Tree a)
 
+Its toplevel structure can be expressed using the primitive type
+constructors as follows.
+
 > type TreeF a = Plus a (Pair (Tree a) (Tree a)) 
 
-need to construct isomorphism from
+We need to construct an isomorphism from
 Tree a <-> TreeF a
 
 > isoTree = Iso fromTree toTree
@@ -103,14 +133,17 @@ Tree a <-> TreeF a
 > toTree (Inl a) = Leaf a
 > toTree (Inr (Pair l r)) = Fork l r
 
-For use in a generic function an appropriate representation function
-is needed.
+For use in a generic function we need to provide an appropriate
+representation function.
 
 > rTree :: Generic f => f a -> f (Tree a)
-> rTree a = view isoTree (plus a (pair (rTree a) (rTree a)))
+> rTree fa = view isoTree (plus fa (pair (rTree fa) (rTree fa)))
 
-Encoding the standard list datatype.
 
+
+
+
+For another example, consider encoding the standard list datatype.
 
 | data List a = Nil | Cons a (List a)
 
@@ -133,7 +166,9 @@ Encoding the standard list datatype.
 Here is the corresponding representation transformer.
 
 > rList :: Generic f => f a -> f [a]
-> rList a = view isoList (plus unit (pair a (rList a)))
+> rList fa = view isoList (plus unit (pair fa (rList fa)))
+
+Yet another example: the maybe type.
 
 > type MaybeF a = Plus Unit a
 
@@ -148,7 +183,7 @@ Here is the corresponding representation transformer.
 > toMaybe (Inr a) = Just a
 
 > rMaybe :: Generic f => f a -> f (Maybe a)
-> rMaybe a = view isoMaybe (plus unit a)
+> rMaybe fa = view isoMaybe (plus unit fa)
 
 
 Booleans. Bool = Plus Unit Unit
@@ -167,6 +202,13 @@ Booleans. Bool = Plus Unit Unit
 > rBool = view isoBool (plus unit unit)
 
 
+
+
+
+
+
+
+
 ** Task: provide REP instances for
 *** data Shrub α β = Tip α | Node (Shrub α β) β (Shrub α β)
 *** data Rose α = Branch α [Rose α] 
@@ -182,6 +224,22 @@ Booleans. Bool = Plus Unit Unit
 >   char   :: f Char
 >   int    :: f Int
 >   view   :: Iso a b -> f a -> f b
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ** Automatically inferring a representation
@@ -272,7 +330,7 @@ data structure.
 >   view iso a = Count (\b -> count' a (fromData iso b))
 
 Just using this function generically results in the constant 0
-function! To obtain interesting result, we need to provide a
+function! To obtain interesting results, we need to provide a
 representation for the type constructor.
 
 > size :: FRep h => h a -> Int
