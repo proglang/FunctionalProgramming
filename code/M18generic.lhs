@@ -97,7 +97,6 @@ the actual type in terms of the primitive types and type constructors.
 >                                  in  (Pair vl vr, bsr))
 >   char         = ReadBin (unbits 7)
 >   int          = ReadBin (unbits 16)
->
 >   view iso     = \r -> ReadBin (\bs -> let (gt, bs') = readBin' r bs in (toData iso gt, bs'))
 >
 > unbits :: Enum a => Int -> Bin -> (a, Bin)
@@ -111,7 +110,7 @@ the actual type in terms of the primitive types and type constructors.
 
 ** Representing a type
 
-For example, consider a typical datatype of binary trees:
+As an example, consider a typical datatype of binary trees:
 
 > data Tree a = Leaf a | Fork (Tree a) (Tree a)
 
@@ -134,7 +133,10 @@ Tree a <-> TreeF a
 > toTree (Inr (Pair l r)) = Fork l r
 
 For use in a generic function we need to provide an appropriate
-representation function.
+representation function. It takes a generic function on type a and
+lifts it to a function of type Tree a. It does so by converting Tree a
+to TreeF a on demand and composing the generic function out of the
+elementary types and constructors as dictated by TreeF a.
 
 > rTree :: Generic f => f a -> f (Tree a)
 > rTree fa = view isoTree (plus fa (pair (rTree fa) (rTree fa)))
@@ -161,12 +163,26 @@ For another example, consider encoding the standard list datatype.
 > toList (Inl Unit) = []
 > toList (Inr (Pair x xs)) = x : xs
 
+If List were just defined by a recursive equation
+
+| type List' a = Plus Unit (Pair a (List' a))
+
+then its representation could be constructed without invoking view
+and the isomorphism.
+
 | rList' a = plus unit (pair a (rList' a))
 
-Here is the corresponding representation transformer.
+But neither the type nor the value definition is legal Haskell.
+
+Here is the corresponding representation transformer instead.
 
 > rList :: Generic f => f a -> f [a]
 > rList fa = view isoList (plus unit (pair fa (rList fa)))
+
+
+
+
+
 
 Yet another example: the maybe type.
 
@@ -211,7 +227,29 @@ Booleans. Bool = Plus Unit Unit
 
 ** Task: provide REP instances for
 *** data Shrub α β = Tip α | Node (Shrub α β) β (Shrub α β)
-*** data Rose α = Branch α [Rose α] 
+
+> data Rose α = Branch α [Rose α] 
+
+> type RoseF a = Pair a [Rose a]
+>
+> isoRose = Iso fromRose toRose
+>
+> fromRose :: Rose a -> RoseF a
+> fromRose (Branch a lra) = Pair a lra
+>
+> toRose :: RoseF a -> Rose a
+> toRose (Pair a lra) = Branch a lra
+>
+> rRose :: Generic f => f a -> f (Rose a)
+> rRose fa = view isoRose (pair fa (rList (rRose fa)))
+
+> instance Rep a => Rep (Rose a) where
+>   rep = rRose rep
+>
+> instance FRep Rose where
+>   frep = rRose
+
+
 
 ** Implementation
 
@@ -224,6 +262,9 @@ Booleans. Bool = Plus Unit Unit
 >   char   :: f Char
 >   int    :: f Int
 >   view   :: Iso a b -> f a -> f b
+
+
+
 
 
 
@@ -271,9 +312,12 @@ Booleans. Bool = Plus Unit Unit
 > instance Rep Bool where
 >   rep = rBool
 
-
 > showBin :: (Rep a) => a -> Bin
 > showBin = showBin' rep
+
+
+To support a new datatype, we need to implement a rep transformer for
+the datatype and define a Rep instance for it.
 
 ** Problem: Extensibility
 
@@ -303,6 +347,7 @@ the same time using a two-parameter class.
 
 | instance GRep ShowBin a => GRep ShowBin [a] where
 |   grep = ...
+
 
 * Abstracting over a type constructor
 
