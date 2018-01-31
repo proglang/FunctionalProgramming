@@ -289,6 +289,12 @@ test the color of nodes on the search path.
 With these optimizations, this implementation of binary search trees
 is very fast.
 
+
+
+
+
+
+
 ** Queues
 
 A common functional implementation of a queue consists of a pair of
@@ -339,6 +345,25 @@ be evenly spread over the enq and tailq operations.
 > rotate (x:xs) (y:ys) a = x : rotate xs ys (y:a)
 
 With this implementation, all operations take O(1) worst-case time.
+
+enq x1 (RTQ [] [] []) -> 
+exec (RTQ [] (x1:[]) []) ->
+RTQ f1 [] f1 where f1 = rotate [] (x1:[]) []
+
+enq x2
+
+exec (RTQ f1 (x2:[]) f1) where f1 = rotate [] (x1:[]) []
+->
+exec (RTQ f1 (x2:[]) f1) where { f1 = x1:f1'; f1' = [] }
+->
+RTQ f1 (x2:[]) f1'
+
+enq x3
+
+exec (RTQ f1 (x3:x2:[]) f1') where { f1 = x1:f1'; f1' = [] }
+->
+RTQ (f2 [] f2) where  { f1 = x1:f1'; f1' = []; f2 = rotate f1 (x3:x2:[]) [] }
+
 
 ********************************************************************************
 ** Auxiliary definitions: interface for set and heap manipulation
