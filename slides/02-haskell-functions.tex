@@ -58,8 +58,7 @@ absolute'' x = if x >= 0 then x else -x
   \item
     Reduce a problem (e.g., \texttt{power x n}) to a smaller
     problem of the same kind 
-  \item Eventually reach a ``smallest'' base case 
-  \item Solve base case separately 
+  \item Eventually reach a base case that can be solved immediately
   \item Build up solutions from smaller solutions
   \end{itemize}
 \end{frame}
@@ -103,9 +102,9 @@ power x n | n > 0 = x * power x (n - 1)
   \begin{block}{Counting intersections}
 \begin{verbatim}
 -- max number of intersections of n lines
-intersect :: Integer -> Integer
-intersect 0   = 0
-intersect n | n > 0 = intersect (n - 1) + n - 1
+nisect :: Integer -> Integer
+nisect 0   = 0
+nisect n | n > 0 = nisect (n - 1) + n - 1
 \end{verbatim}
   \end{block}
 \end{frame}
