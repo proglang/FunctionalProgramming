@@ -17,17 +17,17 @@
 \begin{frame}[fragile]
   \frametitle{Predefined Types}
   \begin{itemize}
-  \item \texttt{Bool} (True, False)
-  \item  \texttt{Char} ('x', '?', \dots)
-  \item \texttt{Double}, \texttt{Float} 
-  \item   \texttt{Integer}
+  \item \texttt{Bool}: \lstinline{True :: Bool}, \lstinline{False :: Bool}
+  \item  \texttt{Char}: \lstinline{'x' :: Char}, \lstinline{'?' :: Char}, \dots
+  \item \texttt{Double}, \texttt{Float}: \lstinline{3.14 :: Double}
+  \item   \texttt{Integer}: \lstinline{4711 :: Integer}
   \item  \texttt{Int} --- machine integers ($\ge$ 30 bits signed
     integer)
-  \item  ()
-    --- the unit type, single value () 
+  \item  \texttt{()}
+    --- the unit type, single value \lstinline{() :: ()}
   \item  function types
   \item tuples and lists
-  \item \texttt{String} (\verb|"xyz"|, \dots)  
+  \item \texttt{String}:  \lstinline{"xyz" :: String}, \dots
   \item \dots
   \end{itemize}
 \end{frame}
@@ -35,7 +35,7 @@
 \begin{frame}[fragile]
   \frametitle{Tuples}
   \begin{block}{}
-\begin{verbatim}
+\begin{lstlisting}
 -- example tuples
 examplePair :: (Double, Bool)  -- Double x Bool
 examplePair = (3.14, False)
@@ -45,14 +45,31 @@ exampleTriple = (False, 42, "Answer")
 
 exampleFunction :: (Bool, Int, String) -> Bool
 exampleFunction (b, i, s) = not b && length s < i
-\end{verbatim}
+\end{lstlisting}
   \end{block}
   \begin{alertblock}{Summary}
     \begin{itemize}
     \item Syntax for tuple type like syntax for tuple values
-    \item Tuples are \textbf{immutable} : once a tuple value is defined it cannot change!
+    \item Tuples are \textbf{immutable}: in fact, \textbf{all values
+        are}!\\
+      Once a value is defined it cannot change! 
     \end{itemize}
   \end{alertblock}
+\end{frame}
+\begin{frame}
+  \frametitle{Typing for Tuples}
+  \begin{block}{Typing Rule}
+    \begin{mathpar}
+      \inferrule[Tuple]{e_1 :: t_1 \\ e_2 :: t_2 \\\dots \\ e_n :: t_n}{
+        (e_1, \dots, e_n) :: (t_1, \dots, t_n)}
+    \end{mathpar}
+    \begin{itemize}
+    \item $e_1, \dots, e_n$ are Haskell expressions
+    \item $t_1, \dots, t_n$ are their respective types
+    \item Then the tuple expression $(e_1, \dots, e_n)$ has the tuple
+      type $(t_1, \dots, t_n)$.
+    \end{itemize}
+  \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
@@ -61,10 +78,10 @@ exampleFunction (b, i, s) = not b && length s < i
   \item The “duct tape” of functional programming
   \item Collections of things of the same type 
   \item 
-    For any type \texttt{x}, \texttt{[x]} is the type of lists of \texttt{x}s
-    \\ e.g. \texttt{[Bool]} is the type of lists of \texttt{Bool}
+    For any type \lstinline{x}, \lstinline{[x]} is the type of lists of \lstinline{x}s
+    \\ e.g. \lstinline{[Bool]} is the type of lists of \lstinline{Bool}
   \item Syntax for list type like syntax for list values
-  \item Lists are \textbf{immutable} : once a list value is defined it cannot change!
+  \item Lists are \textbf{immutable}: once a list value is defined it cannot change!
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -72,15 +89,32 @@ exampleFunction (b, i, s) = not b && length s < i
   \frametitle{Constructing lists}
   \begin{block}<+->{The values of type [a] are \dots}
     \begin{itemize}
-    \item either \texttt{[]}, the empty list
-    \item or \texttt{x:xs} where \texttt{x} has type \texttt{a} and
-      \texttt{xs} has type \texttt{[a]} \\
-      ``\texttt{:}'' is pronounced ``cons''
+    \item either \lstinline{[]}, the empty list
+    \item or \lstinline{x:xs} where \lstinline{x} has type \lstinline{a} and
+      \lstinline{xs} has type \lstinline{[a]} \\
+      ``\lstinline{:}'' is pronounced ``cons''
+    \item \lstinline{[]} and \lstinline{(:)} are the \textbf{list constructors}
     \end{itemize}
   \end{block}
-  \begin{alertblock}<+->{Quiz}
-    Which of the following expressions have type \texttt{[Bool]}?
-\begin{verbatim}
+  \begin{block}<+->{Typing Rules for Lists}
+    \begin{mathpar}
+      \inferrule[Nil]{}{ [] :: [t] }
+
+      \inferrule[Cons]{e_1 :: t \\ e_2 :: [t]}{(e_1 : e_2) :: [t]}
+    \end{mathpar}
+    \begin{itemize}
+    \item The empty list can serve as a list of any type $t$
+    \item If there is some $t$ such that $e_1$ has type $t$ and $e_2$
+      has type $[t]$, then $(e_1:e_2)$ has type $[t]$.
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Typing Lists}
+\begin{alertblock}<+->{Quiz}
+    Which of the following expressions have type \lstinline{[Bool]}?
+\begin{lstlisting}
   []
   True : [ ]
   True:False
@@ -88,78 +122,84 @@ exampleFunction (b, i, s) = not b && length s < i
   (False:False):[ ]
   (False:[]):[ ]
   (True : (False : (True : []))) : (False:[]):[ ]
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{List shorthands}
   \begin{block}{Equivalent ways of writing a list}
-    \begin{itemize}
-    \item \texttt{1:(2:(3:[ ]))}  --- standard, fully parenthesized
-    \item \texttt{1:2:3:[ ]} --- \texttt{(:)} associates to the right
-    \item \texttt{[1,2,3]}
-    \end{itemize}
+    \begin{flushleft}
+      \begin{tabular}{l@{\qquad---\qquad}l}
+        \lstinline{1:(2:(3:[ ]))}& standard, fully parenthesized\\
+        \lstinline{1:2:3:[ ]} & \lstinline{(:)} associates to the right\\
+        \lstinline{[1,2,3]} &  bracketed notation
+      \end{tabular}
+    \end{flushleft}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Functions on lists}
   \begin{block}<+->{Definition by \textbf{pattern matching}}
-\begin{verbatim}
--- function over lists - examples
+\begin{lstlisting}
+-- function over lists, examples for list patterns
 summerize :: [String] -> String
 summerize []  = "None"
 summerize [x] = "Only " ++ x
 summerize [x,y] = "Two things: " ++ x ++ " and " ++ y
 summerize [_,_,_] = "Three things: ???"
 summerize _   = "Several things."   -- wild card pattern
-\end{verbatim}
+\end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Explanations --- expressions}
+  \begin{alertblock}<+->{Explanations --- patterns}
+    \footnotesize{}
     \begin{itemize}
-    \item  \texttt{(++)} \textbf{list concatenation}
-    \item  \texttt{(++)} associates to right because it's more efficient
-      \begin{itemize}
-      \item \texttt{ [1,2,3,4,5] ++ ([6,7,8,9] ++ [])} --- 10 copy
-        operations
-      \item 
-        \texttt{([1,2,3,4,5] ++ [6,7,8,9]) ++ []} --- 14 copy operations,
-        because \texttt{[1,2,3,4,5]} is copied twice
-      \end{itemize}
+    \item patterns contain constructors and variables
+    \item patterns are checked in sequence
+    \item constructors are checked against argument value
+    \item variables are bound to the values in
+      corresponding position in the argument
+    \item each variable may occur at most once in a pattern
+    \item wild card pattern \verb!_! matches everything, no binding, may occur multiple times
     \end{itemize}
   \end{alertblock}
-\end{frame}
+
+  \end{frame}
 \begin{frame}[fragile]
   \frametitle{Pattern matching on lists}
-  \begin{alertblock}<+->{Explanations --- patterns}
-    \small
+\begin{alertblock}<+->{Explanations --- expressions}
     \begin{itemize}
-    \item  patterns are checked in sequence
-    \item  variables in patterns are bound to the values in
-      corresponding position in the argument
-    \item  each variable may occur at most once in a pattern
-    \item wild card pattern \verb!_!\\ matches everything, no binding, may occur multiple times
+    \item  \lstinline{(++)} \textbf{list concatenation}
+    \item  \lstinline{(++)} associates to right
+      % because it's more efficient
+      % \begin{itemize}
+      % \item \lstinline{ [1,2,3,4,5] ++ ([6,7,8,9] ++ [])} --- 10 copy
+      %   operations
+      % \item 
+      %   \lstinline{([1,2,3,4,5] ++ [6,7,8,9]) ++ []} --- 14 copy operations,
+      %   because \lstinline{[1,2,3,4,5]} is copied twice
+      % \end{itemize}
     \end{itemize}
   \end{alertblock}
-\end{frame}
+  \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Primitive recursion on lists}
-  \begin{block}<+->{Common example}
-\begin{verbatim}
+  \begin{block}<+->{Common example: double every element in a list of numbers}
+\begin{lstlisting}
 -- doubles [3,6,12] = [6,12,24]
 doubles :: [Integer] -> [Integer]
 doubles []     = undefined
 doubles (x:xs) = undefined
-\end{verbatim}
+\end{lstlisting}
   \end{block}
   \begin{alertblock}<+->{BUT}
     Would not write it in this way --- it's a common pattern that we'll define in a library function 
   \end{alertblock}
   \begin{alertblock}<+->{}
     \begin{itemize}
-    \item \texttt{undefined} is a value of any type
+    \item \lstinline{undefined} is a value of any type
     \item evaluating it yields a run-time error
     \end{itemize}
   \end{alertblock}
@@ -167,24 +207,25 @@ doubles (x:xs) = undefined
 
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{The function map}
+  \frametitle{map: Apply Function to Every Element of a List}
   \begin{block}<+->{Definition}
-\begin{verbatim}
+\begin{lstlisting}
 -- map f [x1, x2, ..., xn] = [f x1, f x2, ..., fn]
+map :: (a -> b) -> [a] -> [b]
 map f []     = undefined
 map f (x:xs) = undefined
-\end{verbatim}
+\end{lstlisting}
     (map is in the standard Prelude - no need to define it)
   \end{block}
   \begin{alertblock}<+->{Define doubles in terms of map}
   \end{alertblock}
   \begin{block}<+->{}
-\begin{verbatim}
+\begin{lstlisting}
 doubles xs = map double xs
 
 double :: Integer -> Integer
 double x = undefined
-\end{verbatim}
+\end{lstlisting}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
@@ -194,16 +235,16 @@ double x = undefined
   which do not have a certain property from 
   a given list: 
 
-\begin{verbatim}
+\begin{lstlisting}
 filter odd [1,2,3,4,5] == [1,3,5]
-\end{verbatim}
+\end{lstlisting}
 
   \begin{block}{Definition}
-\begin{verbatim}
+\begin{lstlisting}
 filter :: (a -> Bool) -> [a] -> [a]
 filter p []       = undefined
 filter p (x:xs) = undefined
-\end{verbatim}
+\end{lstlisting}
 (filter is in the standard Prelude - no need to define it)
   \end{block}
 \end{frame}
