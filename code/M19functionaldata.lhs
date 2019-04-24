@@ -50,15 +50,19 @@ member and insert operations.
 Persistent data structure. Easy correctness proof.
 Known deficiency: Not balanced.
 
+
+
+
+
 ** Leftist Heap
 
-A heap or a priority queue is a special representation of a set where
-access to a "minimal" element is most efficient.  A typical
+A heap or a priority queue is a special representation of an ordered
+set where access to a "minimal" element is most efficient.  A typical
 representation of a heap is a tree with the minimum element at the
 root and with every node fulfilling the "heap condition" that the
 elements at its children are greater than (or equal to) the element at
 the node.  A consequence of the heap condition is that the elements
-along any path in the tree are sorted (ascending).
+along any path in the tree are sorted ascendingly.
 
 A *leftist heap* is a heap-ordered binary tree that satisfies the
 *leftist property*: The rank of any left child is at least as large as
@@ -76,9 +80,9 @@ Our representation of leftist heaps directly includes rank information:
 
 > data Heap a = EH | TH Int a (Heap a) (Heap a)
 
-Key: Two leftist heaps can be merge by merging their right spines as
-with sorted lists and then swapping children along this path to
-restore the leftist property.
+Key observation: Two leftist heaps can be merged by merging their
+right spines as with sorted lists and then swapping children along
+this path to restore the leftist property.
 
 > instance Merge Heap where
 >   merge h1 EH = h1
@@ -101,7 +105,7 @@ restore the leftist property.
 >       else
 >         TH (rankl + 1) x r l
 
-Merge runs in O (log n) time becuase the length of each right spine is
+Merge runs in O (log n) time because the length of each right spine is
 at most logarithmic in the number of elements.
 
 Given the efficient merge function, the remaining functions are trivial.
@@ -117,8 +121,8 @@ What's their complexity?
 
 ** Binomial Heaps
 
-Binomial queues are another common implementation of heaps.
-Binomial heaps are composed  of primitive objects, the binomial trees.
+Binomial heaps are another common implementation of heaps.
+They are composed  of primitive objects, the "binomial trees".
 They are defined inductively:
 
 *** A binomial tree of rank 0 is a singleton node.
@@ -144,13 +148,20 @@ with larger roots below trees with smaller roots. This code assumes
 that only trees of equal rank are linked.
 
 > link :: (Ord a) => BinTree a -> BinTree a -> BinTree a
-> link t1@(Node r x1 c1) t2@(Node _ x2 c2) =
+> link t1@(Node r1 x1 c1) t2@(Node r2 x2 c2) | r1 == r2 =
 >   if x1 <= x2 then
->      Node (r+1) x1 (t2 : c1)
+>      Node (r1+1) x1 (t2 : c1)
 >   else
->      Node (r+1) x2 (t1 : c2)
+>      Node (r1+1) x2 (t1 : c2)
 
-A binomial heap is a collection of heap-ordered binomial trees in
+
+
+
+
+
+
+
+A "binomial heap" is a collection of heap-ordered binomial trees in
 which no two trees have the same rank. This collection is represented
 as a list of trees in rank-increasing order.
 
@@ -159,7 +170,7 @@ as a list of trees in rank-increasing order.
 Because each binomial tree has 2^r Elements and because no two trees
 in a binomial heap have the same rank, the trees in a binomial heap of
 size n correspond to the ones in the binary representation of n.
-Hence, a heap of size n contains at most floor (log (n + 1)) trees.
+Hence, a heap of size n contains at most floor (log_2 (n + 1)) trees.
 
 The insert and merge operations on binomial heaps are defined in
 analogy to binary addition with the link operation corresponding to
@@ -193,11 +204,15 @@ and links the trees of equal rank.
 >     GT -> t2 : mergeTrees h1 ts2
 >     EQ -> insTree (link t1 t2) (mergeTrees ts1 ts2)
 
+Complexity?
+
+
 For the remaining operations, we need an auxiliary function that
 extracts the minimum tree from a heap. It clearly takes O (log n) time
 
 > removeMinTree :: (Ord a) => [BinTree a] -> (BinTree a, [BinTree a])
-> removeMinTree [t] = (t, [])
+> removeMinTree [t] =
+>   (t, [])
 > removeMinTree (t:ts) =
 >   if root t <= root t1 then
 >     (t, ts)
