@@ -137,7 +137,7 @@ True
   \end{alertblock}
 \end{frame}
 \begin{frame}[fragile]
-  \frametitle{Aside: Writing Properties}
+  \frametitle{Aside: Testing by Writing Properties}
   \begin{block}{Convention}
     Function names beginning with
     \verb|prop_| are properties we expect to be True 
@@ -293,7 +293,7 @@ price = 79
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Every Value has a type}
-  The \texttt{:i} command prints information about a nae
+  The \texttt{:i} command prints information about a name
 \begin{verbatim}
 *Main> :i price
 price :: Integer
@@ -342,7 +342,7 @@ prop_EuroUSD' :: Double -> Bool
 \begin{frame}
   \frametitle{Type checking}
   \begin{itemize}
-  \item  Infers (works out) the type of every expression 
+  \item  An algorithm \textbf{infers} (works out) the type of every expression 
   \item  Checks that all types match --- before running the program
   \end{itemize}
 \end{frame}
@@ -367,7 +367,8 @@ euro :: Double -> Double
 \begin{frame}[fragile]
   \frametitle{Why did it work before?}
   \begin{itemize}
-  \item Numeric literals are \textbf{overloaded}
+  \item Numeric literals are \textbf{overloaded}: they can be
+    used with several types
   \item  Giving the number a name fixes its type
   \end{itemize}
 \begin{verbatim}
