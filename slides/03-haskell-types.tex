@@ -13,7 +13,12 @@
 \begin{frame}
   \titlepage
 \end{frame}
+\begin{frame}
+  \frametitle{Contents}
+  \tableofcontents{}
+\end{frame}
 %----------------------------------------------------------------------
+\section{Predefined Types}
 \begin{frame}[fragile]
   \frametitle{Predefined Types}
   \begin{itemize}
@@ -32,6 +37,7 @@
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
+\section{Tuples}
 \begin{frame}[fragile]
   \frametitle{Tuples}
   \begin{block}{}
@@ -72,6 +78,7 @@ exampleFunction (b, i, s) = not b && length s < i
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
+\section{Lists}
 \begin{frame}
   \frametitle{Lists}
   \begin{itemize}
@@ -139,6 +146,7 @@ exampleFunction (b, i, s) = not b && length s < i
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
+\section{Pattern Matching on Lists}
 \begin{frame}[fragile]
   \frametitle{Functions on lists}
   \begin{block}<+->{Definition by \textbf{pattern matching}}
@@ -184,6 +192,7 @@ summerize _   = "Several things."   -- wild card pattern
   \end{alertblock}
   \end{frame}
 %----------------------------------------------------------------------
+\section{Primitive Recursion, Map, and Filter}
 \begin{frame}[fragile]
   \frametitle{Primitive recursion on lists}
   \begin{block}<+->{Common example: double every element in a list of numbers}
