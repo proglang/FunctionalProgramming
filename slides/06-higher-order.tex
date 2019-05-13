@@ -52,6 +52,25 @@ filter :: (a -> Bool) -> [a] -> [a]
     \end{eqnarray*}
   \end{alertblock}
 \end{frame}
+\begin{frame}
+  \frametitle{Instantiation}
+  \begin{block}<+->{Instances of a polymorphic type}
+    Consider
+    \begin{eqnarray*}
+      \text{filter} & :: & \forall a. (a \to \text{Bool}) \to [a] \to [a]
+    \end{eqnarray*}
+    We may replace (instantiate) \texttt{a} by any type:
+    \begin{eqnarray*}
+      \text{filter} & :: & (Int \to \text{Bool}) \to [Int] \to [Int] \\
+      \text{filter} & :: & ([Char] \to \text{Bool}) \to [[Char]] \to [[Char]]
+    \end{eqnarray*}
+  \end{block}
+  \begin{block}<+->{Instantiation rule}
+    \begin{mathpar}
+      \inferrule[Inst]{e :: \forall a. t}{e :: t[a \mapsto t']}
+    \end{mathpar}
+  \end{block}
+\end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Function types}
@@ -94,6 +113,46 @@ type T2 = (Int, Int) -> Int
 \end{block}
 \end{frame}
 %----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Typing Function Applications}
+  \begin{block}<+->{Typing Rule}
+    \begin{mathpar}
+      \inferrule[App]
+      {e_1 :: t_2 \to t_1 \\ e_2 :: t_2}
+      {(e_1\ e_2) :: t_1}
+    \end{mathpar}
+  \end{block}
+  \begin{block}<+->{Example}
+    Given
+    \begin{eqnarray*}
+      \text{map} & :: & \forall a. \forall b. (a \to b) \to [a] \to [b]
+      \\
+      \text{even} & :: & \mathtt{Int} \to \mathtt{Bool}
+    \end{eqnarray*}
+    \footnotesize
+    \begin{mathpar}
+      \inferrule*
+      {
+        \inferrule*
+        {
+          \inferrule*
+          {\text{map}  ::  \forall a. \forall b. (a \to b) \to [a] \to [b]}
+          { \text{map} ::  (\texttt{Int} \to \texttt{Bool}) \to [\texttt{Int}] \to [\texttt{Bool}]}
+          \\
+          \inferrule*{}
+          {\text{even} :: \texttt{Int} \to \texttt{Bool}}
+        }
+        { \text{map}\ \text{even} :: \alt<+->{[\texttt{Int}] \to [\texttt{Bool}]}{??}
+        }
+        \\
+        \inferrule*
+        {}
+        {\text{[1..5]} :: \text{[Int]}}
+      }
+      { \text{map}\ \text{even}\ \text{[1..5]} :: \alt<+->{\texttt{[Bool]}}{??}}
+    \end{mathpar}
+  \end{block}
+\end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Designing a higher-order function}
@@ -134,7 +193,7 @@ foldr' op e (x:xs) = x `op` foldr' op e xs
     \item \texttt{op :: a -> b -> b} is a combining function
     \end{itemize}
   \end{block}
-  \begin{alertblock}<+->{What's the type of foldr?}
+  \begin{alertblock}<+->{What's the type of foldr'?}
     \vspace{-\baselineskip}
   \end{alertblock}
   \begin{block}<+->{}
@@ -145,6 +204,13 @@ foldr' :: (a -> b -> b) -> b -> [a] -> b
   \begin{alertblock}<+->{Also known as reduce}
     map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
   \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Intuition about foldr}
+  \begin{center}
+    \includegraphics{Right-fold-transformation}
+  \end{center}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -164,13 +230,6 @@ concat  xs = undefined
 maximum (x:xs) = undefined
 \end{verbatim}
   \end{block}
-\end{frame}
-%----------------------------------------------------------------------
-\begin{frame}
-  \frametitle{Intuition about foldr}
-  \begin{center}
-    \includegraphics{Right-fold-transformation}
-  \end{center}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -267,7 +326,8 @@ removeSpaces xs = filter (not . isSpace) xs
 \begin{verbatim}
 (f . g) x = f (g x)
 \end{verbatim}
-    \item<+-> What's the type of \texttt{.}?
+    \item<+-> What's the type of \texttt{(.)}?
+    \item<+-> \texttt{(.) :: (b -> c) -> (a -> b) -> (a -> c)}
     \end{itemize}
   \end{block}
 \end{frame}
@@ -280,10 +340,13 @@ removeSpaces xs = filter (not . isSpace) xs
 snoc x ys = ys++[x]
 \end{verbatim}
   \item<+->
-  Alternative: define \texttt{snoc} using a \href{https://en.wikipedia.org/wiki/Anonymous_function}{lambda expression}
+  Alternative: define \texttt{snoc} using an anonymous function aka
+  \href{https://en.wikipedia.org/wiki/Anonymous_function}{lambda
+    expression} 
 \begin{verbatim}
 snoc = \ x ys -> ys++[x]
 \end{verbatim}
+  Nowadays, the Unicode lambda can also be used
 \item<+->
   Often for function used in one place as in
 \begin{verbatim}
@@ -292,7 +355,11 @@ f3 xs = foldr snoc [] xs
 \end{verbatim}
 \item<+-> Equivalently replace \texttt{snoc} by its definition
 \begin{verbatim}
-f3 xs = foldr (\ x ys -> ys++[x]) [] xs
+f3' xs = foldr (\ x ys -> ys++[x]) [] xs
+\end{verbatim}
+\item<+-> Shorten more using partial application
+\begin{verbatim}
+f3'' xs = foldr (\ x -> (++[x])) [] xs
 \end{verbatim}
 \end{itemize}
 \end{frame}
