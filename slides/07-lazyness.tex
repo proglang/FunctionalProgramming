@@ -1,0 +1,76 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle{Laziness}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Laziness}
+  \begin{itemize}
+  \item Haskell does not evaluate function arguments unless they are
+    demanded to calculate the function's result
+  \item Data structures are only evaluated as much as they are needed
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Infinite lists}
+\begin{verbatim}
+nat :: [Integer]
+nat = [0..] -- cheating!
+
+ones :: [Integer]
+ones = undefined
+
+-- |create an infinite list of argument value
+repeat' :: a -> [a]
+repeat' a = undefined
+\end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Fibonacci numbers}
+\begin{verbatim}
+fib :: [Integer]
+fib = undefined
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Sieve of Eratosthenes}
+\begin{verbatim}
+primes :: [Integer]
+primes = undefined
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{The minimum tree}
+  \begin{block}<+->{A binary tree type}
+    A variant of binary trees has information only at the nodes.
+\begin{verbatim}
+data BTree = Leaf Int | Branch BTree BTree
+\end{verbatim}
+  \end{block}
+  \begin{block}<+->{Task}
+    \begin{itemize}
+    \item<+-> Write a function \texttt{mintree} that replaces the value at
+      each leaf by the minimum value of all leaves in the tree.
+    \item<+-> \alert{Only one traversal of the tree is allowed! }
+    \end{itemize}
+  \end{block}
+\end{frame}
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
