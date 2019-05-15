@@ -1,4 +1,4 @@
-module M07Lazyness where
+module M07Laziness where
 
 nat :: [Integer]
 
