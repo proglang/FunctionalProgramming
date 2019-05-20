@@ -1,0 +1,2 @@
+-- f x = read (show x)
+-- g x = show (read x)
