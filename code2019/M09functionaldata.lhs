@@ -28,6 +28,7 @@ The representation needs to provide efficient implementations for the
 member and insert operations.
        
 > data Tree a = E | T (Tree a) a (Tree a)
+>             deriving (Show)
 
 > empty = E
 
@@ -79,6 +80,7 @@ floor(log_2 (n+1)) elements.
 Our representation of leftist heaps directly includes rank information:
 
 > data Heap a = EH | TH Int a (Heap a) (Heap a)
+>             deriving (Show)
 
 Key observation: Two leftist heaps can be merged by merging their
 right spines as with sorted lists and then swapping children along
@@ -126,11 +128,13 @@ They are composed  of primitive objects, the "binomial trees".
 They are defined inductively:
 
 *** A binomial tree of rank 0 is a singleton node.
-*** A binomial tree of rank (r+1) is formed by linking two binomial trees of rank r, which makes one tree the leftmost child of the other.
+*** A binomial tree of rank (r+1) is formed by linking two binomial trees of
+    rank r, which makes one tree the leftmost child of the other.
 
 A binomial tree of rank r contains exactly 2^r nodes.
 Here is an alternative definition:
-A binomial tree of rank r is a node with r children t1, ..., tr where each ti is a binomial tree of rank (r-i).
+A binomial tree of rank r is a node with r children t1, ..., tr where each ti
+is a binomial tree of rank (r-i).
 The first field of a tree node contains its rank.
 
 > data BinTree a = Node Int a [BinTree a]
@@ -253,7 +257,8 @@ where empty nodes are considered black.
 A red-black tree must satisfy the following invariants.
 
 *1* No red node has a red child.
-*2* Every path from the root to a empty node contains the same number of black nodes. 
+*2* Every path from the root to a empty node contains the same number of
+    black nodes. 
 
 These invariants guarantee that the longest path in a red-black tree
 (with alternating red and black nodes) is never more than twice as
@@ -304,11 +309,7 @@ test the color of nodes on the search path.
 With these optimizations, this implementation of binary search trees
 is very fast.
 
-
-
-
-
-
+** Stack
 
 ** Queues
 
@@ -317,6 +318,7 @@ lists where one list contains the front elements of the queue and the
 other the rear elements in *reverse*.
 
 > data Queue a = Queue [a] [a]
+>              deriving (Show)
 
 Moreover, we maintain the invariant that the front list is only empty
 if the rear list is also empty.  Whenever the front list becomes
@@ -329,10 +331,10 @@ empty, we reverse the rear list and put it in front.
 >   headq (Queue (x:_) _) = x
 >   tailq (Queue (_:xs) ys) = checkf (Queue xs ys)
 >   enq x (Queue xs ys) = checkf (Queue xs (x:ys))
->   mtq (Queue xs _) = null xs
+>   nullq (Queue xs _) = null xs
 >   emptyq = (Queue [] [])
 
-Complexity: headq and mtq run in O(1) worst case. tailq and enq run in
+Complexity: headq and nullq run in O(1) worst case. tailq and enq run in
 O(n) worst case, but in O(1) amortized time.
 
 There is also a real-time version of the queue where each operation
@@ -347,7 +349,7 @@ be evenly spread over the enq and tailq operations.
 
 > instance QueueOps RTQ where
 >   emptyq = RTQ [] [] []
->   mtq (RTQ xs _ _) = null xs
+>   nullq (RTQ xs _ _) = null xs
 >   enq x (RTQ f r s) = exec (RTQ f (x:r) s)
 >   headq (RTQ (x:f) _ _) = x
 >   tailq (RTQ (x:f) r s) = exec (RTQ f r s)
@@ -405,7 +407,7 @@ RTQ (f2 [] f2) where  { f1 = x1:f1'; f1' = []; f2 = rotate f1 (x3:x2:[]) [] }
 >   deleteMin :: (Ord a) => f a -> f a
 
 > class QueueOps q where
->   mtq :: q a -> Bool
+>   nullq :: q a -> Bool
 >   emptyq :: q a
 >   enq :: a -> q a -> q a
 >   tailq :: q a -> q a
