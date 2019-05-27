@@ -388,6 +388,12 @@ RTQ (f2 [] f2) where  { f1 = x1:f1'; f1' = []; f2 = rotate f1 (x3:x2:[]) [] }
 > class Rank f where
 >   rank :: f a -> Int
 
+> rankBinTree :: BinTree a -> Int
+> rankBinTree (Node r _ _) = r
+
+> instance Rank [] where
+>   rank xs = length xs
+
 > class Root f where
 >   root :: f a -> a
 
