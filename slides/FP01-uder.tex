@@ -1,0 +1,384 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\usepackage{tikz}
+
+\subtitle{Part I}
+\date{Uder, 30.05.2019}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Contents}
+  \begin{itemize}
+  \item Basics of functional programming using Haskell
+  \item Haskell development tools
+  \item Writing Haskell programs
+  \item Using Haskell libraries
+  \item Your first Haskell project
+  \end{itemize}
+\end{frame}
+
+
+%----------------------------------------------------------------------
+\section{Introduction}
+\begin{frame}
+  \frametitle{What is Functional Programming?}
+  \begin{block}<+->{A different approach to programming}
+    \begin{LARGE}
+      \begin{center}\bf
+        ~
+        \\[1ex]
+        Functions and values
+        \\[2ex]
+        {\normalsize rather than}
+        \\[2ex]
+        Assignments and addresses
+        \\[1ex]
+        ~
+      \end{center}
+    \end{LARGE}
+  \end{block}
+  \begin{alertblock}<+->{\bf It will make you a better programmer}
+    ~
+  \end{alertblock}
+\end{frame} 
+%----------------------------------------------------------------------
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Variables}
+  \begin{block}<+->{Functional (Haskell)}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Haskell]
+x :: Int
+x = 5
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      Variable \texttt{x} has value \texttt{5} forever
+    \end{minipage}
+  \end{block}
+  \begin{block}<+->{Imperative (Java / C)}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Java]
+int x = 5;
+...
+x = x+1;
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      Variable \texttt{x} can change its content over time
+    \end{minipage}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Functions}
+  \begin{block}<+->{Functional (Haskell)}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Haskell]
+f :: Int -> Int -> Int
+f x y = 2*x + y
+
+f 42 16 // always 100
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      Return value of a function \textbf{only} depends on its inputs
+    \end{minipage}
+  \end{block}
+  \begin{block}<+->{Imperative (Java)}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Java]
+boolean flag;
+static int f (int x, int y) {
+  return flag ? 2*x + y , 2*x - y;
+}
+
+int z = f (42, 16); // who knows?
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      Return value depends on non-local variable \texttt{flag}
+    \end{minipage}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functional vs Imperative Programming: Laziness}
+  \begin{block}<+->{Haskell}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Haskell]
+x = expensiveComputation
+g anotherExpensiveComputation
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      \begin{itemize}
+      \item The expensive computation will only happen if \texttt{x}
+        is ever used.
+      \item Another expensive computation will only happen if
+        \texttt{g} uses its argument.
+      \end{itemize}
+    \end{minipage}
+  \end{block}
+  \begin{block}<+->{Java}
+    \begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[language=Java]
+int x = expensiveComputation;
+g (anotherExpensiveComputation)
+\end{lstlisting}
+    \end{minipage}
+    ~
+    \begin{minipage}[t]{0.45\linewidth}
+      \begin{itemize}
+      \item Both expensive computations will happen anyway.
+      \item Laziness can be simulated, but it's complex!
+      \end{itemize}
+    \end{minipage}
+  \end{block}
+\end{frame}
+
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Many features that make programs more concise}
+  \begin{itemize}
+  \item Pattern Matching
+  \item Higher-order functions
+  \item Algebraic datatypes
+  \item Polymorphic types
+  \item Parametric overloading
+  \item Type inference
+  \item Monads \& friends (for IO, concurrency, \dots)
+  \item Comprehensions
+  \item Metaprogramming
+  \item Domain specific languages
+  \item \dots
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Types}
+\begin{frame}[fragile]
+  \frametitle{Predefined Types}
+  \framesubtitle{Every Haskell value has a type}
+  \begin{center}
+    \begin{tabular}{l@{ --- }l}
+      \texttt{Bool}
+      & \lstinline|True :: Bool|, \lstinline|False :: Bool| \\
+      \texttt{Char}
+      &\lstinline|'x' :: Char|, \lstinline|'?' :: Char|, \dots\\
+      \texttt{Double}, \texttt{Float}
+      & \lstinline|3.14 :: Double| \\
+      \texttt{Integer}
+      & \lstinline|4711 :: Integer| \\
+      \texttt{Int}
+      &machine integers ($\ge$ 30 bits signed integer) \\
+      \texttt{()}
+      & the \alert{unit type}, single value \lstinline|() :: ()| \\
+      \lstinline|a -> b|
+      & function types \\
+      \lstinline|(a, b)|
+      &tuple types \\
+      \lstinline|[a]|
+      &list types \\
+      \lstinline|String|
+      &  \lstinline|"xyz" :: String|, \dots
+    \end{tabular}
+  \end{center}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Functions}
+\begin{block}{Examples.hs}
+\begin{lstlisting}
+dollarRate = 1.3671
+
+-- |convert EUR to USD
+usd euros = euros * dollarRate
+\end{lstlisting}
+  \end{block}
+  \begin{itemize}
+  \item \lstinline{dollarRate} defines a constant
+  \item \lstinline{usd} is a function 
+  \item Its type \lstinline{Double -> Double} is \alert{inferred} by
+    the Haskell compiler
+  \item To compute, a function call \lstinline{usd arg} is replaced by
+    the right hand side of its definition\\
+    \lstinline{usd arg} $\rightarrow$ \lstinline{arg * dollarRate}
+    $\rightarrow$ \lstinline{arg * 1.3671} $\rightarrow$ \dots
+  \end{itemize}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Tuples}
+  \begin{block}{}
+\begin{lstlisting}[language=Haskell]
+-- example tuples
+examplePair :: (Double, Bool)  -- Double x Bool
+examplePair = (3.14, False)
+
+exampleTriple :: (Bool, Int, String) -- Bool x Int x String
+exampleTriple = (False, 42, "Answer")
+
+exampleFunction :: (Bool, Int, String) -> Bool
+exampleFunction (b, i, s) = not b && length s < i
+\end{lstlisting}
+  \end{block}
+  \begin{alertblock}{Summary}
+    \begin{itemize}
+    \item Syntax for tuple type like syntax for tuple values
+    \item Tuples are \textbf{immutable}: in fact, \textbf{all values
+        are}!\\
+      Once a value is defined it cannot change! 
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Typing for Tuples}
+  \begin{block}{Typing Rule}
+    \begin{mathpar}
+      \inferrule[Tuple]{e_1 :: t_1 \\ e_2 :: t_2 \\\dots \\ e_n :: t_n}{
+        (e_1, \dots, e_n) :: (t_1, \dots, t_n)}
+    \end{mathpar}
+    If
+    \begin{itemize}
+    \item $e_1, \dots, e_n$ are Haskell expressions
+    \item $t_1, \dots, t_n$ are their respective types
+    \item Then the tuple expression $(e_1, \dots, e_n)$ has the tuple
+      type $(t_1, \dots, t_n)$.
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+
+\begin{frame}
+  \frametitle{Lists}
+  \begin{itemize}
+  \item The “duct tape” of functional programming
+  \item Collections of things of the same type 
+  \item 
+    For any type \lstinline{a}, \lstinline{[a]} is the type of lists
+    with elements of type \lstinline{a}
+    \\ e.g. \lstinline{[Bool]} is the type of lists of \lstinline{Bool}
+  \item Syntax for list type like syntax for list values
+  \item Lists are \textbf{immutable}: once a list value is defined it cannot change!
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Constructing lists}
+  \begin{block}<+->{The values of type [a] are \dots}
+    \begin{itemize}
+    \item either \lstinline{[]}, the empty list
+    \item or \lstinline{x:xs} where \lstinline{x} has type \lstinline{a} and
+      \lstinline{xs} has type \lstinline{[a]} \\
+      ``\lstinline{:}'' is pronounced ``cons''
+    \item \lstinline{[]} and \lstinline{(:)} are the \textbf{list constructors}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Typing Rules for Lists}
+    \begin{mathpar}
+      \inferrule[Nil]{}{ [] :: [t] }
+
+      \inferrule[Cons]{e_1 :: t \\ e_2 :: [t]}{(e_1 : e_2) :: [t]}
+    \end{mathpar}
+    \begin{itemize}
+    \item The empty list can serve as a list of any type $t$
+    \item If there is some $t$ such that $e_1$ has type $t$ and $e_2$
+      has type $[t]$, then $(e_1:e_2)$ has type $[t]$.
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Typing Lists}
+\begin{alertblock}<+->{Quiz Time}
+    Which of the following expressions have type \lstinline{[Bool]}?
+\begin{lstlisting}[language=Haskell]
+  [ ]
+  True : [ ]
+  True : False
+  False : (False : [ ])
+  (False : False) : [ ]
+  (False : []) : [ ]
+  (True : (False : (True : []))) : (False:[]):[ ]
+\end{lstlisting}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Pattern Matching on Lists}
+\begin{frame}[fragile]
+  \frametitle{Functions on lists}
+  \begin{block}<+->{Definition by \textbf{pattern matching}}
+\begin{lstlisting}
+-- double every element of a list of integers
+-- doubles [3,6,12] = [6,12,24]
+doubles :: [Integer] -> [Integer]
+doubles []     = []
+doubles (x:xs) = (2 * x) : doubles xs
+\end{lstlisting}
+  \end{block}
+  \begin{alertblock}<+->{Explanations --- patterns}
+    \footnotesize{}
+    \begin{itemize}
+    \item patterns contain constructors and variables
+    \item patterns are checked in sequence
+    \item constructors are checked against argument value
+    \item variables are bound to the values in
+      corresponding position in the argument
+    \item each variable may occur at most once in a pattern
+    \item wild card pattern \verb!_! matches everything, no binding, may occur multiple times
+    \end{itemize}
+  \end{alertblock}
+
+  \end{frame}
+
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{References}
+  \begin{itemize}
+  \item Paper by the original developers of Haskell in the conference on History of
+    Programming Languages (HOPL III): \href{A History
+      of Haskell: Being Lazy with
+      Class}{http://dl.acm.org/citation.cfm?id=1238856}
+  \item The Haskell home page: \url{http://www.haskell.org}
+  \item Haskell libraries repository:
+    \url{https://hackage.haskell.org/}
+  \item Haskell Tool Stack: \url{https://docs.haskellstack.org/en/stable/README/}
+  \end{itemize}
+\end{frame}
+
+%----------------------------------------------------------------------
+
+\begin{frame}
+  % \frametitle{Questions?}
+  \begin{center}
+    \tikz{\node[scale=15] at (0,0){?};}
+  \end{center}
+\end{frame}
+
+
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
