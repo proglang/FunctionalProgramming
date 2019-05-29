@@ -10,6 +10,13 @@
 \date{Uder, 30.05.2019}
 
 \begin{document}
+\AtBeginSection[]
+{
+ \begin{frame}<beamer>
+ \frametitle{Plan}
+ \tableofcontents[currentsection]
+ \end{frame}
+}
 
 \begin{frame}
   \titlepage
@@ -18,16 +25,16 @@
 
 %----------------------------------------------------------------------
 
-\begin{frame}
-  \frametitle{Contents}
-  \begin{itemize}
-  \item Basics of functional programming using Haskell
-  \item Haskell development tools
-  \item Writing Haskell programs
-  \item Using Haskell libraries
-  \item Your first Haskell project
-  \end{itemize}
-\end{frame}
+% \begin{frame}
+%   \frametitle{Contents}
+%   \begin{itemize}
+%   \item Basics of functional programming using Haskell
+%   \item Haskell development tools
+%   \item Writing Haskell programs
+%   \item Using Haskell libraries
+%   \item Your first Haskell project
+%   \end{itemize}
+% \end{frame}
 
 
 %----------------------------------------------------------------------
@@ -66,7 +73,10 @@ x = 5
     \end{minipage}
     ~
     \begin{minipage}[t]{0.45\linewidth}
-      Variable \texttt{x} has value \texttt{5} forever
+      \begin{itemize}
+      \item Variable \texttt{x} has value \texttt{5} forever
+      \item It's ok to replace \texttt{x} by \texttt{5} whenever needed
+      \end{itemize}
     \end{minipage}
   \end{block}
   \begin{block}<+->{Imperative (Java / C)}
@@ -79,7 +89,10 @@ x = x+1;
     \end{minipage}
     ~
     \begin{minipage}[t]{0.45\linewidth}
-      Variable \texttt{x} can change its content over time
+      \begin{itemize}
+      \item Variable \texttt{x} can change its content over time
+      \item Current value of \texttt{x} needs to be looked up in the store
+      \end{itemize}
     \end{minipage}
   \end{block}
 \end{frame}
@@ -223,6 +236,29 @@ usd euros = euros * dollarRate
     $\rightarrow$ \lstinline{arg * 1.3671} $\rightarrow$ \dots
   \end{itemize}
 \end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Recursive functions}
+  Compute \verb|x^n| without using the built-in operator
+\begin{lstlisting}
+-- compute x to n-th power
+power x n | n == 0 = 1
+power x n | n > 0  = x * power x (n - 1)
+\end{lstlisting}
+  \begin{itemize}
+  \item defined using \alert{guarded equations}
+  \item computation chooses the first equation such that the guard is
+    true
+    \begin{itemize}
+    \item \lstinline|power 5 0| $\rightarrow$ \lstinline|1|
+    \item \lstinline|power 5 2| $\rightarrow$
+      \lstinline|5 * power 5 1| $\rightarrow$
+      \lstinline|5 * (5 * power 5 0)| $\rightarrow$
+      \lstinline|5 * (5 * 1)|
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 % ----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Tuples}
@@ -307,6 +343,20 @@ exampleFunction (b, i, s) = not b && length s < i
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{List shorthands}
+  \begin{block}{Equivalent ways of writing a list}
+    \begin{flushleft}
+      \begin{tabular}{l@{\qquad---\qquad}l}
+        \lstinline{1:(2:(3:[ ]))}& standard, fully parenthesized\\
+        \lstinline{1:2:3:[ ]} & \lstinline{(:)} associates to the right\\
+        \lstinline{[1,2,3]} &  bracketed notation
+      \end{tabular}
+    \end{flushleft}
+  \end{block}
+\end{frame}
+
+%----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Typing Lists}
 \begin{alertblock}<+->{Quiz Time}
@@ -328,27 +378,712 @@ exampleFunction (b, i, s) = not b && length s < i
   \frametitle{Functions on lists}
   \begin{block}<+->{Definition by \textbf{pattern matching}}
 \begin{lstlisting}
--- double every element of a list of integers
--- doubles [3,6,12] = [6,12,24]
+-- double every element of a list of integers: double [3,6,12] == [6,12,24]
 doubles :: [Integer] -> [Integer]
 doubles []     = []
 doubles (x:xs) = (2 * x) : doubles xs
 \end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Explanations --- patterns}
+  \begin{alertblock}<+->{Argument value is checked against patterns}
     \footnotesize{}
     \begin{itemize}
-    \item patterns contain constructors and variables
-    \item patterns are checked in sequence
+    \item patterns contain constructors (\lstinline{[]} and \lstinline{:}) and variables
+    \item patterns are checked in sequence; matching equation is chosen
     \item constructors are checked against argument value
     \item variables are bound to the values in
       corresponding position in the argument
-    \item each variable may occur at most once in a pattern
-    \item wild card pattern \verb!_! matches everything, no binding, may occur multiple times
+    % \item each variable may occur at most once in a pattern
+    % \item wild card pattern \verb!_! matches everything, no binding, may occur multiple times
     \end{itemize}
   \end{alertblock}
-
+  \begin{block}<+->{Example evaluation}
+    \lstinline{doubles (3 : 6 : 12 : [])} $\rightarrow$
+    \begin{tabular}[t]{l}
+    \lstinline|(2 * 3) : doubles (6 : 12 : [])| $\rightarrow$ \\
+    \lstinline|6 : (2 * 6) : doubles (12 : [])| $\rightarrow$ \dots
+    \end{tabular}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+    \frametitle{Higher-order functions}
+    \begin{alertblock}<+->{Definition}
+      A \alert{higher-order function} takes a function argument
+      or returns it as a result.
+    \end{alertblock}
+    \begin{exampleblock}<+->{Example}
+\begin{lstlisting}
+twice :: (a -> a) -> (a -> a)
+twice f x = f (f x)
+\end{lstlisting}
+      \begin{itemize}
+      \item \lstinline{twice} takes a function \lstinline{f} and an
+        argument and applies \lstinline{f} two times to the argument.
+      \item \lstinline{(+1)} is the function that adds one to its
+        argument
+      \item What is \lstinline{twice (+1)}?
+      \item<+-> That's the function that adds two to
+        its argument!
+      \item<+-> But what about \lstinline{twice twice (+1)}?
+      \item<+-> Adds four!
+      \end{itemize}
+    \end{exampleblock}
   \end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{map: Apply Function to Every Element of a List}
+  \begin{block}<+->{Definition}
+\begin{lstlisting}
+-- map f [x1, x2, ..., xn] = [f x1, f x2, ..., fn]
+map :: (a -> b) -> [a] -> [b]
+map f []     = []
+map f (x:xs) = f x : map f xs
+\end{lstlisting}
+    (map is in the standard Prelude - no need to define it)
+  \end{block}
+  \begin{exampleblock}<+->{Defining doubles using map}
+\begin{lstlisting}
+doubles xs = map (*2) xs
+\end{lstlisting}
+  \end{exampleblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{foldr: Reduce a List }
+  % \framesubtitle{Making the pattern into a higher-order function}
+  \begin{block}<+->{Abstracting over value and combining function}
+\begin{lstlisting}
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr op e []     = e
+foldr op e (x:xs) = x `op` foldr' op e xs
+\end{lstlisting}
+    where
+    \begin{itemize}
+    \item \texttt{e :: b} is a value replacing the empty list
+    \item \texttt{op :: a -> b -> b} is a combining function for list
+      element and recursive call on the rest
+    \end{itemize}
+  \end{block}
+  \begin{exampleblock}<+->{Example: many functions become one-liners with foldr}
+\begin{lstlisting}
+sum xs = foldr (+) 0 xs
+product xs = foldr (*) 1 xs
+\end{lstlisting}
+  \end{exampleblock}
+  \begin{alertblock}<+->{Also known as reduce}
+    map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Input and Output}
+\begin{frame}[fragile]
+  \frametitle{Referential transparency and substitutivity}
+  \begin{block}<+->{Recall the beginning}
+    \begin{itemize}
+    \item Every variable and expression has just one value\\
+      \textbf{referential transparency}
+    \item Every variable can be replaced by its definition\\
+      \textbf{substitutivity}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Referential transparency enables reasoning}
+\begin{lstlisting}
+-- sequence of function calls does not matter
+f () + g () == g () + f ()
+-- number of function calls does not matter
+f () + f () == 2 * f ()
+\end{lstlisting}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{How does IO fit in?}
+  \begin{alertblock}<+->{Bad example}
+    Suppose we had an operation that reads a number from the terminal
+\begin{lstlisting}
+input :: () -> Integer
+\end{lstlisting}
+    \begin{itemize}
+    \item<+-> Consider
+\begin{lstlisting}
+let x = input () in
+x + x
+\end{lstlisting}
+    \item<+-> Expectation: read one input and use it twice
+    \item<+-> By substitutivity, this expression must behave like
+\begin{lstlisting}
+input () + input ()
+\end{lstlisting}
+      which reads two inputs!
+    \item<+-> VERY WRONG!!!
+  \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{The dilemma}
+  \begin{block}<+->{Haskell is a pure language, but I/O is a side effect}
+  \end{block}
+  \begin{block}<+->{A contradiction?}
+  \end{block}
+  \begin{block}<+->{No!}
+    \begin{itemize}
+    \item Instead of performing IO operations directly, there is an
+      abstract type of \textbf{IO instructions}, which get executed
+      lazily by the operating system
+    \item Some instructions (e.g., read from a file) return values, so the abstract IO type is parameterized over their type
+    \item Keep in mind: instructions are just values like any other
+  \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Haskell I/O}
+
+\begin{block}<+->{The main function}
+  Top-level result of a program is an IO ``instruction''.
+\begin{lstlisting}
+main :: IO ()
+main = putStrLn "Hello World!"
+\end{lstlisting}
+  \begin{itemize}
+  \item an instruction describes the \textbf{effect} of the program
+  \item effect $=$ IO action, imperative state change, \dots
+  \item Here: print a string on the terminal
+  \end{itemize}
+\end{block}
+% \begin{block}<+->{An instruction that returns a result}
+% \begin{lstlisting}
+% -- defined in the Prelude
+% readFile :: FileName -> IO String
+% \end{lstlisting}
+% \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Kinds of instructions}
+  \begin{block}<+->{Primitive instructions}
+\begin{lstlisting}
+-- predefined
+putChar   :: Char -> IO ()
+getChar   :: IO Char
+writeFile :: FileName -> String -> IO ()
+readFile  :: FileName -> IO String
+\end{lstlisting}
+and many more
+  \end{block}
+  \begin{block}<+->{No op instruction}
+\begin{lstlisting}
+return :: a -> IO a
+\end{lstlisting}
+    The IO instruction \lstinline{return 42} performs no IO, but yields the value 42.
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Combining two instructions}
+  \begin{block}<+->{The bind operator \texttt{>>=}}
+    Intuition:  next instruction may depend on the output of the previous one
+\begin{verbatim}
+(>>=) :: IO a -> (a -> IO b) -> IO b
+\end{verbatim}
+    The instruction \texttt{m >>= f}
+    \begin{itemize}
+    \item first executes \texttt{m :: IO a} 
+    \item gets its result \texttt{x :: a}
+    \item applies \texttt{f :: a -> IO b} to the result
+    \item to obtain an instruction \texttt{f x :: IO b} that returns a \texttt{b}
+    \item and executes this instruction to return a \texttt{b}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Example}
+\begin{lstlisting}
+readFiles f1 f2 =
+   readFile f1 >>= \xs1 -> readFile f2 
+\end{lstlisting}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Instructions vs functions}
+  \begin{block}<+->{Functions}
+    behave the same each time they called
+  \end{block}
+  \begin{block}<+->{Instructions}
+    may be interpreted differently each time 
+    they are executed, depending on context    
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Underlying concept: \textbf{Monad}}
+  \begin{block}<+->{What's a monad?}
+    \begin{itemize}
+    \item abstract type for instructions that produce values
+    \item built-in operators combination \lstinline{>>=} and no-op \lstinline{return}
+    \item abstracts over different interpretations (computations)
+    \end{itemize}
+  \end{block}
+  \begin{alertblock}<+->{IO is a special case of a monad}
+    \begin{itemize}
+    \item one very useful application for monads
+    \item built into Haskell
+    \item but there's more to the concept!
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Algebraic Datatypes}
+\begin{frame}
+  \frametitle{Algebraic Datatypes}
+  \begin{itemize}
+  \item Signature facility for defining datatypes in functional
+    languages
+  \item Describe a new datatype by declaring its \alert{constructor function}s and
+    giving the type of their arguments
+  \item Constructor functions do not evaluate their arguments (like the list
+    constructors \lstinline{[]} and \lstinline{:})
+  \item Constructors can be used for \alert{pattern matching} on the left side of
+    function definitions
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Example scenario}
+  \begin{block}<+->{Model a card game}
+    \begin{itemize}
+    \item represent the game items!
+    \item define game logic on the representations!
+    \end{itemize}
+  \end{block}
+  % \begin{block}<+->{Microsoft Hearts (\href{https://en.wikipedia.org/wiki/Microsoft_Hearts}{Wikipedia link})}
+  %   \begin{itemize}
+  %   \item computer game based on card game ``Hearts''
+  %   \item included in Windows~3.1 through Windows~7
+  %   \item discontinued
+  %   \end{itemize}    
+  % \end{block}
+\end{frame}
+% \begin{frame}
+%   \frametitle{The game of Hearts}
+%   \begin{block}<+->{Gameplay}
+%     \begin{itemize}
+%     \item Four players (three simulated); Trick-taking game
+%     \item Each player plays one card to a trick
+%     \item Trick won by highest card of the leading suit; no Trump!
+%     \item Suit must be followed
+%     \item Heart cannot lead until
+%       \begin{itemize}
+%       \item either Heart has been broken --- a player played Heart before
+%       \item or the leading player has only Heart
+%       \end{itemize}
+%     \item Points are scored by any Heart (1 point) and the Queen of Spades (13 points) 
+%     \end{itemize}
+%   \end{block}
+%   \begin{block}<+->{Objective}
+%     \begin{itemize}
+%     \item Avoid gaining points \textbf{or} gain all 26 points
+%     \end{itemize}
+%   \end{block}
+  
+% \end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Data model for card games}
+  \begin{block}<+->{Description}
+    \begin{itemize}
+    \item A card has a \textbf{Suit} and a \textbf{Rank}
+    \item A card beats another card if it has the same suit, but
+      higher rank
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{A card has a Suit}
+\begin{lstlisting}
+data Suit = Spades | Hearts | Diamonds | Clubs
+\end{lstlisting}
+  \end{block}
+  \begin{alertblock}<+->{Explanation}
+    \begin{itemize}
+    \item new type consisting of four values
+    \item  \texttt{Suit}: the name of the new type
+    \item \texttt{Spades}, \texttt{Hearts}, \dots: the names of its
+      \textbf{constructors}.
+    \item Type and constructor names must be capitalized
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile,fragile]
+  \frametitle{More data}
+  A card has a suit and a \textbf{rank}:
+\begin{lstlisting}
+data Rank = Numeric Integer | Jack | Queen | King | Ace
+\end{lstlisting}
+The constructor \texttt{Numeric} is different: it takes an argument.
+\begin{lstlisting}
+Main> :t Numeric
+Numeric :: Integer -> Rank
+\end{lstlisting}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining a function on Rank}
+  \framesubtitle{Ordering ranks by pattern matching}
+\begin{lstlisting}
+-- rankBeats r1 r2 returns True, if r1 beats r2
+rankBeats :: Rank -> Rank -> Bool
+rankBeats _  Ace    = False
+rankBeats Ace _     = True
+rankBeats _ King    = False
+rankBeats King _    = True
+rankBeats _  Queen  = False
+rankBeats Queen _   = True
+rankBeats _ Jack    = False
+rankBeats Jack _    = True
+rankBeats (Numeric n1) (Numeric n2) = n1 > n2
+--          ^^ pattern match on constructor
+--             yields its argument
+\end{lstlisting}
+
+  \begin{exampleblock}<+->{Example}
+\begin{lstlisting}
+rankBeats Queen Jack == True
+rankBeats Queen King == False
+\end{lstlisting}
+  \end{exampleblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Datatypes can be recursive}
+  \begin{block}<+->{Binary Trees}
+    A binary tree is either
+    \begin{itemize}
+    \item empty or
+    \item it is a node with a data element and two subtrees.
+    \end{itemize}
+\begin{lstlisting}
+data BTree a = Leaf | Node (BTree a) a (BTree a)
+\end{lstlisting}
+  \begin{itemize}
+  \item Parameterised over the type \lstinline{a} of elements
+  \item Recursive datatype definition
+  \item Two arguments of \lstinline{Node} refer to the currently
+    defined type \lstinline{BTree a}
+  \item  \lstinline{Leaf} is the \textbf{base case}
+  \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Type classes}
+\begin{frame}[fragile]
+  \frametitle{Haskell integrates overloading with polymorphism}
+  \begin{block}<+->{Restricted polymorphism}
+    \begin{itemize}
+    \item Some functions work on parametric types, but are restricted to specific instances
+    \item Types contain type variables and \textbf{constraints}
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Examples}
+\begin{lstlisting}
+-- elem x xs : is x an element of list xs?
+-- type a must support equality
+elem :: Eq a => a -> [a] -> Bool
+-- insert x xs : insert x into sorted list xs
+-- type a must support comparison
+insert :: Ord a => a -> [a] -> [a]
+-- square x : compute the square of x
+-- type a supports numeric operations
+square :: Num a => a -> a
+\end{lstlisting}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Type classes}
+  \begin{itemize}
+  \item Each constraint mentions a \textbf{type class}\\
+    like \texttt{Eq}, \texttt{Ord}, \texttt{Num}, \dots
+  \item A type class is a set of types that support the same operations\\
+    e.g.\ \texttt{Eq} requires \texttt{==} and \texttt{/=}
+  \item Type classes form a hierarchy\\
+    e.g.\ \texttt{Ord a => Eq a}
+  \item Many classes are predefined, but you can roll your own
+  \end{itemize}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Classes and Instances}
+  \begin{itemize}
+  \item A class declaration \textbf{only} specifies a signature (i.e., the class members and their types)
+\begin{lstlisting}
+class Num a where
+  (+), (*), (-) :: a -> a -> a
+  negate, abs, signum :: a -> a
+  fromInteger :: Integer -> a
+\end{lstlisting}
+  \item A separate instance declaration specifies that a type belongs to a class by giving definitions for all class members
+\begin{lstlisting}
+instance Num Int where ...
+instance Num Integer where ...
+instance Num Double where ...
+instance Num Float where ...
+\end{lstlisting}
+%   \item This info can be obtained from GHCI by
+% \begin{lstlisting}
+% :i Num 
+% \end{lstlisting}
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Example: Equality}
+  \begin{block}<+->{The type class \texttt{Eq}}
+\begin{lstlisting}
+class Eq a where
+  (==), (/=) :: a -> a -> Bool
+  x /= y = not (x == y)         -- default definition
+\end{lstlisting}
+    An instance must only provide \texttt{(==)}.
+  \end{block}
+  \begin{alertblock}<+->{Question}
+    Does equality make sense at every type?
+  \end{alertblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining \texttt{Eq} for pairs}
+  \begin{block}<+->{When are two pairs equal?}
+  \end{block}
+  \begin{block}<+->{Solution}
+\begin{lstlisting}
+instance (Eq a, Eq b) => Eq (a, b) where
+  (a1, b1) == (a2, b2) = a1 == a2 && b1 == b2
+\end{lstlisting}
+  \end{block}
+  \begin{block}<+->{Is this definition recursive?}
+  \end{block}
+  \begin{alertblock}<+->{NO!}
+  \end{alertblock}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Defining Eq for Suit}
+  \begin{block}<+->{Manual definition}
+\begin{lstlisting}
+data Suit = Spades | Hearts | Diamonds | Clubs
+
+instance Eq Suit where
+  Spades == Spades = True
+  Hearts == Hearts = True
+  Diamonds == Diamonds = True
+  Clubs == Clubs = True
+  _ == _ = False // any other combination
+\end{lstlisting}
+  \end{block}
+  \begin{alertblock}<+->{Boring to write \dots}
+    
+  \end{alertblock}
+  \begin{block}<+->{Automatic derivation of Eq instance}
+\begin{lstlisting}
+data Suit = Spades | Hearts | Diamonds | Clubs
+    deriving (Eq)
+\end{lstlisting}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Search trees and expression trees}
+\begin{frame}[fragile]
+  \frametitle{Search trees}
+  \begin{alertblock}<+->{Definition}
+    A \alert{search tree} is a binary tree such that  at each node
+    \lstinline{Node l x r} the element \lstinline{x} is greater than every element in the left
+    subtree \lstinline{l} and \lstinline{x} is less than every element
+    in the right subtree \lstinline{r}.
+  \end{alertblock}
+  \begin{block}{Insert value into a search tree}
+\begin{lstlisting}
+insert :: Ord a => a -> BTree a -> BTree a
+insert x Leaf         = Node Leaf x Leaf
+insert x node@(Node l y r)
+    | x < y = Node (insert x l) y r
+    | x > y = Node l y (insert x r)
+    | otherwise = node
+\end{lstlisting}
+    \begin{itemize}
+    \item \lstinline{Ord a => ...} means that the type \lstinline{a}
+      must admit comparison
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Expression trees}
+  \begin{block}<+->{Definition}
+    Arithmetic expressions comprising constants and binary operators
+\begin{lstlisting}
+data Term  = Con Integer
+           | Bin Term Op Term  
+           
+data Op    = Add | Sub | Mul | Div
+\end{lstlisting}  
+  \end{block}
+  \begin{block}<+->{Interpretation}
+\begin{lstlisting}
+eval              :: Term -> Integer
+eval (Con n)      =  n
+eval (Bin t op u) =  sys op (eval t) (eval u)
+
+sys Add       =  (+)         
+sys Sub       =  (-)
+sys Mul       =  (*)         
+sys Div       =  div
+\end{lstlisting}  
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Monads}
+\begin{frame}[fragile]
+  \frametitle{Extending the interpreter}
+  \begin{block}<+->{Possible extensions}
+    \begin{itemize}
+    \item Error handling
+    \item Counting evaluation steps
+    \item Variables, state
+    \item Output
+    \end{itemize}
+    \dots{} but without changing the structure of the interpreter!
+  \end{block}
+  \begin{block}<+->{Monads to the rescue}
+    In each case, we can phrase the extension as a type of commands,
+    as we've seen in the case of I/O.
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Commands for error handling}
+  \begin{block}<+->{Interface: three operations}
+    \begin{itemize}
+    \item raise an error message
+    \item combine computations with error handling (standard bind
+      operation)
+    \item return a value without an error (standard return operation)
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Datatype for error handling}
+\begin{lstlisting}
+data Exception a =  Raise  String
+                 |  Return a
+\end{lstlisting}
+    \begin{itemize}
+    \item errors are represented by strings
+    \item \lstinline{a} is the type of returned values
+    \end{itemize}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{The Monad Interface}
+\begin{block}<+->{The type class Monad}
+\begin{lstlisting}
+class Monad m where
+  (>>=)  :: m a -> (a -> m b) -> m b
+  return :: a -> m a
+  fail   :: String -> m a
+\end{lstlisting}
+  Here, \texttt{m} is a type variable that can stand for \texttt{IO},
+  \texttt{[]}, and other \textbf{type constructors}. 
+\end{block}
+\end{frame}     
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Monadic interpretation}
+\begin{block}<+->{Error handling as a monad}
+\begin{lstlisting}
+instance Monad Exception where
+  return a = Return a
+  m >>= f  = case m of 
+               Raise  s -> Raise s
+               Return v -> f v
+  fail s   = Raise s
+\end{lstlisting}
+\end{block}
+\begin{block}<+->{Monadic interpretation}
+\begin{lstlisting}
+eval             :: Term -> Exception Integer
+eval (Con n)      = return n
+eval (Bin t op u) = eval t  >>= \v ->
+                    eval u  >>= \w ->
+                    if (op == Div && w == 0) 
+                     then fail "div by zero"
+                    else return (sys op v w)
+\end{lstlisting}
+\end{block}
+  
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Why would you write an interpreter in this style?}
+  \begin{itemize}
+  \item Easy modification to support other effects / monads.
+  \item It's possible to combine monads modularly to support
+    combinations of effects.
+  \end{itemize}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{A monad for counting}
+  \framesubtitle{The state monad}
+  \begin{alertblock}{State}
+\begin{lstlisting}
+data ST s a = ST (s -> (a, s))
+exST (ST sas) = sas
+
+instance Monad (ST s) where
+  return a = ST (\s -> (a, s))
+  m >>= f  = ST (\s -> let (a, s') = exST m s in
+                       exST (f a) s')
+
+type Count a = ST Integer a
+
+incr :: Count ()
+incr =  ST (\i -> ((), i + 1))
+\end{lstlisting} 
+\end{alertblock}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Monadic interpreter with reduction count}
+  \framesubtitle{Implementation}
+\begin{exampleblock}{Evaluation}
+\begin{lstlisting}
+eval :: Term -> Count Integer
+eval (Con n)      =  return n
+eval (Bin t op u) =  eval t >>= \v ->
+                     eval u >>= \w ->
+                     incr   >>
+                     return (sys op v w)
+\end{lstlisting} 
+\end{exampleblock}
+\end{frame}
+% ----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Typical monads}
+  \begin{block}<+->{Already used}
+  \begin{itemize}       
+  \item Identity monad
+  \item Exception monad
+  \item State monad
+  \item I/O monad
+  \end{itemize} 
+\end{block}
+\begin{block}{Others}
+  \begin{itemize}
+  \item Writer monad: supports a write operation
+  \item Maybe monad: computation that may or may not return a result
+  \item List monad: Multiple results / nondeterminism, backtracking
+  \end{itemize}
+\end{block}
+\end{frame}
 
 %----------------------------------------------------------------------
 \begin{frame}

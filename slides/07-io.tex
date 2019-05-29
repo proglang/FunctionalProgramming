@@ -25,12 +25,12 @@
     \end{itemize}
   \end{block}
   \begin{block}<+->{Enables reasoning}
-\begin{verbatim}
+\begin{lstlisting}
 -- sequence of function calls does not matter
 f () + g () == g () + f ()
 -- number of function calls does not matter
 f () + f ( ) == 2 * f ()
-\end{verbatim}
+\end{lstlisting}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
@@ -38,20 +38,20 @@ f () + f ( ) == 2 * f ()
   \frametitle{How does IO fit in?}
   \begin{alertblock}<+->{Bad example}
     Suppose we had 
-\begin{verbatim}
+\begin{lstlisting}
 input :: () -> Integer
-\end{verbatim}
+\end{lstlisting}
     \begin{itemize}
     \item<+-> Consider
-\begin{verbatim}
+\begin{lstlisting}
 let x = input () in
 x + x
-\end{verbatim}
+\end{lstlisting}
     \item<+-> Expect to read one input and use it twice
     \item<+-> By substitutivity, this expression must behave like
-\begin{verbatim}
+\begin{lstlisting}
 input () + input ()
-\end{verbatim}
+\end{lstlisting}
       which reads two inputs!
     \item<+-> VERY WRONG!!!
   \end{itemize}
@@ -80,39 +80,39 @@ input () + input ()
 
 \begin{block}<+->{The main function}
   Top-level result of a program is an IO ``instruction''.
-\begin{verbatim}
+\begin{lstlisting}
 main :: IO ()
 main = undefined
-\end{verbatim}
+\end{lstlisting}
   \begin{itemize}
   \item an instruction describes the \textbf{effect} of the program
   \item effect $=$ IO action, imperative state change, \dots
   \end{itemize}
 \end{block}
 % \begin{block}<+->{An instruction that returns a result}
-% \begin{verbatim}
+% \begin{lstlisting}
 % -- defined in the Prelude
 % readFile :: FileName -> IO String
-% \end{verbatim}
+% \end{lstlisting}
 % \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Kinds of instructions}
   \begin{block}<+->{Primitive instructions}
-\begin{verbatim}
+\begin{lstlisting}
 -- defined in the Prelude
 putChar   :: Char -> IO ()
 getChar   :: IO Char
 writeFile :: FileName -> String -> IO ()
 readFile  :: FileName -> IO String
-\end{verbatim}
+\end{lstlisting}
 and many more
   \end{block}
   \begin{block}<+->{No op instruction}
-\begin{verbatim}
+\begin{lstlisting}
 return :: a -> IO a
-\end{verbatim}
+\end{lstlisting}
     The IO instruction \texttt{return 42} performs no IO, but yields the value 42.
   \end{block}
 \end{frame}
@@ -121,9 +121,9 @@ return :: a -> IO a
   \frametitle{Combining two instructions}
   \begin{block}<+->{The bind operator \texttt{>>=}}
     Intuition:  next instruction may depend on the output of the previous one
-\begin{verbatim}
+\begin{lstlisting}
 (>>=) :: IO a -> (a -> IO b) -> IO b
-\end{verbatim}
+\end{lstlisting}
     The instruction \texttt{m >>= f}
     \begin{itemize}
     \item executes \texttt{m :: IO a} first
@@ -134,16 +134,16 @@ return :: a -> IO a
     \end{itemize}
   \end{block}
   \begin{block}<+->{Example}
-\begin{verbatim}
+\begin{lstlisting}
 readFiles f1 f2 =
    readFile f1 >>= \xs1 -> readFile f2 
-\end{verbatim}
+\end{lstlisting}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{More convenient: \texttt{do} notation}
-\begin{verbatim}
+\begin{lstlisting}
 copyFile source target =
   undefined
 
@@ -152,7 +152,7 @@ doTwice io =
 
 doNot io =
   undefined
-\end{verbatim}
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
@@ -210,7 +210,7 @@ doNot io =
 \begin{frame}[fragile]
   \frametitle{Hands-on task}
   Define a function
-\begin{verbatim}
+\begin{lstlisting}
 sortFile :: FilePath -> FilePath -> IO ()
 
 -- sortFile inFile outFile 
@@ -220,21 +220,21 @@ sortFile :: FilePath -> FilePath -> IO ()
 -- sort :: Ord a => [a] -> [a]
 -- lines :: String -> [String]
 -- unlines :: [String] -> String
-\end{verbatim}
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Utilities}
-\begin{verbatim}
+\begin{lstlisting}
 sequence :: [IO a] -> IO [a]
 sequence_ :: [IO a] -> IO ()
-\end{verbatim}
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Another hands-on task}
   Define a function
-\begin{verbatim}
+\begin{lstlisting}
 printTable :: [String] -> IO ()
 
 {-
@@ -244,7 +244,7 @@ outputs
 2: Rio
 3: Tokio
 -} 
-\end{verbatim}
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 %----------------------------------------------------------------------

@@ -4,8 +4,7 @@
 \input{common}
 %%% frontmatter
 \input{frontmatter}
-\subtitle
-{Interpreters and Monads}
+\subtitle{Interpreters and Monads}
 
 \begin{document}
 
@@ -23,21 +22,21 @@
 \begin{frame}[fragile]
   \frametitle{A simple expression language}
 \begin{block}{Definition}
-\begin{verbatim}
+\begin{lstlisting}
 data Term  = Con Integer
            | Bin Term Op Term  
              deriving (Eq, Show)
            
 data Op    = Add | Sub | Mul | Div
              deriving (Eq, Show)
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 \end{frame}             
 
 \begin{frame}[fragile]
   \frametitle{A simple interpreter}
 \begin{block}{Evaluation}
-\begin{verbatim}
+\begin{lstlisting}
 eval              :: Term -> Integer
 eval (Con n)      =  n
 eval (Bin t op u) =  sys op (eval t) (eval u)
@@ -46,7 +45,7 @@ sys Add       =  (+)
 sys Sub       =  (-)
 sys Mul       =  (*)         
 sys Div       =  div
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 \end{frame}             
 
@@ -66,7 +65,7 @@ sys Div       =  div
 \begin{frame}[fragile]
   \frametitle{Interpreter with error handling}
   \begin{block}{Exception}
-\begin{verbatim}
+\begin{lstlisting}
 data Exception a =  Raise  String
                  |  Return a
 
@@ -82,7 +81,7 @@ eval (Bin t op u) = case eval t of
                           Raise "div by zero"
                         else                                  
                           Return (sys op v w)
-\end{verbatim}
+\end{lstlisting}
 \end{block}     
 \end{frame}             
 
@@ -90,12 +89,12 @@ eval (Bin t op u) = case eval t of
 \begin{frame}[fragile]
   \frametitle{Monads to the rescue!}
 \begin{block}{The type class Monad}
-\begin{verbatim}
+\begin{lstlisting}
 class Monad m where
   (>>=)  :: m a -> (a -> m b) -> m b
   return :: a -> m a
   fail   :: String -> m a
-\end{verbatim}
+\end{lstlisting}
   Here, \texttt{m} is a variable that can stand for \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}.
 \end{block}
 \end{frame}     
@@ -104,23 +103,23 @@ class Monad m where
 \begin{frame}[fragile]
   \frametitle{Monadic evaluator}
   \begin{alertblock}{The identity monad}
-\begin{verbatim}
+\begin{lstlisting}
 newtype Id a = Id a
 
 instance Monad Id where
     return x = Id x
     x >>= f  = let Id y = x in f y
-\end{verbatim}  
+\end{lstlisting}  
 \end{alertblock}
 
 \begin{exampleblock}{Monadic interpreter}
-\begin{verbatim}
+\begin{lstlisting}
 eval              :: Term -> Id Integer
 eval (Con n)      =  return n
 eval (Bin t op u) =  eval t  >>= \v ->
                      eval u  >>= \w ->
                      return (sys op v w)
-\end{verbatim}  
+\end{lstlisting}  
 \end{exampleblock}
 \end{frame}             
 
@@ -128,18 +127,18 @@ eval (Bin t op u) =  eval t  >>= \v ->
 \begin{frame}[fragile]
   \frametitle{Monadic interpreter with error handling}
   \begin{alertblock}{Exeception}
-\begin{verbatim}
+\begin{lstlisting}
 instance Monad Exception where
   return a = Return a
   m >>= f  = case m of 
                Raise  s -> Raise s
                Return v -> f v
   fail s   = Raise s
-\end{verbatim}  
+\end{lstlisting}  
 \end{alertblock}
 
 \begin{exampleblock}{Interpreter}
-\begin{verbatim}
+\begin{lstlisting}
 eval             :: Term -> Exception Integer
 eval (Con n)      = return n
 eval (Bin t op u) = eval t  >>= \v ->
@@ -147,14 +146,14 @@ eval (Bin t op u) = eval t  >>= \v ->
                     if (op == Div && w == 0) 
                      then fail "div by zero"
                     else return (sys op v w)
-\end{verbatim}  
+\end{lstlisting}  
 \end{exampleblock}
 \end{frame}             
 
 \begin{frame}[fragile]
   \frametitle{Interpreter with tracing}
   \begin{block}{Trace}
-\begin{verbatim}
+\begin{lstlisting}
 newtype Trace a = Trace (a, String)
 
 eval :: Term -> Trace Integer
@@ -167,7 +166,7 @@ eval e@(Bin t op u) =
 
 trace t n = "eval (" ++ show t ++ ") = "
               ++ show n ++ "\n"
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 \end{frame}
 
@@ -175,7 +174,7 @@ trace t n = "eval (" ++ show t ++ ") = "
 \begin{frame}[fragile]
   \frametitle{A monad for tracing}
   \begin{alertblock}{Trace}
-\begin{verbatim}
+\begin{lstlisting}
 instance Monad Trace where
   return a = (a, "")
   m >>= f  = let Trace (a, x) = m in
@@ -184,14 +183,14 @@ instance Monad Trace where
 
 output   :: String -> Trace ()
 output s  = Trace ((), s)
-\end{verbatim}  
+\end{lstlisting}  
 \end{alertblock}
 \end{frame}
 
 \begin{frame}[fragile]
  \frametitle{Monadic interpreter with tracing}
  \begin{exampleblock}{Evaluation}
-\begin{verbatim}
+\begin{lstlisting}
 eval :: Term -> Trace Integer
 eval e@(Con n) = output (trace e n) >>
                  return n
@@ -200,14 +199,14 @@ eval e@(Bin t op u) = eval t >>= \v ->
                       let r = sys op v w in
                       output (trace e r) >>
                       return r
-\end{verbatim}
+\end{lstlisting}
 \end{exampleblock}      
 \end{frame}             
 
 \begin{frame}[fragile]
   \frametitle{Interpreter with reduction count}\small
   \begin{block}{Count}
-\begin{verbatim}
+\begin{lstlisting}
 type Count a =  Int -> (a, Int)
 
 eval              :: Term -> Count Integer
@@ -215,7 +214,7 @@ eval (Con n)      = \i -> (n, i)
 eval (Bin t op u) = \i -> let (v, j) = eval t i in    
                           let (w, k) = eval u j in
                            (sys op v w, k + 1)
-\end{verbatim} 
+\end{lstlisting} 
 \end{block}
 \end{frame}            
 
@@ -224,7 +223,7 @@ eval (Bin t op u) = \i -> let (v, j) = eval t i in
   \frametitle{A monad for counting}
   \framesubtitle{The state monad}
   \begin{alertblock}{State}
-\begin{verbatim}
+\begin{lstlisting}
 data ST s a = ST (s -> (a, s))
 exST (ST sas) = sas
 
@@ -237,7 +236,7 @@ type Count a = ST Int a
 
 incr :: Count ()
 incr =  ST (\i -> ((), i + 1))
-\end{verbatim} 
+\end{lstlisting} 
 \end{alertblock}
 \end{frame}
 
@@ -245,14 +244,14 @@ incr =  ST (\i -> ((), i + 1))
   \frametitle{Monadic interpreter with reduction count}
   \framesubtitle{Implementation}
 \begin{exampleblock}{Evaluation}
-\begin{verbatim}
+\begin{lstlisting}
 eval :: Term -> Count Integer
 eval (Con n)      =  return n
 eval (Bin t op u) =  eval t >>= \v ->
                      eval u >>= \w ->
                      incr   >>
                      return (sys op v w)
-\end{verbatim} 
+\end{lstlisting} 
 \end{exampleblock}
 \end{frame}            
 
@@ -272,19 +271,19 @@ eval (Bin t op u) =  eval t >>= \v ->
   \frametitle{Not every type constructor can be a monad}
   \framesubtitle{Monad laws}
   \begin{alertblock}{return is a left unit}
-\begin{verbatim}
+\begin{lstlisting}
 return x >>= f        == f x
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
   \begin{alertblock}{return is a right unit}
-\begin{verbatim}
+\begin{lstlisting}
 m >>= return          == m
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
   \begin{alertblock}{bind is associative}
-\begin{verbatim}
+\begin{lstlisting}
 m1 >>= \x -> (m2 >>= f) == (m1 >>= \x -> m2) >>= f
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
 \end{frame}
 
@@ -298,7 +297,7 @@ m1 >>= \x -> (m2 >>= f) == (m1 >>= \x -> m2) >>= f
                 \end{block}     
 \pause
 \begin{block}{Definition (predefined)}
-\begin{verbatim}
+\begin{lstlisting}
 data Maybe a = Nothing | Just a
 
 instance Monad Maybe where
@@ -306,7 +305,7 @@ instance Monad Maybe where
     
     Nothing  >>= f = Nothing
     (Just x) >>= f = f x
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 \end{frame}             
 
@@ -320,17 +319,17 @@ instance Monad Maybe where
                 \end{block}     
 \pause
 \begin{block}{Definition (predefined)}
-\begin{verbatim}
+\begin{lstlisting}
 instance Monad [] where
     return x = [x]
     m >>= f  = concatMap f m
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 where 
-\begin{verbatim}
+\begin{lstlisting}
 concatMap :: (a -> [b]) -> [a] -> [b]
 concatMap = undefined
-\end{verbatim}
+\end{lstlisting}
 \end{frame}             
 
 \begin{frame}[fragile]
