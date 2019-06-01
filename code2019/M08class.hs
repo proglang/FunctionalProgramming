@@ -34,3 +34,16 @@ instance Num a => Num (NumPlus a) where
 
 -- f x = read (show x)
 -- g x = show (read x)
+
+class Stack s where
+  push :: s a -> a -> s a
+  pop  :: s a -> s a
+  top  :: s a -> a
+  init :: s a
+
+instance Stack [] where
+  push = flip (:)
+  pop  = tail
+  top  = head
+  init = []
+

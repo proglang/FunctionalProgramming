@@ -56,3 +56,8 @@ my f (x:xs) = f x : my f xs
   
 f3' xs = foldr' (\ x ys -> (++[x]) ys) [] xs
 f3'' = foldr' (\ x -> (++[x])) [] 
+
+filter' p = foldr' op []
+  where
+    op x | p x = (x :)
+         | otherwise = id
