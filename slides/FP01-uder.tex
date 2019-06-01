@@ -633,12 +633,53 @@ readFiles f1 f2 =
   \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
+\begin{frame}[fragile,fragile]
+  \frametitle{Intermezzo: Quicksort!}
+% qsort :: Ord a => [a] -> [a]
+% qsort (piv:xs) = qsort [x | x <- xs, x <= piv ] ++ piv : qsort [x | x <- xs, x >  piv ]
+  \begin{exampleblock}<+->{Quicksort implementation}
+\begin{lstlisting}
+qsort [] = []
+qsort (piv:xs) = qsort (filter (<= piv) xs) ++ piv : qsort (filter (> piv) xs)
+\end{lstlisting}
+  \end{exampleblock}
+  \begin{itemize}
+  \item \lstinline{(filter (<= piv) xs)} --- elements of \lstinline{xs}
+    less than or equal to \lstinline{piv}
+  \item predefined, but \dots
+  \end{itemize}
+  \begin{columns}
+    \begin{column}{0.49\linewidth}
+  \begin{exampleblock}<+->{filter implemented with foldr}
+\begin{lstlisting}
+filter :: (a -> Bool) -> [a] -> [a]
+filter p = foldr op []
+  where op x | p x = (x :)
+             | otherwise = id
+\end{lstlisting}
+  \end{exampleblock}
+\end{column}
+    \begin{column}{0.49\linewidth}
+  \begin{exampleblock}<+->{filter implemented with foldr}
+\begin{lstlisting}
+filter :: (a -> Bool) -> [a] -> [a]
+filter p xs = foldr op [] xs
+  where op x xs | p x = (x :) xs
+                | otherwise = id xs
+\end{lstlisting}
+  \end{exampleblock}
+\end{column}
+
+  \end{columns}
+\end{frame}
+%----------------------------------------------------------------------
 \section{Algebraic Datatypes}
 \begin{frame}
   \frametitle{Algebraic Datatypes}
   \begin{itemize}
   \item Signature facility for defining datatypes in functional
     languages
+  \item Originally introduced in the language Hope in the 1970s
   \item Describe a new datatype by declaring its \alert{constructor function}s and
     giving the type of their arguments
   \item Constructor functions do not evaluate their arguments (like the list
@@ -656,6 +697,11 @@ readFiles f1 f2 =
     \item define game logic on the representations!
     \end{itemize}
   \end{block}
+  \begin{center}
+    \includegraphics{pictures/AcetoFive}
+  \end{center}
+  \vfill
+  \tiny Ron Maijen [CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)]
   % \begin{block}<+->{Microsoft Hearts (\href{https://en.wikipedia.org/wiki/Microsoft_Hearts}{Wikipedia link})}
   %   \begin{itemize}
   %   \item computer game based on card game ``Hearts''
@@ -757,30 +803,63 @@ rankBeats Queen King == False
   \frametitle{Datatypes can be recursive}
   \begin{block}<+->{Binary Trees}
     A binary tree is either
-    \begin{itemize}
-    \item empty or
-    \item it is a node with a data element and two subtrees.
-    \end{itemize}
+    \alert{empty} or  a \alert{node with a data element and two subtrees}.
 \begin{lstlisting}
 data BTree a = Leaf | Node (BTree a) a (BTree a)
 \end{lstlisting}
   \begin{itemize}
   \item Parameterised over the type \lstinline{a} of elements
   \item Recursive datatype definition
-  \item Two arguments of \lstinline{Node} refer to the currently
-    defined type \lstinline{BTree a}
-  \item  \lstinline{Leaf} is the \textbf{base case}
+  % \item Two arguments of \lstinline{Node} refer to the currently
+  %   defined type \lstinline{BTree a}
+  % \item  \lstinline{Leaf} is the \textbf{base case}
   \end{itemize}
+\end{block}
+\begin{exampleblock}{Example}
+  \begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+bt :: BTree Int
+bt = Node (Node Leaf 0 Leaf)
+          10
+          (Node Leaf 42 Leaf)
+\end{lstlisting}
+  \end{minipage}
+  \begin{minipage}{0.45\linewidth}
+    \begin{center}
+      \begin{tikzpicture}
+        \node[circle,draw](z){$10$} child{ node[circle,draw]{0}}
+        child{ node[circle,draw]{42} };
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+    
+\end{exampleblock}
+\end{frame}
+%----------------------------------------------------------------------
+\section{Polymorphism and type classes}
+\begin{frame}[fragile]
+  \frametitle{Parametric polymorphism}
+  \begin{block}<+->{Most higher-order functions are polymorphic}
+\begin{lstlisting}
+map    :: (a -> b) -> [a] -> [b]
+filter :: (a -> Bool) -> [a] -> [a]
+\end{lstlisting}
+    \begin{itemize}
+    \item \lstinline{a} and \lstinline{b} are \alert{type variables}
+    \item the functions can be used for \textbf{any} types
+      instantiated for \lstinline{a} and \lstinline{b}
+    \item they work uniformly for all these instances
+    \end{itemize}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
-\section{Type classes}
 \begin{frame}[fragile]
   \frametitle{Haskell integrates overloading with polymorphism}
   \begin{block}<+->{Restricted polymorphism}
     \begin{itemize}
     \item Some functions work on parametric types, but are restricted to specific instances
-    \item Types contain type variables and \textbf{constraints}
+    \item Types contain type variables and \textbf{constraints} like
+      \lstinline{Eq a}, \lstinline{Ord a} etc
     \end{itemize}
   \end{block}
   \begin{block}<+->{Examples}
@@ -804,9 +883,10 @@ square :: Num a => a -> a
   \item Each constraint mentions a \textbf{type class}\\
     like \texttt{Eq}, \texttt{Ord}, \texttt{Num}, \dots
   \item A type class is a set of types that support the same operations\\
-    e.g.\ \texttt{Eq} requires \texttt{==} and \texttt{/=}
+    e.g.\ members of \texttt{Eq} must support \texttt{==} and \texttt{/=}
   \item Type classes form a hierarchy\\
-    e.g.\ \texttt{Ord a => Eq a}
+    e.g.\ \texttt{Eq a => Ord a} \\``must belong to \lstinline{Eq}
+    before you belong to \lstinline{Ord}''
   \item Many classes are predefined, but you can roll your own
   \end{itemize}
 \end{frame}
@@ -880,13 +960,39 @@ instance Eq Suit where
   _ == _ = False // any other combination
 \end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Boring to write \dots}
+  \begin{alertblock}<+->{Boring to write boilerplate code \dots}
     
   \end{alertblock}
   \begin{block}<+->{Automatic derivation of Eq instance}
 \begin{lstlisting}
 data Suit = Spades | Hearts | Diamonds | Clubs
     deriving (Eq)
+\end{lstlisting}
+  \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Abstract data types using type classes}
+  \begin{itemize}
+  \item Abstract data types separate the specification of the
+    interface from the implementation
+  \end{itemize}
+  \begin{block}{Interface}
+\begin{lstlisting}
+class Stack s where
+  push :: s a -> a -> s a
+  pop  :: s a -> s a
+  top  :: s a -> a
+  init :: s a
+\end{lstlisting}
+  \end{block}
+  \begin{block}{Implementation}
+\begin{lstlisting}
+instance Stack [] where
+  push = flip (:)
+  pop  = tail
+  top  = head
+  init = []
 \end{lstlisting}
   \end{block}
 \end{frame}
@@ -918,50 +1024,86 @@ insert x node@(Node l y r)
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Expression trees}
+    Arithmetic expressions comprising constants and binary operators 
+  \begin{columns}
+    \begin{column}{0.4\linewidth}
   \begin{block}<+->{Definition}
-    Arithmetic expressions comprising constants and binary operators
 \begin{lstlisting}
-data Term  = Con Integer
-           | Bin Term Op Term  
+data Term
+  = Con Integer
+  | Bin Term Op Term  
            
-data Op    = Add | Sub | Mul | Div
+data Op
+  = Add 
+  | Sub
+  | Mul
+  | Div
 \end{lstlisting}  
   \end{block}
+\end{column}
+\begin{column}{0.55\linewidth}
   \begin{block}<+->{Interpretation}
 \begin{lstlisting}
 eval              :: Term -> Integer
 eval (Con n)      =  n
 eval (Bin t op u) =  sys op (eval t) (eval u)
 
+sys :: Op -> (Integer -> Integer -> Integer)
 sys Add       =  (+)         
 sys Sub       =  (-)
 sys Mul       =  (*)         
 sys Div       =  div
 \end{lstlisting}  
   \end{block}
-\end{frame}
+\end{column}
+\end{columns}
+\begin{exampleblock}<+->{Example}
+  \begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+term = Bin (Con 40) Add (Con 2)
+\end{lstlisting}
+  \end{minipage}
+  \begin{minipage}{0.45\linewidth}
+\begin{center}\footnotesize
+      \begin{tikzpicture}[level distance=6ex]
+        \node[draw](z){Add} child{ node[draw]{40}}
+        child{ node[draw]{2} };
+      \end{tikzpicture}
+    \end{center}
+  \end{minipage}
+\end{exampleblock}
+  \end{frame}
 %----------------------------------------------------------------------
 \section{Monads}
 \begin{frame}[fragile]
   \frametitle{Extending the interpreter}
   \begin{block}<+->{Possible extensions}
-    \begin{itemize}
-    \item Error handling
-    \item Counting evaluation steps
-    \item Variables, state
-    \item Output
-    \end{itemize}
+    \begin{minipage}{0.45\linewidth}
+      \begin{itemize}
+      \item Error handling
+      \item Counting evaluation steps
+      \item Variables, state
+      \item Output
+      \end{itemize}
+    \end{minipage}
+    \begin{minipage}{0.45\linewidth}
+      \only<+->{\scalebox{2}{\alert{Effects!!!}}}
+    \end{minipage}
+
     \dots{} but without changing the structure of the interpreter!
   \end{block}
   \begin{block}<+->{Monads to the rescue}
-    In each case, we can phrase the extension as a type of commands,
-    as we've seen in the case of I/O.
+    \begin{itemize}
+    \item In each case, we can phrase the extension as a type of
+      commands, as we've seen in the case of I/O.
+    \item Classical FP approach to incorporate effects
+    \end{itemize}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Commands for error handling}
-  \begin{block}<+->{Interface: three operations}
+  \begin{block}<+->{Interface to error handling: three operations}
     \begin{itemize}
     \item raise an error message
     \item combine computations with error handling (standard bind
@@ -969,14 +1111,14 @@ sys Div       =  div
     \item return a value without an error (standard return operation)
     \end{itemize}
   \end{block}
-  \begin{block}<+->{Datatype for error handling}
+  \begin{block}<+->{Datatype for error signaling}
 \begin{lstlisting}
 data Exception a =  Raise  String
                  |  Return a
 \end{lstlisting}
     \begin{itemize}
-    \item errors are represented by strings
-    \item \lstinline{a} is the type of returned values
+    \item error messages are represented by strings
+    \item \lstinline{a} is the type of normally returned values
     \end{itemize}
   \end{block}
 \end{frame}
@@ -990,14 +1132,24 @@ class Monad m where
   return :: a -> m a
   fail   :: String -> m a
 \end{lstlisting}
-  Here, \texttt{m} is a type variable that can stand for \texttt{IO},
-  \texttt{[]}, and other \textbf{type constructors}. 
+  \begin{itemize}
+  \item \alert{\textbf{NEW:}} \texttt{m} is a type variable that can
+    stand for \texttt{IO}, \texttt{[]}, and other \textbf{type
+      constructors}. Like \lstinline{Exception}.
+  \item Types of bind and return abstracted over \lstinline{IO}
+  \item \lstinline{do} notation: instead of
+    \lstinline{m1 >>= \x -> m2} write
+\begin{lstlisting}
+do x <- m1
+   m2
+\end{lstlisting}
+  \end{itemize}
 \end{block}
 \end{frame}     
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Monadic interpretation}
-\begin{block}<+->{Error handling as a monad}
+\begin{block}<+->{Error signaling as a monad}
 \begin{lstlisting}
 instance Monad Exception where
   return a = Return a
@@ -1011,11 +1163,12 @@ instance Monad Exception where
 \begin{lstlisting}
 eval             :: Term -> Exception Integer
 eval (Con n)      = return n
-eval (Bin t op u) = eval t  >>= \v ->
-                    eval u  >>= \w ->
-                    if (op == Div && w == 0) 
-                     then fail "div by zero"
-                    else return (sys op v w)
+eval (Bin t op u) = do
+  v <- eval t
+  w <- eval u
+  if (op == Div && w == 0) 
+    then fail "div by zero"
+    else return (sys op v w)
 \end{lstlisting}
 \end{block}
   
@@ -1032,23 +1185,28 @@ eval (Bin t op u) = eval t  >>= \v ->
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{A monad for counting}
-  \framesubtitle{The state monad}
-  \begin{alertblock}{State}
+  \begin{block}{The state monad}
 \begin{lstlisting}
 data ST s a = ST (s -> (a, s))
 exST (ST sas) = sas
 
 instance Monad (ST s) where
   return a = ST (\s -> (a, s))
-  m >>= f  = ST (\s -> let (a, s') = exST m s in
-                       exST (f a) s')
+  m >>= f  = ST (\s -> let (a, s') = exST m s in exST (f a) s')
+
+-- primitive for reading and writing the state
+get :: ST s s
+get = ST (\s -> (s, s))
+
+put :: s -> ST s ()
+put s = ST (const ((), s))
 
 type Count a = ST Integer a
 
 incr :: Count ()
-incr =  ST (\i -> ((), i + 1))
+incr = get >>= \i -> put (i+1)
 \end{lstlisting} 
-\end{alertblock}
+\end{block}
 \end{frame}
 % ----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -1057,11 +1215,12 @@ incr =  ST (\i -> ((), i + 1))
 \begin{exampleblock}{Evaluation}
 \begin{lstlisting}
 eval :: Term -> Count Integer
-eval (Con n)      =  return n
-eval (Bin t op u) =  eval t >>= \v ->
-                     eval u >>= \w ->
-                     incr   >>
-                     return (sys op v w)
+eval (Con n)      = return n
+eval (Bin t op u) = do
+  v <- eval t
+  w <- eval u
+  incr
+  return (sys op v w)
 \end{lstlisting} 
 \end{exampleblock}
 \end{frame}
@@ -1078,13 +1237,63 @@ eval (Bin t op u) =  eval t >>= \v ->
 \end{block}
 \begin{block}{Others}
   \begin{itemize}
-  \item Writer monad: supports a write operation
+  \item Writer monad: supports an output operation\\
+    \lstinline{Monoid w => Monad (Writer w)} where
+    \lstinline{data Writer w a = Writer a w}
   \item Maybe monad: computation that may or may not return a result
   \item List monad: Multiple results / nondeterminism, backtracking
   \end{itemize}
 \end{block}
 \end{frame}
 
+%----------------------------------------------------------------------
+\begin{frame}[fragile]
+  \frametitle{Modular computations}
+  \begin{itemize}
+  \item Types given to \lstinline{eval} restrict to a single monad
+  \item Better to just state requirements on the monad
+  \end{itemize}
+  \begin{exampleblock}{Modular evaluation}
+\begin{lstlisting}
+incr :: MonadState Integer m => m ()
+incr = get >>= \i -> put (i+1)
+
+eval :: (MonadState Integer m, MonadError String m)
+     => Term -> m Integer
+eval (Con n)      = return n
+eval (Bin t op u) = do
+  v <- eval t
+  w <- eval u
+  incr
+  if (op == Div && w == 0) 
+    then throwError "div by zero"
+    else return (sys op v w)
+\end{lstlisting}
+  \end{exampleblock}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{Conclusion}
+
+  \begin{block}{Still to come}
+    \begin{itemize}
+    \item Yet more typing features
+      \begin{itemize}
+      \item polymorphic functions as parameters
+      \item type-level computation (associated classes and type
+        families)
+      \item dependent types 
+      \end{itemize}
+    \item Concurrency, parallelism, GPU programming
+    \item Metaprogramming
+    \item Domain specific languages
+    \item \dots
+    \end{itemize}
+  \end{block}
+  \begin{alertblock}{Industrial users of Haskell}
+    \url{https://wiki.haskell.org/Haskell_in_industry}
+  \end{alertblock}
+\end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{References}
@@ -1105,7 +1314,7 @@ eval (Bin t op u) =  eval t >>= \v ->
 \begin{frame}
   % \frametitle{Questions?}
   \begin{center}
-    \tikz{\node[scale=15] at (0,0){?};}
+    \tikz{\node[scale=5] at (0,0){Thank you!};}
   \end{center}
 \end{frame}
 
