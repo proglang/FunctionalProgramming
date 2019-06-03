@@ -1,0 +1,462 @@
+%% -*- coding: utf-8 -*-
+\documentclass{beamer}
+
+\input{common}
+%%% frontmatter
+\input{frontmatter}
+\subtitle
+{Functors, Applicatives, and Parsers}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Introduction}
+  \begin{itemize}
+  \item Functors and applicatives are concepts from \alert{category
+      theory}
+  \item A very general and abstract theory about structures and maps between them
+  \item So general that mathematicians call it ``general abstract
+    nonsense''
+  \item Yields very useful abstractions for functional programming
+  \item We only review them specialized for Haskell
+  \end{itemize}
+\end{frame}
+
+\section{Functors}
+\begin{frame}[fragile]
+  \frametitle{Functors}
+  \begin{block}<+->{Definition}
+    A \alert{Functor} is a mapping \lstinline{f} between types such that for
+    every pair of type \lstinline{a} and \lstinline$b$ there is a
+    function 
+    \lstinline|fmap :: (a -> b) -> (f a -> f b)|
+    such that the \alert{functorial laws} hold:
+    \begin{enumerate}
+    \item the identity function on \lstinline$a$ is mapped to the
+      identity function on \lstinline$f a$:\\
+      \lstinline$fmap id fx == id fx$, \quad for all \lstinline$fx$ in
+      \lstinline$f a$
+    \item \lstinline$fmap$ is compatible with function composition\\
+      \lstinline$fmap (f . g) == fmap f . fmap g$, \quad for all
+      \lstinline$f :: b -> c$ and \lstinline$g :: a -> b$
+    \end{enumerate}
+  \end{block}
+  \begin{alertblock}<+->{Functions on types}
+    \begin{itemize}
+    \item \lstinline{Int}, \lstinline{Bool}, \lstinline{Double} etc
+      are types.
+    \item parameterized types like \lstinline$[a]$,
+      \lstinline$BTree a$, \lstinline$IO a$ can be considered as a
+      type constructor (i.e., \lstinline$[]$, \lstinline$BTree$,
+      \lstinline$IO$) applied to a type 
+    \item We can express that formally by writing \alert{kindings}:
+      \lstinline{Int :: *},
+      \lstinline{Bool :: *},
+      \lstinline{Double :: *}, but
+      \lstinline{[] :: * -> *},
+      \lstinline{BTree :: * -> *},
+      \lstinline{IO :: * -> *}
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Functors in Haskell}
+\begin{alertblock}<+->{The functor class}
+\begin{lstlisting}
+class Functor f where
+  fmap :: (a -> b) -> (f a -> f b)
+\end{lstlisting}
+    \begin{itemize}
+  \item \alert{\textbf{NEW:}} \texttt{f} is a type variable that can
+    stand for \textbf{type
+      constructors} (ie, functions on types) like  \texttt{IO},
+    \texttt{[]}, and others.  So \lstinline$f :: * -> *$!
+  \end{itemize}
+\end{alertblock}
+\begin{exampleblock}<+->{Good news}
+  We already know a couple of functors!
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}
+  \frametitle{List is a functor}
+  \begin{itemize}[<+->]
+  \item To make list an instance of functor, we need to instantiate
+    the type \lstinline$f$ in the type of \lstinline|fmap| by
+    \lstinline|[]|, the list type constructor
+  \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
+  \item \lstinline|fmap :: (a -> b) -> ([a] -> [b])|
+  \item Looks familiar?
+  \item It's the type of \lstinline|map|
+  \item It remains to check the functorial laws on \lstinline|map|
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Functorial laws for list}
+  \begin{block}<+->{\lstinline$fmap id fx == id fx$}
+    \lstinline$fx$ is a list, so we must proceed by induction
+    \begin{itemize}
+    \item \lstinline|map id [] == [] == id []|
+    \item \lstinline$map id (x:xs) == id x : map id xs == x : xs == id (x : xs)$
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{\lstinline$fmap (f . g) == fmap f . fmap g$}
+    Must hold when applied to any list \lstinline$fx$
+    \begin{itemize}
+    \item \lstinline$map (f . g) [] == [] == map f (map g [])$
+    \item \lstinline$map (f . g) (x : xs) == (f . g) x : map (f . g) xs$ \\
+      \lstinline$== f (g x) : (map f . map g) xs$ by function
+      composition and induction \\
+      \lstinline$== f (g x) : map f (map g xs)$ by function composition
+      \\
+      \lstinline$== map f (g x : map g xs)$ by \lstinline$map f$
+      \\
+      \lstinline$== map f (map g (x : xs))$ by \lstinline$map g$
+      \\
+      \lstinline$== (map f . map g) (x : xs)$
+    \end{itemize}
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{Maybe is a functor}
+  \begin{itemize}[<+->]
+  \item Reminder: \lstinline$data Maybe a = Nothing | Just a$
+  \item To make \lstinline$Maybe$ an instance of functor, we need to instantiate
+    the type \lstinline$f$ in the type of \lstinline|fmap| by the type constructor
+    \lstinline|Maybe|
+  \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
+  \item \lstinline|mapMaybe :: (a -> b) -> (Maybe a -> Maybe b)|
+  \item There is actually no real choice for its definition
+  \item \lstinline|mapMaybe g Nothing = Nothing|
+  \item \lstinline|mapMaybe g (Just a) = Just (g a)| 
+  \item Second equation could return \lstinline$Nothing$, but that
+    would violate the functorial laws
+  \item It remains to check the functorial laws on \lstinline|mapMaybe|
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Functorial laws for Maybe}
+  \begin{block}<+->{\lstinline$fmap id fx == id fx$}
+    \lstinline$fx$ is a Maybe, so we must proceed by induction (cases)
+    \begin{itemize}
+    \item \lstinline$mapMaybe id Nothing == Nothing == id Nothing$
+    \item \lstinline$mapMaybe id (Just x) == Just x == id (Just x)$
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{\lstinline$fmap (f . g) == fmap f . fmap g$}
+    Must hold when applied to any Maybe \lstinline$fx$
+    \begin{itemize}
+    \item \lstinline$mapMaybe (f . g) Nothing == Nothing == map f (map g Nothing)$
+    \item \lstinline$mapMaybe (f . g) (Just x)$ \\
+      \lstinline$== Just ((f . g) x)$ 
+      \\
+      \lstinline$== Just (f (g x))$ by function composition
+      \\
+      \lstinline$== mapMaybe f (Just (g x))$ by \lstinline$map f$
+      \\
+      \lstinline$== mapMaybe f (mapMaybe g (Just x))$ by \lstinline$map g$
+      \\
+      \lstinline$== (mapMaybe f . mapMaybe g) (Just x)$
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{BTree is a functor}
+  \begin{itemize}[<+->]
+  \item Reminder:
+    \lstinline$data BTree a = Leaf | Node (BTree a) a (BTree a)$
+  \item To make \lstinline$BTree$ an instance of functor, we need to instantiate
+    the type \lstinline$f$ in the type of \lstinline|fmap| by the type constructor
+    \lstinline|BTree|
+  \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
+  \item \lstinline|mapBTree :: (a -> b) -> (BTree a -> BTree b)|
+  \item There is actually no real choice for its definition
+\begin{lstlisting}
+mapBTree g Leaf = Leaf
+mapBTree g (Node l a r) = Node (mapBTree g l) (g a) (mapBTree g r)
+\end{lstlisting}
+  \item In the second equation we need to transform the data at the
+    node by \lstinline$g$ and the subtrees of type
+    \lstinline$BTree a$ recursively to \lstinline$BTree b$ using the
+    \lstinline$mapBTree$ function
+  \item It remains to check the functorial laws on
+    \lstinline|mapBTree|, but we'll leave this inductive proof to you.
+  \end{itemize}
+\end{frame}
+
+\section{Applicatives}
+\begin{frame}
+  \frametitle{Applicatives}
+  \begin{itemize}
+  \item An applicative (functor) is a special kind of functor
+  \item It has further operations and laws
+  \item We motivate it with a couple of examples
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+  \begin{alertblock}<+->{Example 1: sequencing IO commands}
+\begin{lstlisting}
+sequence :: [IO a] -> IO [a]
+sequence []       = return []
+sequence (io:ios) = do x <- io
+                       xs <- sequence ios
+                       return (x:xs)
+\end{lstlisting}  
+  \end{alertblock}
+  \begin{alertblock}<+->{Alternative way}
+\begin{lstlisting}
+sequence []       = return []
+sequence (io:ios) = return (:) `ap` io `ap` sequence ios
+
+return :: Monad m => a -> m a
+ap     :: Monad m => m (a -> b) -> m a -> m b
+\end{lstlisting}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Applicative}
+ \begin{exampleblock}<+->{Example 2: transposition}
+\begin{lstlisting}
+transpose :: [[a]] -> [[a]]
+transpose [] = repeat []
+transpose (xs:xss) = zipWith (:) xs (transpose xss)
+\end{lstlisting}
+ \end{exampleblock}
+ \begin{alertblock}<+->{Rewrite}
+\begin{lstlisting}
+transpose []       = repeat []
+transpose (xs:xss) = repeat (:) `zapp` xs `zapp` transpose xss
+
+zapp :: [a -> b] -> [a] -> [b]
+zapp fs xs = zipWith ($) fs xs
+\end{lstlisting}
+ \end{alertblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Applicative Interpreter}
+  \begin{block}<+->{A datatype for expressions}
+\begin{lstlisting}
+data Exp v
+  = Var v               -- variables
+  | Val Int             -- constants
+  | Add (Exp v) (Exp v) -- addition
+\end{lstlisting}
+  \end{block}
+  \begin{exampleblock}<+->{Standard interpretation}
+\begin{lstlisting}
+eval :: Exp v -> Env v -> Int
+eval (Var v) env = fetch v env
+eval (Val i) env = i
+eval (Add e1 e2) env = eval e1 env + eval e2 env
+
+type Env v = v -> Int
+fetch :: v -> Env v -> Int
+fetch v env = env v
+\end{lstlisting} 
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Applicative Interpreter}
+  \begin{alertblock}{Alternative implementation}
+\begin{lstlisting}
+eval' :: Exp v -> Env v -> Int
+eval' (Var v) = fetch v
+eval' (Val i) = const i
+eval' (Add e1 e2) = const (+) `ess` (eval' e1) `ess` (eval' e2)
+
+ess a b c = (a c) (b c)
+\end{lstlisting} 
+\end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+\begin{exampleblock}{Extract the common structure}
+\begin{lstlisting}
+class Functor f => Applicative f where
+  pure  :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+\end{lstlisting} 
+\end{exampleblock}
+\end{frame}            
+
+\begin{frame}[fragile]
+  \frametitle{Applicative}
+  \begin{block}{Laws}
+  \begin{itemize}       
+  \item Identity
+\begin{lstlisting}
+pure id <*> v == v
+\end{lstlisting}
+  \item Composition
+\begin{lstlisting}
+pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+\end{lstlisting}
+  \item Homomorphism
+\begin{lstlisting}
+pure f <*> pure x = pure (f x)
+\end{lstlisting}
+  \item Interchange
+\begin{lstlisting}
+u <*> pure y = pure ($ y) <*> u
+\end{lstlisting}
+  \end{itemize} 
+  \end{block}   
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Instances of Applicative}
+  \begin{itemize}
+  \item<+-> List, Maybe, and IO are also applicatives
+  \end{itemize}
+  \begin{block}<+->{Lists}
+\begin{lstlisting}
+instance Applicative [] where
+  -- pure :: a -> [a]
+  pure a = [a]
+  -- (<*>) :: [a -> b] -> [a] -> [b]
+  fs <*> xs = concatMap (\f -> map f xs) fs
+\end{lstlisting}
+  \end{block}
+  \begin{block}<+->{Maybe}
+\begin{lstlisting}
+instance Applicative Maybe where
+  -- pure :: a -> Maybe a
+  pure a = Just a
+  -- (<*>) :: Maybe (a -> b) -> Maybe a -> Maybe b
+  Just f <*> Just a = Just (f a)
+  _ <*> _ = Nothing
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+\section{Parsers}
+\begin{frame}[fragile]
+  \frametitle{An interesting example for Applicatives}
+  \begin{block}<+->{Simple arithmetic expressions}
+\begin{lstlisting}
+data Term  = Con Integer
+           | Bin Term Op Term  
+             deriving (Eq, Show)
+           
+data Op    = Add | Sub | Mul | Div
+             deriving (Eq, Show)
+\end{lstlisting}
+\end{block}
+\begin{alertblock}<+->{Parsing expressions}
+  \begin{itemize}
+  \item Read a string like \texttt{"3+42/6"}
+  \item Recognize it as a valid term
+  \item Return \texttt{Bin (Con 3) Add (Bin (Con 42) Div (Con 6))} 
+  \end{itemize}
+\end{alertblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Parsing}
+\begin{block}{The type of a simple parser}
+\begin{lstlisting}
+type Parser token result = [token] -> [(result, [token])]
+\end{lstlisting}  
+\end{block}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Combinator parsing}
+  \begin{block}{Primitive parsers}
+\begin{lstlisting}
+pempty :: Parser t r
+succeed :: r -> Parser t r
+satisfy :: (t -> Bool) -> Parser t t
+msatisfy :: (t -> Maybe a) -> Parser t a
+lit :: Eq t => t -> Parser t t
+\end{lstlisting}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Combinator parsing II}
+  \begin{block}{Combination of parsers}
+\begin{lstlisting}
+palt :: Parser t r -> Parser t r -> Parser t r
+pseq :: Parser t (s -> r) -> Parser t s -> Parser t r
+pmap :: (s -> r) -> Parser t s -> Parser t r
+\end{lstlisting}
+\end{block}     
+\end{frame}             
+
+
+\begin{frame}[fragile]
+  \frametitle{A taste of compiler construction}
+\begin{block}{A lexer}
+ A lexer partitions the incoming list of
+ characters into a list of tokens. A token is either a single symbol, 
+ an identifier, or a number. Whitespace characters are removed.
+\end{block}
+\end{frame}     
+
+
+\begin{frame}[fragile]
+  \frametitle{Underlying concepts}
+  \begin{alertblock}{Parsers have a rich structure}
+    \begin{itemize}
+    \item parsing illustrates functors, applicatives, as well as
+      monads that we already saw in the guise of IO instructions
+    \end{itemize}
+  \end{alertblock}
+\end{frame}             
+
+\begin{frame}[fragile]
+  \frametitle{Parsing is \dots}
+  \begin{block}{A functor}
+    Check the functorial laws!
+  \end{block}
+  \begin{block}{An applicative}
+    Check applicative laws!
+  \end{block}
+  \begin{block}{A monad}
+    Check the monad laws (upcoming)!
+  \end{block}
+  \begin{alertblock}{Consequence}
+    Can use \texttt{do} notation for parsing!
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parsers are Applicative!}
+  \begin{alertblock}{}
+\begin{lstlisting}
+instance Applicative (Parser' token) where
+  pure = return
+  (<*>) = ap
+
+instance Alternative (Parser' token) where
+  empty = mzero
+  (<|>) = mplus
+\end{lstlisting}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Wrapup}
+  \begin{itemize}[<+->]
+  \item what if there are multiple applicatives?
+  \item they just compose (unlike monads)
+  \item applicative do notation
+  \item applicatives cannot express dependency
+  \item enable more clever parsers
+  \end{itemize}
+  
+\end{frame}
+
+\end{document}

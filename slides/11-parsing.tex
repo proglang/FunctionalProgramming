@@ -23,14 +23,14 @@
 \begin{frame}[fragile]
   \frametitle{Recall the expression language}
 \begin{block}<+->{Definition}
-\begin{verbatim}
+\begin{lstlisting}
 data Term  = Con Integer
            | Bin Term Op Term  
              deriving (Eq, Show)
            
 data Op    = Add | Sub | Mul | Div
              deriving (Eq, Show)
-\end{verbatim}
+\end{lstlisting}
 \end{block}
 \begin{alertblock}<+->{Parsing expressions}
   \begin{itemize}
@@ -44,33 +44,33 @@ data Op    = Add | Sub | Mul | Div
 \begin{frame}[fragile]
   \frametitle{Parsing}
 \begin{block}{The type of a simple parser}
-\begin{verbatim}
+\begin{lstlisting}
 type Parser token result = [token] -> [(result, [token])]
-\end{verbatim}  
+\end{lstlisting}  
 \end{block}
 \end{frame}             
 
 \begin{frame}[fragile]
   \frametitle{Combinator parsing}
   \begin{block}{Primitive parsers}
-\begin{verbatim}
+\begin{lstlisting}
 pempty :: Parser t r
 succeed :: r -> Parser t r
 satisfy :: (t -> Bool) -> Parser t t
 msatisfy :: (t -> Maybe a) -> Parser t a
 lit :: Eq t => t -> Parser t t
-\end{verbatim}
+\end{lstlisting}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Combinator parsing II}
   \begin{block}{Combination of parsers}
-\begin{verbatim}
+\begin{lstlisting}
 palt :: Parser t r -> Parser t r -> Parser t r
 pseq :: Parser t (s -> r) -> Parser t s -> Parser t r
 pmap :: (s -> r) -> Parser t s -> Parser t r
-\end{verbatim}
+\end{lstlisting}
 \end{block}     
 \end{frame}             
 
@@ -99,20 +99,20 @@ pmap :: (s -> r) -> Parser t s -> Parser t r
 \begin{frame}[fragile]
   \frametitle{Functors}
   \begin{alertblock}{The functor class}
-\begin{verbatim}
+\begin{lstlisting}
 class Functor f where
   fmap :: (a -> b) -> (f a -> f b)
-\end{verbatim}  
+\end{lstlisting}  
 \end{alertblock}
 
 \begin{exampleblock}{Instances}
   List, Maybe, IO, \dots
 \end{exampleblock}
 \begin{alertblock}{Functorial laws}
-\begin{verbatim}
+\begin{lstlisting}
 fmap id_a == id_f_a
 fmap (f . g) == fmap f . fmap g
-\end{verbatim}
+\end{lstlisting}
 \end{alertblock}
 \end{frame}             
 
@@ -133,22 +133,22 @@ fmap (f . g) == fmap f . fmap g
 \begin{frame}[fragile]
   \frametitle{Applicative}
   \begin{alertblock}{Example 1: sequencing computation}
-\begin{verbatim}
+\begin{lstlisting}
 sequence :: [IO a] -> IO [a]
 sequence []       = return []
 sequence (io:ios) = do x <- io
                        xs <- sequence ios
                        return (x:xs)
-\end{verbatim}  
+\end{lstlisting}  
   \end{alertblock}
   \begin{alertblock}{Alternative way}
-\begin{verbatim}
+\begin{lstlisting}
 sequence []       = return []
 sequence (io:ios) = return (:) `ap` io `ap` sequence ios
 
 return :: Monad m => a -> m a
 ap     :: Monad m => m (a -> b) -> m a -> m b
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
 \end{frame}
 
@@ -157,27 +157,27 @@ ap     :: Monad m => m (a -> b) -> m a -> m b
 \begin{frame}[fragile]
  \frametitle{Applicative}
  \begin{exampleblock}{Example 2: transposition}
-\begin{verbatim}
+\begin{lstlisting}
 transpose :: [[a]] -> [[a]]
 transpose [] = repeat []
 transpose (xs:xss) = zipWith (:) xs (transpose xss)
-\end{verbatim}
+\end{lstlisting}
  \end{exampleblock}
  \begin{alertblock}{Rewrite}
-\begin{verbatim}
+\begin{lstlisting}
 transpose []       = repeat []
 transpose (xs:xss) = repeat (:) `zapp` xs `zapp` transpose xss
 
 zapp :: [a -> b] -> [a] -> [b]
 zapp fs xs = zipWith ($) fs xs
-\end{verbatim}
+\end{lstlisting}
  \end{alertblock}
 \end{frame}             
 
 \begin{frame}[fragile]
   \frametitle{Applicative Interpreter}
   \begin{block}{Standard interpretation}
-\begin{verbatim}
+\begin{lstlisting}
 data Exp v
   = Var v
   | Val Int
@@ -191,33 +191,33 @@ eval (Add e1 e2) env = eval e1 env + eval e2 env
 type Env v = v -> Int
 fetch :: v -> Env v -> Int
 fetch v env = env v
-\end{verbatim} 
+\end{lstlisting} 
 \end{block}
-\end{frame}            
+\end{frame}
 
 
 \begin{frame}[fragile]
   \frametitle{Applicative Interpreter}
   \begin{alertblock}{Alternative implementation}
-\begin{verbatim}
+\begin{lstlisting}
 eval' :: Exp v -> Env v -> Int
 eval' (Var v) = fetch v
 eval' (Val i) = const i
 eval' (Add e1 e2) = const (+) `ess` (eval' e1) `ess` (eval' e2)
 
 ess a b c = (a c) (b c)
-\end{verbatim} 
+\end{lstlisting} 
 \end{alertblock}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Applicative}
 \begin{exampleblock}{Extract the common structure}
-\begin{verbatim}
+\begin{lstlisting}
 class Functor f => Applicative f where
   pure  :: a -> f a
   (<*>) :: f (a -> b) -> f a -> f b
-\end{verbatim} 
+\end{lstlisting} 
 \end{exampleblock}
 \end{frame}            
 
@@ -226,21 +226,21 @@ class Functor f => Applicative f where
   \begin{block}{Laws}
   \begin{itemize}       
   \item Identity
-\begin{verbatim}
+\begin{lstlisting}
 pure id <*> v == v
-\end{verbatim}
+\end{lstlisting}
   \item Composition
-\begin{verbatim}
+\begin{lstlisting}
 pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
-\end{verbatim}
+\end{lstlisting}
   \item Homomorphism
-\begin{verbatim}
+\begin{lstlisting}
 pure f <*> pure x = pure (f x)
-\end{verbatim}
+\end{lstlisting}
   \item Interchange
-\begin{verbatim}
+\begin{lstlisting}
 u <*> pure y = pure ($ y) <*> u
-\end{verbatim}
+\end{lstlisting}
   \end{itemize} 
   \end{block}   
 \end{frame}
@@ -248,7 +248,7 @@ u <*> pure y = pure ($ y) <*> u
 \begin{frame}[fragile]
   \frametitle{Parsers are Applicative!}
   \begin{alertblock}{}
-\begin{verbatim}
+\begin{lstlisting}
 instance Applicative (Parser' token) where
   pure = return
   (<*>) = ap
@@ -256,7 +256,7 @@ instance Applicative (Parser' token) where
 instance Alternative (Parser' token) where
   empty = mzero
   (<|>) = mplus
-\end{verbatim}
+\end{lstlisting}
   \end{alertblock}
 \end{frame}
 
