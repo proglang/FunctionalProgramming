@@ -34,7 +34,7 @@ data Op    = Add | Sub | Mul | Div
 \end{block}
 \begin{alertblock}<+->{Parsing expressions}
   \begin{itemize}
-  \item Read a string like \texttt{\dq 3+42/6\dq}
+  \item Read a string like \texttt{"3+42/6"}
   \item Recognize it as a valid term
   \item Return \texttt{Bin (Con 3) Add (Bin (Con 42) Div (Con 6))} 
   \end{itemize}

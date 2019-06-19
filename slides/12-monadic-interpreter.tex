@@ -63,12 +63,30 @@ sys Div       =  div
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Feature: Error handling}
+  \begin{itemize}
+  \item A computation either returns a value or it fails on the way
+  \item Could be expressed with the \lstinline{Maybe} type
+    \begin{itemize}
+    \item Returning the value \lstinline{v} is \lstinline{Just v}
+    \item Signalling an error is \lstinline{Nothing}
+    \end{itemize}
+  \item But it would be better to have an error message
+\begin{lstlisting}
+data Exception a = Raise String
+                 | Return a
+\end{lstlisting}
+  \item Equivalently we might use the  predefined type \lstinline{Either a b}
+\begin{lstlisting}
+type Exception' a = Either String a
+\end{lstlisting}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
   \frametitle{Interpreter with error handling}
   \begin{block}{Exception}
 \begin{lstlisting}
-data Exception a =  Raise  String
-                 |  Return a
-
 eval              :: Term -> Exception Integer
 eval (Con n)      = Return n
 eval (Bin t op u) = case eval t of
@@ -83,26 +101,119 @@ eval (Bin t op u) = case eval t of
                           Return (sys op v w)
 \end{lstlisting}
 \end{block}     
-\end{frame}             
+\end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Feature: Tracing}
+  \begin{itemize}
+  \item We would like to produce a trace of the computation
+  \item Each step of the computation should be documented
+  \item Such a computation returns the computed value \textbf{and} the
+    trace
+  \item Could be expressed with the following type
+\begin{lstlisting}
+newtype Trace a = Trace (a, String)
+\end{lstlisting}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interpreter with tracing}
+  \begin{block}{Trace}
+\begin{lstlisting}
+eval :: Term -> Trace Integer
+eval e@(Con n)      = Trace (n, trace e n)
+eval e@(Bin t op u) = 
+   let Trace (v, x) = eval t in
+   let Trace (w, y) = eval u in
+   let r = sys op v w in
+   Trace (r, x ++ y ++ trace e r)
+
+trace t n = "eval (" ++ show t ++ ") = "
+              ++ show n ++ "\n"
+\end{lstlisting}  
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Feature: Reduction count}
+  \begin{itemize}
+  \item We want to keep track of the number of reductions during
+    evaluation of an expressions
+  \item To this end, a counter value must be passed as a parameter to
+    the \lstinline{eval} function, which must return the updated
+    counter
+  \item A type like the following would do
+\begin{lstlisting}
+newtype Count a = Count { exCount :: Int -> (a, Int) }
+\end{lstlisting}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Interpreter with reduction count}\small
+  \begin{block}{Count}
+\begin{lstlisting}
+eval              :: Term -> Count Integer
+eval (Con n)      = Count $ \i -> (n, i)
+eval (Bin t op u) = Count $ \i -> let (v, j) = exCount (eval t) i in    
+                                  let (w, k) = exCount (eval u) j in
+                                  (sys op v w, k + 1)
+\end{lstlisting} 
+\end{block}
+\end{frame}            
+
+\begin{frame}
+  \frametitle{Monads}
+  \begin{itemize}
+  \item There is an abstract concept of computation behind these
+    examples: Monads
+  \item Originates in category theory
+  \item Mathematicians did not even bother to give it a proper name,
+    they called it ``standard construction''
+  \item Discovered for computations by Eugenio Moggi
+  \item Popularized for programming by Phil Wadler
+  \item In Haskell: the \lstinline{Monad} type class
+  \end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Monads to the rescue!}
-\begin{block}{The type class Monad}
+\begin{block}<+->{The type class Monad}
 \begin{lstlisting}
-class Monad m where
+class Applicative m => Monad m where
   (>>=)  :: m a -> (a -> m b) -> m b
   return :: a -> m a
   fail   :: String -> m a
 \end{lstlisting}
-  Here, \texttt{m} is a variable that can stand for \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}.
+  Here, \texttt{m :: * -> *} is a variable that can stand for
+  \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}. 
+\end{block}
+\begin{block}<+->{Purpose of the operations}
+  \begin{alertblock}
+  \item Bind \lstinline{(>>=)} is for \textbf{composing}
+    computations\\
+    In \lstinline{IO} composing means sequencing
+  \item \lstinline{return} is for injecting values into computations\\
+    A trivial computation that does nothing but return the value
+  \item Monads live for their other features!
+  \end{alertblock}
 \end{block}
 \end{frame}     
 
 
 \begin{frame}[fragile]
   \frametitle{Monadic evaluator}
-  \begin{alertblock}{The identity monad}
+\begin{exampleblock}<+->{Monadic interpreter}
+\begin{lstlisting}
+eval              :: Monad m => Term -> m Integer
+eval (Con n)      =  return n
+eval (Bin t op u) =  eval t  >>= \v ->
+                     eval u  >>= \w ->
+                     return (sys op v w)
+\end{lstlisting}  
+\end{exampleblock}
+  \begin{alertblock}<+->{The identity monad}
 \begin{lstlisting}
 newtype Id a = Id a
 
@@ -112,15 +223,6 @@ instance Monad Id where
 \end{lstlisting}  
 \end{alertblock}
 
-\begin{exampleblock}{Monadic interpreter}
-\begin{lstlisting}
-eval              :: Term -> Id Integer
-eval (Con n)      =  return n
-eval (Bin t op u) =  eval t  >>= \v ->
-                     eval u  >>= \w ->
-                     return (sys op v w)
-\end{lstlisting}  
-\end{exampleblock}
 \end{frame}             
 
 
@@ -133,7 +235,7 @@ instance Monad Exception where
   m >>= f  = case m of 
                Raise  s -> Raise s
                Return v -> f v
-  fail s   = Raise s
+  fail s   = Raise s                -- the extra operation
 \end{lstlisting}  
 \end{alertblock}
 
@@ -150,25 +252,6 @@ eval (Bin t op u) = eval t  >>= \v ->
 \end{exampleblock}
 \end{frame}             
 
-\begin{frame}[fragile]
-  \frametitle{Interpreter with tracing}
-  \begin{block}{Trace}
-\begin{lstlisting}
-newtype Trace a = Trace (a, String)
-
-eval :: Term -> Trace Integer
-eval e@(Con n)      = Trace (n, trace e n)
-eval e@(Bin t op u) = 
-   let Trace (v, x) = eval t in
-   let Trace (w, y) = eval u in
-   let r = sys op v w in
-   Trace (r, x ++ y ++ trace e r)
-
-trace t n = "eval (" ++ show t ++ ") = "
-              ++ show n ++ "\n"
-\end{lstlisting}  
-\end{block}
-\end{frame}
 
 
 \begin{frame}[fragile]
@@ -203,20 +286,6 @@ eval e@(Bin t op u) = eval t >>= \v ->
 \end{exampleblock}      
 \end{frame}             
 
-\begin{frame}[fragile]
-  \frametitle{Interpreter with reduction count}\small
-  \begin{block}{Count}
-\begin{lstlisting}
-type Count a =  Int -> (a, Int)
-
-eval              :: Term -> Count Integer
-eval (Con n)      = \i -> (n, i)
-eval (Bin t op u) = \i -> let (v, j) = eval t i in    
-                          let (w, k) = eval u j in
-                           (sys op v w, k + 1)
-\end{lstlisting} 
-\end{block}
-\end{frame}            
 
 
 \begin{frame}[fragile]
@@ -350,7 +419,7 @@ concatMap = undefined
   \item need to combine monads
   \item sequence matters (e.g., exception and state)
   \item some monads do not combine at all
-  \item BUT we can go for something weaker
+  % \item BUT we can go for something weaker
   \end{itemize}
   
 \end{frame}

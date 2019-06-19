@@ -170,6 +170,52 @@ A -> aB
 B -> bB
 B -> 
 
+a^* = 1 + a a^*
+
+A -> aA
+A -> \epsilon
+
+> star :: Parser token result -> Parser token [result]
+> star parse_item =
+>   palt (pseq (pmap (:) parse_item) (star parse_item))
+>        (succeed [])
+
+
+> parse_ab_star =
+>   star (pseq (pmap (,) (lit 'a')) (lit 'b'))
+
+
+[([('a','b'),('a','b'),('a','b'),('a','b'),('a','b'),('a','b'),('a','b')],"")
+,([('a','b'),('a','b'),('a','b'),('a','b'),('a','b'),('a','b')],"ab")
+,([('a','b'),('a','b'),('a','b'),('a','b'),('a','b')],"abab")
+,([('a','b'),('a','b'),('a','b'),('a','b')],"ababab")
+,([('a','b'),('a','b'),('a','b')],"abababab")
+,([('a','b'),('a','b')],"ababababab")
+,([('a','b')],"abababababab")
+,([],"ababababababab")]
+
+> parse_ab_star_ab =
+>   pseq (pmap (const id) (parse_ab_star)) (pseq (pmap (,) (lit 'a')) (lit 'b'))
+
+[(('a','b'),"")
+,(('a','b'),"ab")
+,(('a','b'),"abab")
+,(('a','b'),"ababab")
+,(('a','b'),"abababab")
+,(('a','b'),"ababababab")
+,(('a','b'),"abababababab")]
+
+
+
+
+
+
+
+
+
+
+
+
 
 * An application to parsing expressions
 
@@ -371,6 +417,17 @@ to parse
 >   <|>
 >   symbol '(' *> parseE <* symbol ')'
 
+> parseL = do
+>   keyword "let"
+>   x <- ident
+>   symbol '='
+>   e1 <- parseE
+>   keyword "in"
+>   e2 <- parseE
+>   return $ L x e1 e2
+
+> parseV = fmap V $ pSatisfy mIdentToken
+
 > parseE' :: Parser Token [E]
 > parseE' =
 >   pure (:) <* symbol '+' <*> parseT <*> parseE'
@@ -382,6 +439,9 @@ to parse
 >   pure build_term <*> parseT <*> parseE'
 
 > keyword = lit . Ident
+
+keyword s = lit (Ident s)
+
 > symbol = lit . Symbol
 > ident = pIdent
 > pSatisfy = msatisfy
