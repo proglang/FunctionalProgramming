@@ -27,7 +27,7 @@
 
 \begin{frame}
   \frametitle{Reminder: Monad}
-  \begin{block}{Definition of a Monad -- Lecture 7}
+  \begin{block}{Definition of a Monad -- Previous lecture}
     \begin{itemize}
     \item abstract datatype for instructions that produce values
     \item built-in combination \lstinline{>>=}
@@ -56,18 +56,39 @@ with the following laws:
 \end{block}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{What about Composition?}
   \begin{itemize}[<+->]
-  \item Applicatives compose (as seen in the lecture on parsing).
-  \item Monads do not necessarily compose.
-  \item We sometimes want to use multiples monads at once!
+  \item What does it even mean?
+  \item Given two \textbf{functors} \lstinline{f} and \lstinline{g},
+    is \lstinline{f . g} also a functor?\\
+    I.e., the type constructor
+    that first applies \lstinline{g} and then \lstinline{f}?
+  \item Can make that more formal
+\begin{lstlisting}
+newtype Comp f g a = Comp (f (g a))
+\end{lstlisting}
+  \item The type constructor \lstinline{Comp} has an interesting
+    kinding that corresponds to the type of function composition:
+\begin{lstlisting}
+Comp :: (* -> *) -> (* -> *) -> (* -> *)
+\end{lstlisting}
+  \item Questions
+    \begin{itemize}
+    \item If \lstinline{f} and \lstinline{g} are functors, what about
+      \lstinline{Comp f g}?
+    \item If \lstinline{f} and \lstinline{g} are applicatives, what about
+      \lstinline{Comp f g}?
+    \item If \lstinline{f} and \lstinline{g} are monads, what about
+      \lstinline{Comp f g}?
+    \end{itemize}
+  \item We sometimes want to use multiple functors, applicatives, monads at once! 
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Why combine monads}
-  Lecture 10: Monadic interpreters.
+  \frametitle{Why combine functors, applicatives, monads}
+  Lecture 12: Monadic interpreters.
 
   Interpreters can have many features:
   \begin{itemize}
@@ -78,6 +99,34 @@ with the following laws:
   \end{itemize}
 
   To implement an interpreter, we need to combine all these monads!
+\end{frame}
+
+\begin{frame}
+  \frametitle{Let's start by combining functors!}
+  \begin{block}{To show that \lstinline{Comp f g} is a functor \dots}
+    \begin{itemize}
+    \item Implement \lstinline{fmap} (i.e., give an instance of the
+      \lstinline{Functor} class)
+    \item Show that the functor laws hold
+      \begin{itemize}
+      \item The identity function gets mapped to the identity
+        function.
+      \item Functor composition commutes with function composition.
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Let's combine applicatives!}
+  \begin{block}{To show that \lstinline{Comp f g} is an applicative \dots}
+    \begin{itemize}
+    \item Implement \lstinline{pure} and \lstinline{(<*>)} (i.e., give an instance of the
+      \lstinline{Applicative} class)
+    \item Show that the applicative laws hold \dots
+    \end{itemize}
+  \end{block}
+
 \end{frame}
 
 \begin{frame}[fragile]
@@ -100,6 +149,10 @@ instance Monad (ST s) where
 \begin{frame}[fragile]
   \frametitle{Let's combine Monads! -- Maybe+State}
   \begin{block}{The MaybeState monad}
+    \begin{itemize}
+    \item Purpose: propagate state and signaling of errors
+    \item Attention: the state is lost
+    \end{itemize}
       \begin{lstlisting}
 data MaybeState s a = MS { runMS :: s -> Maybe (a, s) }
 
@@ -120,7 +173,7 @@ instance Monad (MST s) where
   \frametitle{Alternative solution: Monad transformers}
 
   Monad transformers offer a better solution:
-  \begin{block}{}
+  \begin{block}<+->{}
 \begin{lstlisting}
 class MonadTrans t where
   lift :: Monad m => m a -> t m a
@@ -131,11 +184,19 @@ class MonadTrans t where
 A monad transformer \lstinline{t} takes a monad \lstinline{m} and yield a new monad
 \lstinline{(t m)}.
 
-\lstinline{lift} allows to lift a computation from the underlying monad to the new monad.
+Function \lstinline{lift} lifts a computation from the underlying
+monad to the new monad.
+
+\begin{block}<+->{Intermezzo}
+  \begin{itemize}[<+->]
+  \item What's the kind of \lstinline{t} in \lstinline{MonadTrans}?
+  \item Answer: \lstinline{t :: (* -> *) -> (* -> *)}
+  \end{itemize}
+\end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{\texttt{MaybeT}}
+  \frametitle{The \texttt{MaybeT} monad transformer}
   \begin{block}{Definition}
 \begin{lstlisting}
 newtype MaybeT m a = MaybeT { runMaybeT :: m (Maybe a) }
@@ -149,13 +210,13 @@ instance (Monad m) => Monad (MaybeT m) where
       Just x  -> runMaybeT (f x)
 
 instance MonadTrans MaybeT where
-  lift mx = MaybeT $ do { x <- mx ; return $ Just x }
+  lift mx = MaybeT $ mx >>= (return . Just)
 \end{lstlisting}
   \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{A simple usage of MaybeT}
+  \frametitle{A simple use of MaybeT}
   We can recover the ``normal'' monad by applying to \lstinline{Identity}.
   \begin{block}{}
   \begin{lstlisting}
@@ -166,7 +227,7 @@ type MaybeLike = MaybeT Identity
 
 
 \begin{frame}[fragile]
-  \frametitle{\texttt{StateT}}
+  \frametitle{The \texttt{StateT} monad transformer}
   \begin{block}{Definition}
 \begin{lstlisting}
 newtype StateT s m a = StateT { runStateT :: s -> m (a,s) }
@@ -192,7 +253,7 @@ instance MonadTrans StateT where
 
 
 \begin{frame}[fragile]
-  \frametitle{\texttt{ReaderT}}
+  \frametitle{The \texttt{ReaderT} monad transformer}
   \begin{block}{Definition}
 \begin{lstlisting}
 newtype ReaderT r m a = ReaderT { runReaderT :: r -> m a }
@@ -215,7 +276,7 @@ instance MonadTrans (ReaderT r) where
 \begin{frame}[fragile]
   \frametitle{Back to interpreters}
 
-  \begin{block}{During lecture 10, a monadic interpreter for:}
+  \begin{block}{During lecture 12, a monadic interpreter for:}
     \begin{lstlisting}
 data Term  = Con Integer
            | Bin Term Op Term
@@ -228,9 +289,9 @@ data Op    = Add | Sub | Mul | Div
   \pause
   Different interpreters with various features:
   \begin{itemize}
-  \item Failure
-  \item Counting instructions
-  \item Traces
+  \item Failure ($\Rightarrow$ exception/Maybe monad)
+  \item Counting instructions ($\Rightarrow$ state monad)
+  \item Traces ($\Rightarrow$ writer monad)
   \end{itemize}
 \end{frame}
 
@@ -238,9 +299,13 @@ data Op    = Add | Sub | Mul | Div
 \begin{frame}
   \frametitle{Key points}
   \begin{itemize}[<+->]
-  \item Monads do not always compose ...
+  \item Monads do not always compose:\\ if \lstinline{m1} and
+    \lstinline{m2} are monads, 
+    there is no general definition that makes \lstinline{Comp m1 m2} a
+    monad 
   \item But monad transformers help.
-  \item Order is important!
+  \item Order is important:\\
+    \lstinline{StateT s Maybe} $\ne$ \lstinline{MaybeT (ST s)}
   \item You should not overdo it.
   \item It's all in the \lstinline{mtl} library.
   \end{itemize}
