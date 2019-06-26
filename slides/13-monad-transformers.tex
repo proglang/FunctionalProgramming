@@ -154,13 +154,13 @@ instance Monad (ST s) where
     \item Attention: the state is lost
     \end{itemize}
       \begin{lstlisting}
-data MaybeState s a = MS { runMS :: s -> Maybe (a, s) }
+data MaybeState s a = MST { runMST :: s -> Maybe (a, s) }
 
 ....
 
 instance Monad (MST s) where
   return a = MST (\s -> Just (a, s))
-  ms >>= f  = MST (\s -> case runMST ms s of
+  ms >>= f = MST (\s -> case runMST ms s of
                           Nothing -> Nothing
                           Just (a,s') -> runMST (f a) s')
       \end{lstlisting}
