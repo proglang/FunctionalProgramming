@@ -3,6 +3,7 @@
 > module M15modular where
 > import Control.Monad.Except
 > import Control.Monad.Reader
+> import Control.Monad.State.Strict
 
 Modular interpreters
 ====================
@@ -27,6 +28,12 @@ We achieve all that just by adding new code, never going back to change existing
 
 
 
+
+
+
+
+
+
 Syntax
 
 0.0 The base language
@@ -42,9 +49,24 @@ Syntax
 
 
 
+
+
+
+
+
+
+
+
 1.0 Exception handling
 
 >   | Try Exp Exp
+
+
+
+
+
+
+
 
 
 
@@ -62,6 +84,11 @@ Syntax
 
 
 
+
+
+
+
+
 3.0 Functions
 
 >   | Lam Ident Exp
@@ -70,10 +97,22 @@ Syntax
 
 
 
+
+
+
+
+
+
+
 4.0 Laziness
 
 >   | Delay Exp
 >   | Force Exp
+
+
+
+
+
 
 
 
@@ -92,6 +131,24 @@ Now that we have several types of values, we have to encode them in a data type.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 3.1 Function values
 
 Now we could try to represent functions by functions...
@@ -104,9 +161,19 @@ but that would not work, because we'd cut off the monad at the point where the f
 
 but then our Value type would have to be parameterized over the monad m. 
 
-Fortunately, there is a simpler first-order representation of functions as a data structure: The closure
+Fortunately, there is a simpler first-order representation of functions as a data structure:
+The closure
 
 >  | VClosure Env Ident Exp
+
+
+
+
+
+
+
+
+
 
 
 
@@ -117,7 +184,17 @@ Fortunately, there is a simpler first-order representation of functions as a dat
 Lazy values are also represented by closures, but they don't have an argument.
 They are evaluated later, but still with their current environment.
 
->  | VThunk Env Exp
+>  | VThunk Int Env Exp
+
+
+
+> showValue :: Value -> IO ()
+> showValue (VInteger i) = putStrLn ("Integer " ++ show i)
+> showValue (VBool b) = putStrLn ("Bool " ++ show b)
+> showValue (VString s) = putStrLn ("String " ++ show s)
+> showValue (VClosure _ _ _) = putStrLn ("Closure")
+> showValue (VThunk i _ _) = putStrLn ("Thunk #"++show i)
+
 
 
 
@@ -133,9 +210,26 @@ They are evaluated later, but still with their current environment.
 
 > binop Eql (VInteger x1) (VInteger x2) =
 >   return $ VBool (x1 == x2)
+>
+> binop Eql (VString s1) (VString s2) =
+>   return $ VBool (s1 == s2)
 
 > binop Cnc (VString s1) (VString s2) =
 >   return $ VString (s1 ++ s2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -161,7 +255,8 @@ throwError :: e -> m a
 
 > type Env = Ident -> Maybe Value
 
-> update :: Ident -> Value -> Env -> Env
+> -- update :: Ident -> Value -> Env -> Env
+> update :: (Eq i) => i -> v -> (i -> Maybe v) -> (i -> Maybe v)
 > update x v e = \y -> if x == y then Just v else e x
 
 
@@ -179,6 +274,20 @@ throwError :: e -> m a
 >   x1 <- eval e1
 >   x2 <- eval e2
 >   binop b x1 x2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,6 +318,15 @@ We don't have a means to pass the string to the evaluator, yet.
 
 
 
+
+
+
+
+
+
+
+
+
 2.2 Variable bindings with a Reader monad
 
 "
@@ -231,6 +349,11 @@ local :: (r -> r)    -- |The function to modify the environment.
 >   v1 <- eval e1
 >   local (update x v1) (eval e2)
 
+Note that e1 is always evaluated!
+
+
+
+
 
 
 
@@ -252,6 +375,17 @@ That is, the function value remembers (in its env component) the environment (i.
 >     _ ->
 >       throwError "function expected"
 
+This manipulation of the environment implements static binding / static scope. 
+
+This application always evaluates the argument v2.
+So these functions are not lazy, but strict. 
+
+
+
+
+
+
+
 
 
 
@@ -260,17 +394,65 @@ That is, the function value remembers (in its env component) the environment (i.
 
 > eval (Delay e) = do
 >   env <- ask
->   return $ VThunk env e
+>   a <- alloc ()
+>   return $ VThunk a env e
 >
 > eval (Force e) = do
 >   v <- eval e
 >   case v of
->     VThunk env e' ->
->       local (const env) (eval e')
+>     VThunk a env e' -> do
+>       st <- get
+>       case memory st a of
+>         Nothing -> do
+>           vforced <- local (const env) (eval e')
+>           let memory' = update a vforced (memory st)
+>           put (st {memory = memory'})
+>           return vforced
+>         Just v -> do
+>           return v
+>     _ ->
+>       throwError "force expected a thunk"
 
 Not quite "lazy" as in Haskell, as they are evaluated at every use (which is "call by name") whereas Haskell's implementation of laziness guarantees at most one evaluation. 
 Providing such a guarantee requires a state monad that remembers whether a thunk has been evaluated already.
 
 
+
 ================================================================================
+
+> run e = evalState (runReaderT (runExceptT (eval e)) (const Nothing)) initialStore
+>
+> data Store = Store {
+>   count :: Int,               -- allocation counter
+>   memory :: Int -> Maybe Value -- memory i = value of thunk at address i
+> }
+>
+> initialStore :: Store
+> initialStore = Store { count = 0, memory = const Nothing }
+>
+> alloc () = do
+>   st <- get
+>   let c = count st
+>   put (st {count = c+1})
+>   return c
+
+
+
+
+
+
+
+
+
+> ex1 = Binop Div (Integer 42) (Integer 0)
+> ex2 = Try ex1 (Integer 0)
+> ex3 = Try (Binop Add ex1 (Integer 1)) (Integer 0)
+> ex4 = Binop Add ex3 ex1
+> ex5 = Let "x" ex1 (Integer 4711)
+> ex6 = Let "x" (Delay ex1) (Integer 4711)
+> ex7 = Let "x" (Delay ex1) (Force (Var "x"))
+> ex8 = Let "x" (Delay ex1) (Try (Force (Var "x")) (Integer 1435))
+> ex9 = Let "x" (Delay ex1) (Try (Force (Var "x")) (Force (Var "x")))
+> 
+
 
