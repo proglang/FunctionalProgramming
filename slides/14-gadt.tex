@@ -42,9 +42,9 @@ data Term  = I Integer
   \frametitle{Interpreters, again}
   \begin{block}{Evaluation}
     \begin{lstlisting}
-eval             :: Term -> Integer
-eval (I n)        = n
-eval (Add t op u) = eval t + eval u
+eval :: Term -> Integer
+eval (I n)     = n
+eval (Add t u) = eval t + eval u
   \end{lstlisting}
 \end{block}
 \end{frame}
@@ -57,7 +57,7 @@ eval (Add t op u) = eval t + eval u
 data Term  = I Integer
            | B Bool
            | Add Term Term
-           | Eq Term Term
+           | Eql Term Term
              deriving (Eq, Show)
   \end{lstlisting}
 \end{block}
@@ -75,17 +75,18 @@ eval (I n)      = Int n
 eval (B b)      = Bool b
 eval (Add t t') = case (eval t, eval t') of
                     (Int i, Int i2) -> Int (i + i2)
-eval (Eq t t')  = case (eval t, eval t') of
+eval (Eql t t')  = case (eval t, eval t') of
                     (Int i, Int i2) -> Bool (i == i2)
                     (Bool i, Bool i2) -> Bool (i == i2)
   \end{lstlisting}
 \end{block}
 \end{frame}
 
-\begin{frame}{Issues with our interpreter}
+\begin{frame}{Issues with the interpreter}
   \begin{itemize}[<+->]
 \item The interpreter can fail because of type mismatch.
-\item We need to deal with failures manually.
+\item We need to deal with failures manually (for instance by making
+  the interpreter monadic).
 \item The more values we have in the language, the more complicated it becomes.
 \item The Haskell type system does not help us.
 \end{itemize}
@@ -132,7 +133,7 @@ data Term =
     I Integer
   | B Bool
   | Add Term Term
-  | Eq Term Term      
+  | Eql Term Term      
     \end{lstlisting}
   \end{block}
 \end{frame}
@@ -145,7 +146,7 @@ data Term where
   I :: Integer -> Term
   B :: Bool -> Term
   Add :: Term -> Term -> Term
-  Eq :: Term -> Term -> Term   
+  Eql :: Term -> Term -> Term   
     \end{lstlisting}
   \end{block}
 \end{frame}
@@ -158,7 +159,7 @@ data Term a where
   I :: Integer -> Term Integer
   B :: Bool -> Term Bool
   Add :: Term (?) -> Term (?) -> Term (?)
-  Eq :: Term (?) -> Term (?) -> Term (?)
+  Eql :: Term (?) -> Term (?) -> Term (?)
     \end{lstlisting}
   \end{block}
 \end{frame}
@@ -171,7 +172,7 @@ data Term a where
   I :: Integer -> Term Integer
   B :: Bool -> Term Bool
   Add :: Term Integer -> Term Integer -> Term Integer
-  Eq :: Term (?) -> Term (?) -> Term (?)
+  Eql :: Term (?) -> Term (?) -> Term (?)
     \end{lstlisting}
   \end{block}
 \end{frame}
@@ -184,9 +185,14 @@ data Term a where
   I :: Integer -> Term Integer
   B :: Bool -> Term Bool
   Add :: Term Integer -> Term Integer -> Term Integer
-  Eq :: (Eq a) => Term a -> Term a -> Term Bool
+  Eql :: (Eq x) => Term x -> Term x -> Term Bool
     \end{lstlisting}
   \end{block}
+  \begin{itemize}
+  \item Read the last line as ``the exists some type \lstinline{x}
+    such that \lstinline{x} is an instance of \lstinline{Eq} and the
+    two arguments have the \textbf{same} type \lstinline{Term x}.''
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -197,12 +203,18 @@ eval :: Term a -> a -- This type annotation is mandatory
 eval (I i) = i --$\pause$
 eval (B b) = b --$\pause$
 eval (Add t t') = eval t + eval t' --$\pause$
-eval (Eq t t') = eval t == eval t' --$\pause$
+eval (Eql t t') = eval t == eval t' --$\pause$
     \end{lstlisting}
   \end{block}\pause
-
-  We call this kind of interpreter ``tag-less'', because it does not
-  require type tags like the data constructors \lstinline{Int} and \lstinline{Bool}.
+  \begin{itemize}[<+->]
+  \item This kind of interpreter is called ``tag-less'', because it
+    does not require type tags like the data constructors
+    \lstinline{Int} and \lstinline{Bool}.
+  \item Pattern matching specializes the type \lstinline{a} according
+    to the return type of the constructor.
+  \item The corresponding right hand side is checked against this
+    specialization of type \lstinline{a}.
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
