@@ -74,6 +74,55 @@ exampl2 = \ x y z -> (x z) (y z) -- \ \ \ (2 0) (1 0)
 
 
 
+ve :: (Int, (Int, (Bool, ())))
+ve = undefined
+
+
+
+
+
+-- ^ GADT interpreter with functions
+-- "typed lambda calculus with constants"
+
+data FExp e a where
+  Con :: a -> FExp e a
+  App :: FExp e (a -> b) -> FExp e a -> FExp e b
+  Lam :: FExp (a, e) b -> FExp e (a -> b)
+  Var :: Nat e a -> FExp e a
+
+data Nat e a where
+  Zero :: Nat (a, b) a
+  Succ :: Nat e a -> Nat (b, e) a
+
+-- \lambda x.x        -- the I combinator
+ex1 = Lam (Var Zero)
+-- \x\y.x  -- the K combinator
+ex2 = Lam (Lam (Var (Succ Zero)))
+-- \f\x. f x
+ex3 = Lam (Lam (App (Var (Succ Zero)) (Var Zero)))
+-- the S combinator \x\y\z -> (x y) (y z)
+ex4 = Lam (Lam (Lam (App (App (Var (Succ (Succ Zero))) (Var Zero))
+                         (App (Var (Succ Zero)) (Var Zero)))))
+
+
+type Program a = FExp () a
+
+lookupNat :: Nat e a -> e -> a
+lookupNat Zero (a, b) = a
+lookupNat (Succ p) (_, b) = lookupNat p b
+
+feval :: e -> FExp e a -> a
+feval e (Con v) = v
+feval e (App f x) = (feval e f) (feval e x)
+feval e (Lam b) = \x -> feval (x, e) b
+feval e (Var p) = lookupNat p e
+
+
+
+
+
+
+
 
 
 
@@ -87,9 +136,21 @@ data Package where
 
 package1 = Package (+1) 41
 package2 = Package length [1,2,3]
+package3 = Package length "sdkfh"
+package4 = Package fst (12, undefined)
+
 
 unpack :: Package -> Int
 unpack (Package f a) = f a
+
+
+data PackageN where
+  PackageN :: Num a => (a -> Int) -> a -> PackageN
+
+package1a = PackageN fromInteger 92384729384729384
+
+unpackN :: PackageN -> Int
+unpackN (PackageN f a) = let b = a * a in f b
 
 -- -- This doesn't work
 -- getFun :: Package -> (a -> Int) -- Who is `a` ?
@@ -103,46 +164,4 @@ unpack (Package f a) = f a
 
 
 
-
-
--- ^ GADT intepreter with functions
-
-data FExp e a where
-  App :: FExp e (a -> b) -> FExp e a -> FExp e b
-  Lam :: FExp (a, e) b -> FExp e (a -> b)
-  Var :: Nat e a -> FExp e a
-
-data Nat e a where
-  Zero :: Nat (a, b) a
-  Succ :: Nat e a -> Nat (b, e) a
-
-
-ex1 = Lam (Var Zero)   -- \lambda x.x        -- the I combinator
-ex2 = Lam (Lam (Var (Succ Zero))) -- \x\y.x  -- the K combinator
-ex3 = Lam (Lam (App (Var (Succ Zero)) (Var Zero))) -- \f\x. f x
--- the S combinator \x\y\z -> (x y) (y z)
-ex4 = Lam (Lam (Lam (App (App (Var (Succ (Succ Zero))) (Var Zero))
-                         (App (Var (Succ Zero)) (Var Zero)))))
-
-
-
-
-
-
-
-
-
-
-
-        
-type Program a = FExp () a
-
-lookupNat :: Nat e a -> e -> a
-lookupNat Zero (a, b) = a
-lookupNat (Succ p) (_, b) = lookupNat p b
-
-feval :: e -> FExp e a -> a
-feval e (App f x) = (feval e f) (feval e x)
-feval e (Lam b) = \x -> feval (x, e) b
-feval e (Var p) = lookupNat p e
 
