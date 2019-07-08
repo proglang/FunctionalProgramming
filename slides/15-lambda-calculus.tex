@@ -109,7 +109,8 @@
   \begin{block}<+->{Reduction rules}\VSPBLS
     \begin{alignat*}{2}
       (\lambda x.M) & \rightarrow_{\alpha} (\lambda y.M[x\mapsto y]) \quad 
-      & y\not\in\free(M) & \quad\text{Alpha reduction}
+      & y\not\in\free(M) & \quad\text{Alpha reduction (\textcolor{red}{renaming bound
+      variables})}
       \\
       ((\lambda x.M)\,N) & \rightarrow_{\beta} M[x\mapsto N]
       && \quad\text{Beta reduction (\textcolor{red}{function application})}
@@ -117,6 +118,7 @@
       (\lambda x.(M\,x)) & \rightarrow_{\eta} M \quad
       & x\not\in\free(M) & \quad \text{Eta reduction}
     \end{alignat*}
+    Left hand side of a rule: \textbf{redex}; right hand side: \textbf{contractum}
   \end{block}
   \begin{block}<+->{Reductions may be applied anywhere in a term}
     \begin{displaymath}
