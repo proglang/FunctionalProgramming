@@ -110,3 +110,109 @@ three (three g) x =
 (three g (three g (three g x)))
 
 -}
+
+-- [0] = \f \x. x
+-- if0 [0] Z S --> Z
+-- if0 [n+-] Z S --> S
+
+if0 = \n -> \z -> \s -> n (\z -> s) z
+{-
+if0 zero Z S
+=
+(\n -> \z -> \s -> n (\z -> s) z) zero Z S
+-->
+(\z -> \s -> zero (\z -> s) z) Z S
+-->
+(\s -> zero (\z -> s) Z) S
+-->
+(zero (\z -> S) Z)
+=
+((\f -> \x -> x) (\z -> S) Z)
+-->
+(\x -> x) Z
+-->
+Z
+-}
+
+pair = \x -> \y -> \f -> f x y
+
+triple = \x y z -> \f -> f x y z
+
+xcase = \e -> \nl -> \nr -> e nl nr
+
+left  = \pl -> \nl nr -> nl pl
+right = \pr -> \nl nr -> nr pr
+
+-- subtraction for Church numerals
+-- requirement: predecessor
+
+xsucc = \n f x -> f (n f x)
+
+xpred = \n -> 
+  fst (n (\(_, r) -> (r, xsucc r)) (zero , zero))
+
+church :: Int -> (a -> a) -> a -> a
+church 0 = zero
+church n = xsucc (church (n-1))
+
+{-
+y = \f -> (\x -> f (x x)) (\x -> f (x x))
+
+N = Y M
+
+N
+=
+(Y M)
+=
+((\f -> (\x -> f (x x)) (\x -> f (x x))) M)
+-->
+((\x -> M (x x)) (\x -> M (x x)))
+-->
+M ((\x -> M (x x)) (\x -> M (x x)))
+
+<--
+M ((\f -> (\x -> f (x x)) (\x -> f (x x))) M)
+=
+M (Y M)
+=
+M N
+
+
+for Y we have: Y M = M (Y M)
+
+-}
+
+fix m = m (fix m)
+
+-- the factorial function
+
+-- write a non-recursive function
+-- that abstracts over the recursive call
+
+fact = 
+  \fac ->
+    \n -> if n == 0 then 1 else n * fac (n - 1)
+{-
+fix fact 0
+-->
+fact (fix fact) 0
+=
+(\fac -> \n ->
+ if n == 0 then 1 else n * fac (n - 1)) (fix fact) 0
+--> -->
+if 0 == 0 then 1 else n * (fix fact) (n - 1)
+-->
+1
+
+fix fact 2
+-->
+fact (fix fact) 2
+=
+(\fac -> \n ->
+ if n == 0 then 1 else n * fac (n - 1)) (fix fact) 2
+--> -->
+if 2 == 0 then 1 else 2 * (fix fact) (2 - 1)
+-->
+2 * (fix fact) 1
+
+-}
