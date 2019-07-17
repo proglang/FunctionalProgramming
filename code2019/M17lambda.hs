@@ -216,3 +216,46 @@ if 2 == 0 then 1 else 2 * (fix fact) (2 - 1)
 2 * (fix fact) 1
 
 -}
+
+{-
+try to type check M N
+
+recursively find that M : A -> B
+recursively find that N : A'
+
+need to check whether A = A'?
+
+concrete example (with type variables a and b):
+M : (a -> b) -> (a -> b)
+N : (Int -> Int)
+
+is (a -> b) = (Int -> Int) ?
+No, but if I substitute a |-> Int and b |-> Int, then it's fine!
+
+--> Need substitute a and b in *whole* type for M:
+
+M : (Int -> Int) -> (Int -> Int)
+N : (Int -> Int)
+----------------------------------- by rule App
+M N : (Int -> Int)
+
+--- another:
+
+M : (a -> b) -> (a -> b)
+N : (c -> Bool)
+
+is (a -> b) =.= (c -> Bool) ?
+
+no, but if I substitute a |-> c and b |-> Bool,
+then I can "unify" the two types:
+
+M : (c -> Bool) -> (c -> Bool)
+N : (c -> Bool)
+
+----
+
+M N : (c -> Bool)
+
+In each case, the substitution is called a unifier of the two types.
+
+-}
