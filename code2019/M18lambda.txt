@@ -1,0 +1,61 @@
+in the lambda case:
+
+P(M) = [ A |- M : T ]
+if x not in A
+
+soundness: A |- M : T derivable
+
+wnat to prove
+
+A |- \x.M : a -> T
+
+but the LAM rule requires
+
+A, x:a |- M : T
+
+---- need property "Weakening"
+
+if A |- M : T and x not in A
+then A, x:T' |- M : T
+
+----
+
+want to prove
+
+S A_0 U S A_1 |- M_0 M_1 : S a
+
+but have: A_0 |- M_0 : T_0  and A_1 |- M_1 : T_1
+
+---- need property "Typing closed under substitution"
+
+if A |- M : T and S substitution
+then S A |- M : S T
+
+----
+
+hence:  S A_0 |- M_0 : S T_0
+and      S A_1 |- M_1 : S T_1
+
+weakening:
+
+S (A_0 + A_1) |- M_0 : S T_0
+S (A_0 + A_1) |- M_1 : S T_1
+
+from unification:   S T_0 = S T_1 -> S a
+
+S (A_0 + A_1) |- M_0 : S T_1 -> S a
+
+hence apply APP 
+
+S (A_0 + A_1) |- M_0 M_1 : S a
+
+
+--------- generic instance
+
+(*) forall a b. a -> b -> c -> b
+>> S = a |-> d, b |-> d  with d another type variable
+
+forall d. d -> d -> c -> d
+
+no quantification over c because it was free in (*)
+
