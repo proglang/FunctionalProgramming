@@ -1,0 +1,49 @@
+name:                code2021
+version:             0.1.0.0
+github:              "peterthiemann/code2021"
+license:             BSD3
+author:              "Peter Thiemann"
+maintainer:          "peter.thiemann@gmail.com"
+copyright:           "2018 Peter Thiemann"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/peterthiemann/code2021#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- svg-builder >= 0.1.1
+
+library:
+  source-dirs: src
+
+executables:
+  code2021-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - code2021
+
+tests:
+  code2021-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - code2021
