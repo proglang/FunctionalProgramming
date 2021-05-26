@@ -1,6 +1,7 @@
 > module M19functionaldata where
 
-* Purely Functional Data Structures
+Purely Functional Data Structures
+====================
 
 This lecture is based on the book
 
@@ -20,7 +21,8 @@ its representation with the previous version.  Garbage collection
 guarantees that inaccessible parts of the previous version are
 reclaimed for other uses.
 
-** Binary Search Tree
+Binary Search Tree
+--------------------
 
 The standard binary search tree serves as a very simple example for a
 representation of a set.  A map can be implemented very similarly.
@@ -55,7 +57,8 @@ Known deficiency: Not balanced.
 
 
 
-** Leftist Heap
+Leftist Heap
+--------------------
 
 A heap or a priority queue is a special representation of an ordered
 set where access to a "minimal" element is most efficient.  A typical
@@ -75,7 +78,7 @@ path to an empty node.
 Proposition:
 
 The right spine of a leftist heap of size n contains at most
-floor(log_2 (n+1)) elements.
+$\lfloor\log_2 (n+1)\rfloor$ elements.
 
 Our representation of leftist heaps directly includes rank information:
 
@@ -107,7 +110,7 @@ this path to restore the leftist property.
 >       else
 >         TH (rankl + 1) x r l
 
-Merge runs in O (log n) time because the length of each right spine is
+Merge runs in $O (\log n)$ time because the length of each right spine is
 at most logarithmic in the number of elements.
 
 Given the efficient merge function, the remaining functions are trivial.
@@ -121,20 +124,21 @@ Given the efficient merge function, the remaining functions are trivial.
 
 What's their complexity?
 
-** Binomial Heaps
+Binomial Heaps
+--------------------
 
 Binomial heaps are another common implementation of heaps.
 They are composed  of primitive objects, the "binomial trees".
 They are defined inductively:
 
-*** A binomial tree of rank 0 is a singleton node.
-*** A binomial tree of rank (r+1) is formed by linking two binomial trees of
+* A binomial tree of rank $0$ is a singleton node.
+* A binomial tree of rank $(r+1)$ is formed by linking two binomial trees of
     rank r, which makes one tree the leftmost child of the other.
 
-A binomial tree of rank r contains exactly 2^r nodes.
+A binomial tree of rank $r$ contains exactly $2^r$ nodes.
 Here is an alternative definition:
-A binomial tree of rank r is a node with r children t1, ..., tr where each ti
-is a binomial tree of rank (r-i).
+A binomial tree of rank $r$ is a node with $r$ children $t_1, \dots, t_r$ where each $t_i$
+is a binomial tree of rank $(r-i)$.
 The first field of a tree node contains its rank.
 
 > data BinTree a = Node Int a [BinTree a]
@@ -171,10 +175,10 @@ as a list of trees in rank-increasing order.
 
 > newtype BinHeap a = BinHeap [BinTree a]
 
-Because each binomial tree has 2^r Elements and because no two trees
+Because each binomial tree has $2^r$ Elements and because no two trees
 in a binomial heap have the same rank, the trees in a binomial heap of
 size n correspond to the ones in the binary representation of n.
-Hence, a heap of size n contains at most floor (log_2 (n + 1)) trees.
+Hence, a heap of size n contains at most $\lfloor \log_2 (n + 1)\rfloor$ trees.
 
 The insert and merge operations on binomial heaps are defined in
 analogy to binary addition with the link operation corresponding to
@@ -192,7 +196,7 @@ processing the carry bit.
 >   insert x (BinHeap ts) = BinHeap (insTree (Node 0 x []) ts)
 
 The worst case for the insert operation occurs when the heap contains
-n = 2^k-1 elements.  In this case, O(k) = O(log n) link operations are
+$n = 2^k-1$ elements.  In this case, $O(k) = O(\log n)$ link operations are
 necessary.
 
 The merge operation is also straightforward. It traverses both lists
@@ -212,7 +216,7 @@ Complexity?
 
 
 For the remaining operations, we need an auxiliary function that
-extracts the minimum tree from a heap. It clearly takes O (log n) time
+extracts the minimum tree from a heap. It clearly takes $O (\log n)$ time
 
 > removeMinTree :: (Ord a) => [BinTree a] -> (BinTree a, [BinTree a])
 > removeMinTree [t] =
@@ -241,13 +245,14 @@ merging.
 >     where (t1, ts1) = removeMinTree ts
 
 
-** Red-Black Trees
+Red-Black Trees
+--------------------
 
 
 Binary search trees may become unbalanced, which degrades their
-potential log(n) performance for find and insert to linear time.  The
+potential $\log n$ performance for find and insert to linear time.  The
 red-black tree is an instance of a balanced binary search tree
-structure that guarantees worst case O(log n) time for find and
+structure that guarantees worst case $O(\log n)$ time for find and
 insert.  In such a tree, every node is colored either red or black
 where empty nodes are considered black.
 
@@ -256,8 +261,8 @@ where empty nodes are considered black.
 
 A red-black tree must satisfy the following invariants.
 
-*1* No red node has a red child.
-*2* Every path from the root to a empty node contains the same number of
+1. No red node has a red child.
+2. Every path from the root to a empty node contains the same number of
     black nodes. 
 
 These invariants guarantee that the longest path in a red-black tree
@@ -266,8 +271,8 @@ long as the shortest path (with black nodes, only).
 
 Proposition:
 
-The maximum depth of a node in a red-black tree of size n is less than
-or equal to 2 * floor (log (n + 1)).
+The maximum depth of a node in a red-black tree of size $n$ is less than
+or equal to $2 * \lfloor \log (n + 1)\rfloor$.
 
 The implementation of member ignores the colors.
 
@@ -309,9 +314,11 @@ test the color of nodes on the search path.
 With these optimizations, this implementation of binary search trees
 is very fast.
 
-** Stack
+Stack
+--------------------
 
-** Queues
+Queues
+--------------------
 
 A common functional implementation of a queue consists of a pair of
 lists where one list contains the front elements of the queue and the
@@ -383,7 +390,8 @@ RTQ (f2 [] f2) where  { f1 = x1:f1'; f1' = []; f2 = rotate f1 (x3:x2:[]) [] }
 
 
 ********************************************************************************
-** Auxiliary definitions: interface for set and heap manipulation
+Auxiliary definitions: interface for set and heap manipulation
+--------------------
 
 > class Rank f where
 >   rank :: f a -> Int
