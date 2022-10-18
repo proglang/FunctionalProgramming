@@ -35,9 +35,10 @@
   \item Definitions are  put in a text file ending in \texttt{.hs}
   \end{itemize}
   \begin{block}{Examples.hs}
-% dollarRate = 1.18215
 \begin{verbatim}
-dollarRate = 1.3671
+ dollarRate2018 = 1.18215  
+ dollarRate2019 = 1.3671
+ dollarRate = 0.98546541
 \end{verbatim}
   \end{block}
 \end{frame}
@@ -48,7 +49,7 @@ dollarRate = 1.3671
     \texttt{> stack ghci}
 \begin{verbatim}
 Configuring GHCi with the following packages: 
-GHCi, version 8.0.2: http://www.haskell.org/ghc/  :? for help
+GHCi, version 9.0.2: http://www.haskell.org/ghc/  :? for help
 Loaded GHCi configuration from /private/var/folders/t4/sknv38zx3qv7c0lm9xj9nhrc0000gn/T/ghci33367/ghci-script
 Prelude> 
 \end{verbatim}
@@ -62,9 +63,9 @@ Ok, modules loaded: Main.
   \item Use the definition
 \begin{verbatim}
 *Main> dollarRate
-1.3671
+0.98546541
 *Main> 53 * dollarRate
-72.4563
+52.22966673
 \end{verbatim}
   \end{itemize}
 \end{frame}
@@ -72,7 +73,7 @@ Ok, modules loaded: Main.
   \frametitle{A function to convert EUR to USD}
 \begin{block}{Examples.hs}
 \begin{verbatim}
-dollarRate = 1.3671
+dollarRate = 0.98546541
 
 -- |convert EUR to USD
 usd euros = euros * dollarRate
@@ -96,9 +97,9 @@ usd euros = euros * dollarRate
   \end{itemize}
 \begin{verbatim}
 *Main> usd 1
-1.3671
+0.98546541
 *Main> usd 73
-99.7983
+71.93897493
 \end{verbatim}
 \end{frame}
 \begin{frame}[fragile]
@@ -132,7 +133,7 @@ True
 True
 \end{verbatim}
   \end{block}
-  \begin{alertblock}<+->{Does it hold generally?}
+  \begin{alertblock}<+->{Does it hold in general?}
     
   \end{alertblock}
 \end{frame}
@@ -340,10 +341,12 @@ prop_EuroUSD' :: Double -> Bool
   \end{itemize}
 \end{frame}
 \begin{frame}
-  \frametitle{Type checking}
+  \frametitle{Type inference and type checking}
   \begin{itemize}
-  \item  An algorithm \textbf{infers} (works out) the type of every expression 
-  \item  Checks that all types match --- before running the program
+  \item An algorithm \textbf{infers} (works out) the type of every
+    expression
+  \item It finds the ``best'' type for each expression
+  \item Checks that all types match --- before running the program
   \end{itemize}
 \end{frame}
 \begin{frame}[fragile]
@@ -389,7 +392,7 @@ euro :: Double -> Double
 \end{verbatim}
 \end{frame}
 \begin{frame}[fragile]
-  \frametitle{Fixing the problem}
+  \frametitle{Fixing the problem/1}
   A definition can be given a \textbf{type signature} which specifies
   its type
 \begin{block}{In Examples.hs}
@@ -404,7 +407,19 @@ price' = 79
 price' :: Double
   	-- Defined at...
 *Main> euro price'
-57.78655548240802
+80.1651678469364
+\end{verbatim}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Fixing the problem/2}
+  Reintroduce the overloading using function \texttt{fromInteger} (a
+  type cast), which converts to any numeral type
+\begin{verbatim}
+*Main> :i price
+price :: Integer
+  	-- Defined at...
+*Main> euro (fromInteger price)
+80.1651678469364
 \end{verbatim}
 \end{frame}
 
