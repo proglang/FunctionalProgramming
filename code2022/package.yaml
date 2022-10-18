@@ -1,6 +1,6 @@
-name:                code2021
+name:                code2022
 version:             0.1.0.0
-github:              "peterthiemann/code2021"
+github:              "peterthiemann/code2022"
 license:             BSD3
 author:              "Peter Thiemann"
 maintainer:          "peter.thiemann@gmail.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/peterthiemann/code2021#readme>
+description:         Please see the README on GitHub at <https://github.com/peterthiemann/code2022#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -27,7 +27,7 @@ library:
   source-dirs: src
 
 executables:
-  code2021-exe:
+  code2022-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -35,10 +35,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - code2021
+    - code2022
 
 tests:
-  code2021-test:
+  code2022-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -46,4 +46,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - code2021
+    - code2022
