@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Examples
       Lib
   other-modules:
       Paths_code2022
