@@ -19,22 +19,25 @@
 \end{frame}
 %----------------------------------------------------------------------
 \section{Predefined Types}
-\begin{frame}[fragile]
+\begin{frame}
   \frametitle{Predefined Types}
-  \begin{itemize}
-  \item \texttt{Bool}: \lstinline{True :: Bool}, \lstinline{False :: Bool}
-  \item  \texttt{Char}: \lstinline{'x' :: Char}, \lstinline{'?' :: Char}, \dots
-  \item \texttt{Double}, \texttt{Float}: \lstinline{3.14 :: Double}
-  \item   \texttt{Integer}: \lstinline{4711 :: Integer}
-  \item  \texttt{Int} --- machine integers ($\ge$ 30 bits signed
-    integer)
-  \item  \texttt{()}
-    --- the unit type, single value \lstinline{() :: ()}
-  \item  function types
-  \item tuples and lists
-  \item \texttt{String}:  \lstinline{"xyz" :: String}, \dots
-  \item \dots
-  \end{itemize}
+  \begin{flushleft}
+    \begin{tabular}{@{\quad$\bullet$\quad}l@{~---~}l}
+      \texttt{Bool}&
+                     \lstinline{True :: Bool}, \lstinline{False :: Bool} \\
+      \texttt{Char} & \lstinline{'x' :: Char}, \lstinline{'?' :: Char}, \dots \\
+      \texttt{Double}, \texttt{Float} & \lstinline{3.14 :: Double} \\
+      \texttt{Integer} & \lstinline{4711 :: Integer} \\
+      \texttt{Int} & machine integers ($\ge$ 30 bits signed integer)
+      \\
+      \texttt{()} & the unit type, single value \lstinline{() :: ()}
+      \\
+      \texttt{A -> B} & function types \\
+      \texttt{(A, B)}, \texttt{[A]} & tuple and list types \\
+      \texttt{String} &  \lstinline{"xyz" :: String}, \dots \\
+      \dots &
+    \end{tabular}
+  \end{flushleft}
 \end{frame}
 %----------------------------------------------------------------------
 \section{Tuples}
@@ -96,7 +99,7 @@ exampleFunction (b, i, s) = not b && length s < i
   \frametitle{Constructing lists}
   \begin{block}<+->{The values of type [a] are \dots}
     \begin{itemize}
-    \item either \lstinline{[]}, the empty list
+    \item either \lstinline{[]}, the empty list, pronounced ``nil''
     \item or \lstinline{x:xs} where \lstinline{x} has type \lstinline{a} and
       \lstinline{xs} has type \lstinline{[a]} \\
       ``\lstinline{:}'' is pronounced ``cons''
@@ -157,12 +160,15 @@ summerize []  = "None"
 summerize [x] = "Only " ++ x
 summerize [x,y] = "Two things: " ++ x ++ " and " ++ y
 summerize [_,_,_] = "Three things: ???"
+summerize (x:xs) = "First " ++ x ++ " and then " ++ concat xs
 summerize _   = "Several things."   -- wild card pattern
 \end{lstlisting}
   \end{block}
   \begin{alertblock}<+->{Explanations --- patterns}
-    \footnotesize{}
+    \tiny{}
     \begin{itemize}
+    \item patterns can occur in place of formal parameters, on the
+      left side of function definitions
     \item patterns contain constructors and variables
     \item patterns are checked in sequence
     \item constructors are checked against argument value
@@ -178,8 +184,10 @@ summerize _   = "Several things."   -- wild card pattern
   \frametitle{Pattern matching on lists}
 \begin{alertblock}<+->{Explanations --- expressions}
     \begin{itemize}
-    \item  \lstinline{(++)} \textbf{list concatenation}
+    \item  \lstinline{(++) :: [a] -> [a] -> [a]} \textbf{list concatenation}
     \item  \lstinline{(++)} associates to right
+    \item \lstinline{concat :: [[a]] -> [a]} \textbf{concatenate a
+        list of lists}
       % because it's more efficient
       % \begin{itemize}
       % \item \lstinline{ [1,2,3,4,5] ++ ([6,7,8,9] ++ [])} --- 10 copy
@@ -216,7 +224,7 @@ doubles (x:xs) = undefined
 
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{map: Apply Function to Every Element of a List}
+  \frametitle{\textbf{map}: Apply Function to Every Element of a List}
   \begin{block}<+->{Definition}
 \begin{lstlisting}
 -- map f [x1, x2, ..., xn] = [f x1, f x2, ..., fn]
@@ -239,7 +247,7 @@ double x = undefined
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{The function filter}
+  \frametitle{The function \textbf{filter}}
   Produce a list by removing all elements 
   which do not have a certain property from 
   a given list: 
