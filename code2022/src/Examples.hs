@@ -1,4 +1,6 @@
--- import Test.QuickCheck
+module Examples where
+
+import Test.QuickCheck
 
 dollarRate = 0.98546541
 
