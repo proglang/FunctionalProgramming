@@ -168,15 +168,23 @@ product (x:xs) = x * product xs
   \end{block}
   \begin{block}<+->{The common pattern}
 \begin{verbatim}
-f []     = e
-f (x:xs) = x `op` f xs
+g []     = z
+g (x:xs) = x `f` g xs
 \end{verbatim}
-    where
+    with parameters
     \begin{itemize}
-    \item \texttt{e :: b} is a value
-    \item \texttt{op :: a -> b -> b} is a combining function
+    \item \texttt{z :: b} is a value
+    \item \texttt{f :: a -> b -> b} is a combining function
     \end{itemize}
+    $\Rightarrow$ Represent \texttt{g} by some \texttt{foldr' f z}
   \end{block}
+\end{frame}
+%----------------------------------------------------------------------
+\begin{frame}
+  \frametitle{The foldr function: Intuition}
+  \begin{center}
+    \includegraphics{Right-fold-transformation}
+  \end{center}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -184,13 +192,13 @@ f (x:xs) = x `op` f xs
   \framesubtitle{Making the pattern into a higher-order function}
   \begin{block}<+->{Abstracting over value and combining function}
 \begin{verbatim}
-foldr' op e []     = e
-foldr' op e (x:xs) = x `op` foldr' op e xs
+foldr' f z []     = z
+foldr' f z (x:xs) = x `f` foldr' f z xs
 \end{verbatim}
     where
     \begin{itemize}
-    \item \texttt{e :: b} is a value
-    \item \texttt{op :: a -> b -> b} is a combining function
+    \item \texttt{z :: b} is a value
+    \item \texttt{f :: a -> b -> b} is a combining function
     \end{itemize}
   \end{block}
   \begin{alertblock}<+->{What's the type of foldr'?}
@@ -204,13 +212,6 @@ foldr' :: (a -> b -> b) -> b -> [a] -> b
   \begin{alertblock}<+->{Also known as reduce}
     map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
   \end{alertblock}
-\end{frame}
-%----------------------------------------------------------------------
-\begin{frame}
-  \frametitle{Intuition about foldr}
-  \begin{center}
-    \includegraphics{Right-fold-transformation}
-  \end{center}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
