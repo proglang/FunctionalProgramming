@@ -34,9 +34,9 @@
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Haskell integrates overloading with polymorphism}
-  \begin{block}<+->{Restricted polymorphism}
+  \begin{block}<+->{Constrained polymorphism}
     \begin{itemize}
-    \item Some functions work on parametric types, but are restricted to specific instances
+    \item Some functions work on parametric types, but are constrained to specific instances
     \item Types contain type variables and \textbf{constraints}
     \end{itemize}
   \end{block}
@@ -71,14 +71,14 @@ square :: Num a => a -> a
 \begin{frame}[fragile]
   \frametitle{Classes and Instances}
   \begin{itemize}
-  \item A class declaration \textbf{only} specifies a signature (i.e., the class members and their types)
+  \item A \emph{class declaration} specifies a signature (i.e., the class members and their types)
 \begin{lstlisting}
 class Num a where
   (+), (*), (-) :: a -> a -> a
   negate, abs, signum :: a -> a
   fromInteger :: Integer -> a
 \end{lstlisting}
-  \item An instance declaration specifies that a type belongs to a class by giving definitions for all class members
+  \item An \emph{instance declaration} specifies that a type belongs to a class by giving definitions for all class members
 \begin{lstlisting}
 instance Num Int where ...
 instance Num Integer where ...
@@ -112,9 +112,9 @@ instance Eq Bool -- Defined in 'GHC.Classes'
 {- and many more -}
 \end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Question}
-    Does equality make sense at every type?
-  \end{alertblock}
+  \begin{exampleblock}<+->{Tacit assumption}
+    Equality is a congruence relation.
+  \end{exampleblock}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -129,7 +129,7 @@ instance (Eq a, Eq b) => Eq (a, b) where
   \end{block}
   \begin{block}<+->{Is this definition recursive?}
   \end{block}
-  \begin{alertblock}<+->{NO!}
+  \begin{alertblock}<+->{YES: on types, NO: on values}
   \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
@@ -147,7 +147,7 @@ instance Eq a => Eq [a] where
   \end{block}
   \begin{block}<+->{Is this definition recursive?}
   \end{block}
-  \begin{alertblock}<+->{YES!}
+  \begin{alertblock}<+->{YES: no types, YES: on values}
     The equality \texttt{xs == ys}.
   \end{alertblock}
 \end{frame}
