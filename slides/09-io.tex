@@ -60,8 +60,8 @@ input () + input ()
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{The dilemma}
-  \begin{block}<+->{Haskell is a pure language, but IO is a side effect}
-  \end{block}
+  \begin{alertblock}<+->{Haskell is a pure language, but IO is a side effect}
+  \end{alertblock}
   \begin{block}<+->{A contradiction?}
   \end{block}
   \begin{block}<+->{No!}
@@ -158,9 +158,9 @@ doNot io =
 \begin{frame}
   \frametitle{Translating \texttt{do} notation into \texttt{>>=} operations}
   \begin{itemize}
-  \item \texttt{do \emph{lastaction}}
+  \item \texttt{do \emph{lastinstruction}}
     \\ $\longrightarrow$
-    \\ \texttt{\emph{lastaction}}
+    \\ \texttt{\emph{lastinstruction}}
     \\[2ex]
   \item \texttt{do \{ \emph{x} <- \emph{action1}; \emph{instructions} \}}
     \\ $\longrightarrow$
@@ -179,18 +179,21 @@ doNot io =
 \begin{frame}[fragile]
   \frametitle{Instructions vs functions}
   \begin{block}<+->{Functions}
-    behave the same each time they called
+    produce the same result each time they are called
   \end{block}
   \begin{block}<+->{Instructions}
-    may be interpreted differently each time 
-    they are executed, depending on context    
+    \begin{itemize}
+    \item are interpreted each time they are executed,
+    \item the result depends on the context
+    \item may be different each time
+    \end{itemize}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Underlying concept: \textbf{Monad}}
 
-  \begin{block}<+->{What's a monad?}
+  \begin{block}<+->{What's a monad? (first approximation)}
     \begin{itemize}
     \item abstract datatype for instructions that produce values
     \item built-in combination \texttt{>>=}
@@ -250,12 +253,12 @@ outputs
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Wrapup}
-  \begin{alertblock}{First meeting with monads}
+  \begin{alertblock}{First encounter with monads}
   \begin{itemize}
-  \item abstract data type of instructions returning results
-  \item next instruction can depend on previous result
-  \item instructions are just values
-  \item basis for Haskell's standard IO
+  \item A monad is an abstract data type of instructions returning results.
+  \item The next instruction can depend on previous results.
+  \item Instructions are just values.
+  \item Haskell's IO operations are instructions of the \texttt{IO} monad.
   \end{itemize}
   \end{alertblock}
 \end{frame}
