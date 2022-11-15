@@ -28,7 +28,7 @@
   \begin{block}<+->{To extend the scope of QuickCheck\dots}
     \begin{itemize}
     \item we only need to write new instance of \texttt{Arbitrary}!
-    \item (require the IO monad)
+    \item (requires the IO monad to generate random numbers)
     \end{itemize}
   \end{block}
 \end{frame}
@@ -92,7 +92,7 @@ vectorOf  :: Int -> Gen a -> Gen [a]
 choose    :: Random a => (a,a) -> Gen a
 \end{verbatim}
   \begin{itemize}
-  \item \texttt{Random} is a predefined class for generating random data
+  \item \texttt{Random} is a predefined type class for generating random data.
   \item (some experiments)
   \end{itemize}
 \end{frame}
@@ -129,10 +129,10 @@ data Card = Card { rank :: Rank, suit :: Suit }
 \begin{frame}[fragile]
   \frametitle{\texttt{Gen} is a monad}
   \begin{itemize}
-  \item \texttt{Gen a} is the type of instructions to generate random values of type \texttt{a}
-  \item \texttt{IO a} is the type of instructions for IO operations with result \texttt{a}
-  \item Both are monads $\Rightarrow$ use bind \texttt{>>=} to combine generators
-  \item Alternatively, the \texttt{do} notation can be used with \texttt{Gen}
+  \item \texttt{Gen a} is the type of instructions to generate random values of type \texttt{a}.
+  \item \texttt{IO a} is the type of instructions for IO operations with result \texttt{a}.
+  \item Both are monads $\Rightarrow$ use bind \texttt{>>=} to combine generators.
+  \item Alternatively, the \texttt{do} notation can be used with \texttt{Gen}.
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -150,8 +150,8 @@ data Card = Card { rank :: Rank, suit :: Suit }
 \begin{frame}[fragile]
   \frametitle{Task: Check the generator}
   \begin{itemize}
-  \item<+-> \texttt{Rank} contains useless values
-  \item<.-> does its generator \texttt{rRank} only yield useful values?
+  \item<+-> \texttt{Rank} contains useless values.
+  \item<.-> Does its generator \texttt{rRank} only yield useful values?
   \end{itemize}
   \begin{block}<+->{Test it!}
 \begin{verbatim}
@@ -171,15 +171,15 @@ prop_all_validRank = forAll rRank validRank
 prop_all_valid_rank_collect r = collect r (validRank r)
 \end{verbatim}
   \begin{itemize}
-  \item \texttt{collect x} does not change the test
-  \item collects values of \texttt{x} and creates a histogram
+  \item \texttt{collect x} does not change the test.
+  \item collects values of \texttt{x} and creates a histogram.
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Task}
   \begin{itemize}
-  \item Define a property that yields a histogram of generated \texttt{Hand}s
+  \item Define a property that yields a histogram of generated \texttt{Hand}s.
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -188,9 +188,9 @@ prop_all_valid_rank_collect r = collect r (validRank r)
   \onslide<+->{}
   \begin{block}<+->{Example}
   \begin{itemize}
-  \item \texttt{insert x xs} inserts a value \texttt{x} in an ordered list \texttt{xs}
-  \item the output should be ordered again (along with other properties)
-  \item how do we test that?
+  \item \texttt{insert x xs} inserts a value \texttt{x} in an ordered list \texttt{xs}.
+  \item The output should be ordered again (along with other properties).
+  \item How do we test that?
   \end{itemize}
 \end{block}
 \end{frame}
@@ -249,9 +249,9 @@ prop_insert_4 x (Ordered xs) = isOrdered (insert x xs)
   \frametitle{Wrapup}
   \begin{alertblock}{Roll your own test data generators}
   \begin{itemize}
-  \item populate the class \texttt{Arbitrary} with the types you want to generate
-  \item generating managed by monad \texttt{Gen}
-  \item conditional test generation
+  \item Populate the class \texttt{Arbitrary} with the types you want to generate.
+  \item Generation of values managed by monad \texttt{Gen}.
+  \item Conditional test generation is important for meaningful testing.
   \end{itemize}
   \end{alertblock}
 \end{frame}
