@@ -20,20 +20,37 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
 module SimplePrelude
-  ( module Prelude,
+  ( -- * Re-exports
+    module Prelude,
+
+    -- * @Functor@
     Functor (..),
     (<$>),
+
+    -- * @Applicative@
     Applicative (..),
     liftA2,
     (<*),
     (*>),
+
+    -- * @Monad@
     Monad (..),
     (>>),
     (=<<),
+
+    -- * @MonadFail@
+    MonadFail (..),
   )
 where
 
-import Prelude hiding (Applicative (..), Functor (..), Monad (..), (<$>), (=<<))
+import Prelude hiding
+  ( Applicative (..),
+    Functor (..),
+    Monad (..),
+    MonadFail (..),
+    (<$>),
+    (=<<),
+  )
 import Prelude qualified as P
 
 class Functor f where
@@ -46,6 +63,9 @@ class Applicative f where
 class Monad m where
   return :: a -> m a
   (>>=) :: m a -> (a -> m b) -> m b
+
+class Monad m => MonadFail m where
+  fail :: String -> m a
 
 -------------------------------------------------------------------------------
 -- Functor based Prelude functions
@@ -95,3 +115,6 @@ instance Applicative P.IO where
 instance Monad P.IO where
   return = P.return
   (>>=) = (P.>>=)
+
+instance MonadFail P.IO where
+  fail = P.fail
