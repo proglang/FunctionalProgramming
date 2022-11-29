@@ -181,7 +181,7 @@ eval (Bin t op u) = Count $ \i -> let (v, j) = exCount (eval t) i in
   \frametitle{Monads to the rescue!}
 \begin{block}<+->{The type class Monad}
 \begin{lstlisting}
-class Applicative m => Monad m where
+class Monad m where
   (>>=)  :: m a -> (a -> m b) -> m b
   return :: a -> m a
   fail   :: String -> m a
@@ -190,14 +190,14 @@ class Applicative m => Monad m where
   \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}. 
 \end{block}
 \begin{block}<+->{Purpose of the operations}
-  \begin{alertblock}
+  \begin{itemize}
   \item Bind \lstinline{(>>=)} is for \textbf{composing}
     computations\\
     In \lstinline{IO} composing means sequencing
   \item \lstinline{return} is for injecting values into computations\\
     A trivial computation that does nothing but return the value
   \item Monads live for their other features!
-  \end{alertblock}
+  \end{itemize}
 \end{block}
 \end{frame}     
 
