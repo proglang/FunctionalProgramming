@@ -43,6 +43,7 @@ module SimplePrelude
   )
 where
 
+import Test.QuickCheck
 import Prelude hiding
   ( Applicative (..),
     Functor (..),
@@ -52,6 +53,9 @@ import Prelude hiding
     (=<<),
   )
 import Prelude qualified as P
+
+-------------------------------------------------------------------------------
+-- Typeclass hierarchy
 
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
@@ -118,3 +122,17 @@ instance Monad P.IO where
 
 instance MonadFail P.IO where
   fail = P.fail
+
+-------------------------------------------------------------------------------
+-- Test.QuickCheck.Gen instances
+
+instance Functor Gen where
+  fmap = P.fmap
+
+instance Applicative Gen where
+  pure = P.pure
+  (<*>) = (P.<*>)
+
+instance Monad Gen where
+  return = P.return
+  (>>=) = (P.>>=)
