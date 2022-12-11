@@ -8,7 +8,13 @@
 {Functors, Applicatives, and Parsers}
 
 \begin{document}
-
+\AtBeginSection[]
+{
+ \begin{frame}<beamer>
+ \frametitle{Plan}
+ \tableofcontents[currentsection]
+ \end{frame}
+}
 \begin{frame}
   \titlepage
 \end{frame}
@@ -22,27 +28,95 @@
   \item So general that mathematicians call it ``general abstract
     nonsense''
   \item Yields very useful abstractions for functional programming
-  \item We only review them specialized for Haskell
+  \item After a brief review we specialize for Haskell
   \end{itemize}
 \end{frame}
 
+\section{Categories}
+\begin{frame}
+  \frametitle{(Small) Categories}
+  \begin{block}{Definition (part 1)}
+    A \alert{small category} is given by
+    \begin{itemize}
+    \item a set of \alert{objects},
+    \item for each pair of objects $A,B$, a set $Hom(A,B)$ of
+      \alert{arrows} (morphisms) between $A$ and $B$,
+    \item for each pair of arrows $f \in Hom(A,B)$ and $g \in Hom (B,
+      C)$ (for objects $A,B,C$), there is an arrow $(f;g) \in Hom (A,
+      C)$, the \alert{composition} of $f$ and $g$ (alternativel, write
+      $g\circ f$).
+    \end{itemize}
+    Moreover, the following laws are expected to hold
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{(Small) Categories}
+  \begin{block}{Definition (part 2: laws)}
+    \begin{itemize}
+    \item For each object $A$ there is a designated
+      \alert{identity arrow} $i_A \in Hom (A,A) $ which behaves as an
+      identity with respect to composition:
+      \begin{itemize}
+      \item for each $f \in Hom (A, B)$, $i_A;f = f$,
+      \item for each $g \in Hom (B, A)$, $g; i_B = g$.
+      \end{itemize}
+    \item Composition of arrows is associative, that is:
+      \begin{align*}
+        f; (g; h) &= (f; g); h
+      \end{align*}
+      for all $f \in Hom (A, B)$, $g \in Hom (B, C)$, and $h \in Hom
+      (C, D)$ and objects $A,B,C,D$.
+    \end{itemize}
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{Examples of categories (not small)}
+  \begin{block}<+->{\textbf{Set}}
+    Objects are sets and morphisms are total functions. 
+  \end{block}
+  \begin{block}<+->{\textbf{Par}}
+    Objects are sets, morphisms are partial functions.
+  \end{block}
+  \begin{block}<+->{\textbf{Group}, \textbf{Ring}, \textbf{Vect}}
+    Objects are groups (rings, vector spaces), morphisms are group
+    (ring, vector space) homomorphisms
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{Smaller categories}
+  \begin{block}<+->{\textbf{FinSet} (only essentially small)}
+    Objects are finite sets and morphisms are total functions.
+  \end{block}
+  \begin{block}<+->{Partially ordered sets}
+    Every poset $(A, \le)$ gives rise to a category with objects $a\in
+    A$ and a single morphism $m_{ab}$ for each $a, b\in A$ such that
+    $a \le b$. 
+  \end{block}
+  \begin{block}<+->{Graphs}
+    Every graph $(N, E)$ gives rise to category with objects $n\in N$
+    and morphisms paths in $N$.
+  \end{block}
+  \begin{block}<+->{Hask (small?)}
+    Objects are Haskell types, morphisms are Haskell functions.
+  \end{block}
+\end{frame}
 \section{Functors}
 \begin{frame}[fragile]
-  \frametitle{Functors}
+  \frametitle{Functors (on Hask)}
   \begin{block}<+->{Definition}
     A \alert{Functor} is a mapping \lstinline{f} between types such that for
-    every pair of type \lstinline{a} and \lstinline$b$ there is a
+    every pair of type \lstinline{a} and \lstinline|b| there is a
     function 
     \lstinline|fmap :: (a -> b) -> (f a -> f b)|
     such that the \alert{functorial laws} hold:
     \begin{enumerate}
-    \item the identity function on \lstinline$a$ is mapped to the
-      identity function on \lstinline$f a$:\\
-      \lstinline$fmap id fx == id fx$, \quad for all \lstinline$fx$ in
-      \lstinline$f a$
-    \item \lstinline$fmap$ is compatible with function composition\\
-      \lstinline$fmap (f . g) == fmap f . fmap g$, \quad for all
-      \lstinline$f :: b -> c$ and \lstinline$g :: a -> b$
+    \item the identity function on \lstinline|a| is mapped to the
+      identity function on \lstinline|f a|:\\
+      \lstinline|fmap id fx == id fx|, \quad for all \lstinline|fx| in
+      \lstinline|f a|
+    \item \lstinline|fmap| is compatible with function composition\\
+      \lstinline|fmap (f . g) == fmap f . fmap g|, \quad for all
+      \lstinline|f :: b -> c| and \lstinline|g :: a -> b|
     \end{enumerate}
   \end{block}
   \begin{alertblock}<+->{Functions on types}
@@ -72,10 +146,10 @@ class Functor f where
   fmap :: (a -> b) -> (f a -> f b)
 \end{lstlisting}
     \begin{itemize}
-  \item \alert{\textbf{NEW:}} \texttt{f} is a type variable that can
+  \item Recall \texttt{f} is a type variable that can
     stand for \textbf{type
       constructors} (ie, functions on types) like  \texttt{IO},
-    \texttt{[]}, and others.  So \lstinline$f :: * -> *$!
+    \texttt{[]}, and others.  So \lstinline|f :: * -> *|!
   \end{itemize}
 \end{alertblock}
 \begin{exampleblock}<+->{Good news}
@@ -87,7 +161,7 @@ class Functor f where
   \frametitle{List is a functor}
   \begin{itemize}[<+->]
   \item To make list an instance of functor, we need to instantiate
-    the type \lstinline$f$ in the type of \lstinline|fmap| by
+    the type \lstinline|f| in the type of \lstinline|fmap| by
     \lstinline|[]|, the list type constructor
   \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
   \item \lstinline|fmap :: (a -> b) -> ([a] -> [b])|
@@ -98,11 +172,11 @@ class Functor f where
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Functorial laws for list}
-  \begin{block}<+->{\lstinline$fmap id fx == id fx$}
-    \lstinline$fx$ is a list, so we must proceed by induction
+  \begin{block}<+->{\lstinline|fmap id fx == id fx|}
+    \lstinline|fx| is a list, so we must proceed by induction
     \begin{itemize}
     \item \lstinline|map id [] == [] == id []|
-    \item \lstinline$map id (x:xs) == id x : map id xs == x : xs == id (x : xs)$
+    \item \lstinline|map id (x:xs) == id x : map id xs == x : xs == id (x : xs)|
     \end{itemize}
   \end{block}
   \begin{block}<+->{\lstinline$fmap (f . g) == fmap f . fmap g$}
@@ -189,7 +263,18 @@ mapBTree g (Node l a r) = Node (mapBTree g l) (g a) (mapBTree g r)
     \lstinline|mapBTree|, but we'll leave this inductive proof to you.
   \end{itemize}
 \end{frame}
-
+\begin{frame}
+  \frametitle{Remark}
+  \begin{itemize}
+  \item Many of the predefined type constructors have \texttt{Functor}
+    instances
+  \item Some of them may be unexpected
+  \item For instance \lstinline|instance Functor ((,) a)| makes the pair
+    type into a functor by defining \texttt{fmap} on the second
+    component
+  \item Mapping on the first component would also define a (different) functor!
+  \end{itemize}
+\end{frame}
 \section{Applicatives}
 \begin{frame}
   \frametitle{Applicatives}
