@@ -8,7 +8,7 @@
 \input{common}
 %%% frontmatter
 \input{frontmatter}
-\author[Gabriel Radanne]{Dr. Gabriel Radanne}
+\author[Gabriel Radanne]{Dr. Gabriel Radanne \and Peter Thiemann}
 \subtitle
 {Monad Transformers}
 
@@ -147,8 +147,37 @@ instance Monad (ST s) where
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Let's combine Monads! - Maybe+State}
+  \begin{block}<+->{Consider  \lstinline{Comp (ST s) Maybe}}
+    \begin{itemize}
+    \item Corresponds to \lstinline{s -> (Maybe a, s)}, a stateful
+      computation that may fail
+    \item \lstinline{return} and \lstinline{>>=} are easy to define
+    \end{itemize}
+  \end{block}
+  \begin{block}<+->{Consider \lstinline{Comp Maybe (ST s)}}
+  \begin{itemize}
+  \item Corresponds to \lstinline{Maybe (s -> (a, s))} 
+    \item \lstinline{return a = return_Maybe (return_ST a)}
+    \item But there's not way to write the bind function:
+\begin{lstlisting}
+Nothing  >>= f = Nothing
+Just sta >>= f = ???
+\end{lstlisting}
+  \end{itemize}
+\end{block}
+\begin{block}<+->{Lessons}
+  \begin{itemize}
+  \item Monads do not compose, in general
+  \item Monad composition is not commutative!
+  \end{itemize}
+\end{block}
+\end{frame}
+
+
+\begin{frame}[fragile]
   \frametitle{Let's combine Monads! -- Maybe+State}
-  \begin{block}{The MaybeState monad}
+  \begin{block}<+->{A different construction: The MaybeState monad}
     \begin{itemize}
     \item Purpose: propagate state and signaling of errors
     \item Attention: the state is lost
@@ -159,20 +188,21 @@ data MaybeState s a = MST { runMST :: s -> Maybe (a, s) }
 ....
 
 instance Monad (MST s) where
-  return a = MST (\s -> Just (a, s))
-  ms >>= f = MST (\s -> case runMST ms s of
-                          Nothing -> Nothing
-                          Just (a,s') -> runMST (f a) s')
+  return a = MST (\s -> return (a, s))
+  ms >>= f = MST (\s -> runMST ms s >>= \(a, s') -> runMST (f a) s')
       \end{lstlisting}
-    \end{block}
-    \pause
-    We would have to write this again for each combination!
+  \end{block}
+  \begin{itemize}
+  \item<+->     Interestingly, the implementation does not depend 
+    on \lstinline{Maybe} at all! 
+  \item<+->     We don't have to write this definition again for other combinations! 
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Alternative solution: Monad transformers}
 
-  Monad transformers offer a better solution:
+  We've seen a particular instance of a \emph{monad transformer}:
   \begin{block}<+->{}
 \begin{lstlisting}
 class MonadTrans t where
@@ -181,10 +211,10 @@ class MonadTrans t where
 
 \end{block}
 
-A monad transformer \lstinline{t} takes a monad \lstinline{m} and yield a new monad
+A monad transformer \lstinline{t} takes a monad \lstinline{m} and yields a new monad
 \lstinline{(t m)}.
 
-Function \lstinline{lift} lifts a computation from the underlying
+Function \lstinline{lift} moves a computation from the underlying
 monad to the new monad.
 
 \begin{block}<+->{Intermezzo}
@@ -203,8 +233,8 @@ newtype MaybeT m a = MaybeT { runMaybeT :: m (Maybe a) }
 
 instance (Monad m) => Monad (MaybeT m) where
   return = MaybeT . return . Just
-  (MaybeT mmx) >>= f = MaybeT $ do
-    mx <- mmx
+  mmx >>= f = MaybeT $ do
+    mx <- runMaybeT mmx
     case mx of
       Nothing -> return Nothing
       Just x  -> runMaybeT (f x)
@@ -276,7 +306,7 @@ instance MonadTrans (ReaderT r) where
 \begin{frame}[fragile]
   \frametitle{Back to interpreters}
 
-  \begin{block}{During lecture 12, a monadic interpreter for:}
+  \begin{block}{Earlier we had a monadic interpreter for:}
     \begin{lstlisting}
 data Term  = Con Integer
            | Bin Term Op Term
