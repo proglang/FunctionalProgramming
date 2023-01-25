@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -27,7 +27,19 @@ library
   exposed-modules:
       Examples
       Lib
+      M14compose
+      M17alacarte
+      M19functionaldata
+      SimplePrelude
       V02
+      V03
+      V05
+      V07
+      V09
+      V10
+      V11
+      V12
+      V13
   other-modules:
       Paths_code2022
   hs-source-dirs:
