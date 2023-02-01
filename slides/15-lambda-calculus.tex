@@ -409,10 +409,34 @@
   \end{block}
 \end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{Scott encoding for natural numbers}
+  \begin{block}<+->{Scott numerals $\ne$ Church numerals}
+\begin{lstlisting}
+data Nat = Zero | Succ Nat
+\end{lstlisting}
+    \begin{itemize}
+    \item Two constructors with arities $0$ and $1$.
+    \end{itemize}
+    \begin{align*}
+      \Encode{\mathtt{Zero}} & = \lambda z\ s. z \\
+      \Encode{\mathtt{Succ}} &= \lambda x_1. \lambda z\ s. s\ x_1 \\
+      \CASE_{\mathtt{Nat}} &= \lambda v.v
+    \end{align*}
+  \end{block}
+  \begin{block}<+->{Addition with Scott numerals requires fixed point}
+    \begin{itemize}
+    \item The Church encoding of a datatype represents a value as the
+      fold operation over the value.
+    \item The Scott encoding represents a value as its case operation.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
 \begin{frame}
   \frametitle{Recursion}
-  \begin{alertblock}<+->{Fixpoint theorem (see Barendregt, The Lambda Calculus)}
-    Every lambda term has a fixpoint:
+  \begin{alertblock}<+->{Fixed point theorem (see Barendregt, The Lambda Calculus)}
+    Every lambda term has a fixed point:
 
     For every $M$ there is some $N$ such that
     $
@@ -426,8 +450,53 @@
     \end{displaymath}
   \end{exampleblock}
   \begin{block}<+->{Remark}
-    $Y$ is Curry's \textbf{fixpoint combinator}. There are infinitely
-    many more fixpoint combinators with various properties.
+    $Y$ is Curry's \textbf{fixed point combinator}. There are infinitely
+    many more fixed point combinators with various properties.
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{Addition with Scott encoding}
+  \begin{block}<+->{Definition of addition}
+    \vspace{-\baselineskip}
+    \begin{align*}
+      f_a &= \lambda a. \lambda m\ n. \CASE_{\mathtt{Nat}}\ m\ n\
+            (\lambda m'. \Encode{\mathtt{Succ}}\ (a\ m'\ n)) \\
+      \Encode{\mathtt{add}} &= Y\  f_a \\
+          &= f_a (Y\ f_a) = f_a \Encode{\mathtt{add}}
+    \end{align*}
+  \end{block}
+\end{frame}
+\begin{frame}
+  \frametitle{Addition with Scott encoding (2)}
+\begin{block}<+->{Case Zero}
+    \vspace{-\baselineskip}
+    \begin{align*}
+      \Encode{\mathtt{add}}\ \Encode{\mathtt{Zero}}\ n
+      &= f_a\ \Encode{\mathtt{add}} \ \Encode{\mathtt{Zero}}\ n \\
+      &= (\lambda m\ n. \CASE_{\mathtt{Nat}}\ m\ n\
+        (\lambda m'. \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\
+        m'\ n)))\ \Encode{\mathtt{Zero}}\ n \\
+      &= \CASE_{\mathtt{Nat}}\ \Encode{\mathtt{Zero}}\ n\
+        (\lambda m'. \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\
+        m'\ n)) \\
+      &= \Encode{\mathtt{Zero}}\ n\
+        (\lambda m'. \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\
+        m'\ n)) \\
+      &= n
+    \end{align*}
+  \end{block}
+  \begin{block}<+->{Case Succ}
+    \vspace{-\baselineskip}
+    \begin{align*}
+      \Encode{\mathtt{add}}\ (\Encode{\mathtt{Succ}}\ k)\ n
+      &= \dots \\
+      &= (\Encode{\mathtt{Succ}}\ k)\ n\
+        (\lambda m'. \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\
+        m'\ n)) \\
+      &=(\lambda m'. \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\
+        m'\ n))\ k  \\
+      &= \Encode{\mathtt{Succ}}\ (\Encode{\mathtt{add}}\ k\ n)
+    \end{align*}
   \end{block}
 \end{frame}
 \begin{frame}
