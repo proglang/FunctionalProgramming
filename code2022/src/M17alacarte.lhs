@@ -468,6 +468,8 @@ It remains to define instances of Render for each functor.
 > instance Render Neg where
 >   render (Neg x) = '-':pretty x
 
+
+
 ** An application to free monads
 
 For any functor f, this data structure is a monad, the *free monad* for f:
@@ -497,7 +499,7 @@ ftf :: f (Term f a)
 
 > instance Functor f => Applicative (Term f) where
 >   pure a = Pure a
->   ag <*> ax = ag `thenTerm` \g -> ax `thenTerm` \x -> Pure $ g x
+>   ag <*> ax = ag `thenTerm` (\g -> ax `thenTerm` (\x -> Pure $ g x))
 
 ag :: f (a -> b)
 ax :: f a
@@ -514,13 +516,31 @@ not. But some well-known monads may be constructed as free monads:
 > data One a = One
 > data Const e a = Const e
 
+Can we construct elements of `Term Zero a`?
+- Pure 1 :: Term Zero Int
+Isomorphic to the Identity functor.
+
+Elements of `Term One a`:
+- Pure x :: Term One x
+- Impure One
+Isomorphic to Maybe a!
+
+Elements of `Term (Const e) a`:
+::: Pure :: a -> Term (Const e) a
+- Pure a :: Term (Const e) a
+::: Impure :: Const e (Term (Const e) a) -> Term (Const e) a
+- Impure (Const e) 
+Isomorphic to Either a e!
+
+
+
 data Term f a
    = Pure a
    | Impure (f (Term f a))
 
 TermZero a = Pure a
 
-TermOne a = Pure a | ImpureOne
+TermOne a = Pure a | Impure One
 
 Term (Const e) a = Pure a | Impure (Const e (Term (Const e) a))
 
@@ -558,6 +578,7 @@ CLEAR: reset memory to zero.
 > data Incr t   = Incr Int t
 > data Recall t = Recall (Int -> t)
 > data Clear t  = Clear t
+> data Put t    = Put Int t
 
 > instance Functor Incr where
 >   fmap f (Incr x t) = Incr x (f t)
@@ -565,6 +586,8 @@ CLEAR: reset memory to zero.
 >   fmap f (Recall h) = Recall (f . h)
 > instance Functor Clear where
 >   fmap f (Clear t) = Clear (f t)
+> instance Functor Put where
+>   fmap f (Put x t) = Put x (f t)
 
 To write terms using this operators, we define smart constructors.
 
@@ -579,6 +602,9 @@ To write terms using this operators, we define smart constructors.
 
 > clear :: (Clear :<: f) => Term f ()
 > clear = injectT (Clear (Pure ()))
+
+> put :: (Put :<: f) => Int -> Term f ()
+> put x = injectT (Put x (Pure ()))
 
 Now, we can use these operators in a monad.
 
@@ -603,6 +629,12 @@ We write functions over terms with a suitable fold operator.
 > foldTerm f alg (Pure a) = f a
 > foldTerm f alg (Impure t) = alg (fmap (foldTerm f alg) t)
 
+second clause:
+t :: f (Term f a)
+foldTerm f alg :: Term f a -> b
+fmap (foldTerm f alg) :: f (Term f a) -> f b
+fmap (foldTerm f alg) t :: f b
+
 To run terms with Incr and Recall, we need to define a data type for
 the memory and a state monad to interpret terms in.
 
@@ -617,14 +649,18 @@ run :: (...) => Term f a -> Mem -> (a, Mem)
 > class Functor f => Run f where
 >   runAlgebra :: f (Mem -> (a, Mem)) -> (Mem -> (a, Mem))
 
+
 > instance Run Incr where
->   runAlgebra (Incr k r) (Mem i) = r (Mem (i+k))
+>   runAlgebra (Incr k cont) = \ (Mem i) -> cont (Mem (i+k))
 
 > instance Run Recall where
->   runAlgebra (Recall r) (Mem i) = r i (Mem i)
+>   runAlgebra (Recall callback) = \ (Mem i) -> (callback i) (Mem i)
 
 > instance Run Clear where
->   runAlgebra (Clear r) (Mem i) = r (Mem 0)
+>   runAlgebra (Clear cont) = \ (Mem i) -> cont (Mem 0)
+
+> instance Run Put where
+>   runAlgebra (Put k cont) = \ (Mem i) -> cont (Mem k)
 
 > instance (Run f, Run g) => Run (f :+: g) where
 >   runAlgebra (Inl r) = runAlgebra r
@@ -633,9 +669,16 @@ run :: (...) => Term f a -> Mem -> (a, Mem)
 > run :: Run f => Term f a -> Mem -> (a, Mem)
 > run = foldTerm (,) runAlgebra
 
+(,) :: a -> b -> (a, b)
+return :: a -> Mem -> (a, Mem)
+
+
 What did we gain?
 
 > tick4 :: Term (Incr :+: Recall :+: Clear) Int
-> tick4 = do y <- recall
->            clear
+> tick4 = tick2
+
+> tick5 :: Term (Incr :+: Recall :+: Clear :+: Put) Int
+> tick5 = do y <- recall
+>            put 4711
 >            return y
