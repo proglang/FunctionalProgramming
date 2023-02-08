@@ -1,0 +1,67 @@
+free and bound
+
+\x.x
+free = 0
+bound = {x}
+
+\x.xy
+free = {y}
+bound = {x}
+
+(\x.x)x
+free = bound = {x}
+
+M = \y.x
+N = y
+M[x -> y] != \y.y (illegal!)
+
+----
+
+Suppose M has two distinct
+normal forms N1 and N2.
+So M -->* N1 and M -->* N2
+by beta reduction.
+So N1 == N2.
+Since they are normal forms,
+they cannot reduce.
+By CR, N1 =alpha= N2.
+
+----
+
+TRUE = \xy.x
+FALSE = \xy.y
+
+TRUE M N =
+(\xy.x) M N -->
+M
+
+----
+
+\fx.x
+\fx.fx
+\fx.f(fx)
+
+----
+
+LEFT  = \m.\l.\r.l m
+RIGHT = \m.\l.\r. r m
+CASE = \v.v
+
+LEFT M = \l.\r.l M
+(LEFT M) Nl Nr --> Nl M
+
+----
+
+prove: M (Y M) <-> Y M
+
+Y M
+=
+(\f. (\x.f (x x)) (\x.f (x x))) M
+->
+(\x.M (x x)) (\x.M (x x))
+->
+M ((\x.M (x x)) (\x.M (x x)))
+<-
+M ((\f. (\x.f (x x)) (\x.f (x x))) M)
+=
+M (Y M)
