@@ -38,7 +38,8 @@
 \begin{verbatim}
  dollarRate2018 = 1.18215  
  dollarRate2019 = 1.3671
- dollarRate = 0.98546541
+ dollarRate2022 = 0.98546541
+ dollarRate = 0.91691801
 \end{verbatim}
   \end{block}
 \end{frame}
@@ -63,9 +64,9 @@ Ok, modules loaded: Main.
   \item Use the definition
 \begin{verbatim}
 *Main> dollarRate
-0.98546541
+0.91691801
 *Main> 53 * dollarRate
-52.22966673
+48.596654529999995
 \end{verbatim}
   \end{itemize}
 \end{frame}
@@ -73,7 +74,7 @@ Ok, modules loaded: Main.
   \frametitle{A function to convert EUR to USD}
 \begin{block}{Examples.hs}
 \begin{verbatim}
-dollarRate = 0.98546541
+dollarRate = 0.91691801
 
 -- |convert EUR to USD
 usd euros = euros * dollarRate
@@ -97,9 +98,9 @@ usd euros = euros * dollarRate
   \end{itemize}
 \begin{verbatim}
 *Main> usd 1
-0.98546541
+0.91691801
 *Main> usd 73
-71.93897493
+66.93501472999999
 \end{verbatim}
 \end{frame}
 \begin{frame}[fragile]
@@ -185,10 +186,10 @@ stack install QuickCheck
 \begin{frame}[fragile]
   \frametitle{What happens for 7.0}
 \begin{verbatim}
-*Main> usd 7
-9.5697
-*Main> euro 9.5697
-6.999999999999999
+*Main> usd 1.1
+1.0086098110000001
+*Main> euro 1.0086098110000001
+1.1000000000000003
 \end{verbatim}
 \end{frame}
 \begin{frame}[fragile]
@@ -196,8 +197,8 @@ stack install QuickCheck
   \begin{itemize}
   \item  There is a tiny difference between the initial and final values 
 \begin{verbatim}
-*Main> euro (usd 7) - 7
--8.881784197001252e-16
+*Main> euro (usd 1.1) - 1.1
+2.220446049250313e-16
 \end{verbatim}
   \item Calculations are only performed to about 15 significant
     figures 
@@ -407,7 +408,7 @@ price' = 79
 price' :: Double
   	-- Defined at...
 *Main> euro price'
-80.1651678469364
+72.43652279
 \end{verbatim}
 \end{frame}
 \begin{frame}[fragile]
@@ -419,7 +420,7 @@ price' :: Double
 price :: Integer
   	-- Defined at...
 *Main> euro (fromInteger price)
-80.1651678469364
+72.43652279
 \end{verbatim}
 \end{frame}
 
