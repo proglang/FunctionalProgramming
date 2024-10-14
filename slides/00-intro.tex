@@ -16,8 +16,8 @@
 \begin{frame}[fragile]
   \frametitle{Coordinates}
   \begin{itemize}
-  \item \textbf{Course hours:}  We 14-16
-  \item \textbf{Course room:} SR 051-00-031
+  \item \textbf{Course hours:}  Tu 14-16
+  \item \textbf{Course room:} SR 106-04-007 Videokonferenz
   \item \textbf{Staff:} Prof.\ Dr.\ Peter Thiemann\\
 \begin{alltt}
 Gebäude 079, Raum 00-015
@@ -25,16 +25,16 @@ Telefon: 0761 203 -8051/-8247
 E-mail: thiemann@cs.uni-freiburg.de
 Web: \href{http://www.informatik.uni-freiburg.de/~thiemann}{http://www.informatik.uni-freiburg.de/~thiemann}
 \end{alltt}
-\item  \textbf{Staff:} Janek Spaderna\\
+\item  \textbf{Staff:} Hannes Saffrich\\
 \begin{alltt}
-E-mail: spadernj@cs.uni-freiburg.de
+E-mail: saffrich@cs.uni-freiburg.de
 \end{alltt}
   \item\textbf{Homepage:}\\ \footnotesize
     \href{https://github.com/proglang/FunctionalProgramming}{
       https://github.com/proglang/FunctionalProgramming}
     \\
-    \href{https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2022/}{
-      https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2022/}
+    \href{https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2024/}{
+      https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2024/}
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -48,8 +48,8 @@ E-mail: spadernj@cs.uni-freiburg.de
   \end{block}
   \begin{block}{Exercise  \~{}90 minutes exercise/week}
     \begin{itemize}
-    \item mostly online
-    \item exercise questions available on Thursdays
+    \item Friday 14-16, SR 00 031, building 051
+    \item exercise questions modality TBA
     \begin{itemize}
     \item discussed in next available exercise session
     \item no need to hand in exercises during the semester
@@ -58,7 +58,7 @@ E-mail: spadernj@cs.uni-freiburg.de
 \end{block}
 \begin{block}{Final exam}
   \begin{itemize}
-  \item written exam
+  \item written exam in the computer pool
   \item comprising theory questions and small programming tasks
   \end{itemize}
 \end{block}
@@ -148,7 +148,7 @@ E-mail: spadernj@cs.uni-freiburg.de
     little effort)}. 
   \item Haskell is good at handling complex data and combining
     components. 
-  \item Haskell is a high-productivity language \\\hfill\textcolor{gray}{ (prioritize programmer-time over computer-time)}
+  \item Haskell is a high-productivity language \\\hfill\textcolor{gray}{ (prioritizes programmer-time over computer-time)}
   \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -196,6 +196,28 @@ int z = f (42, 16); // who knows?
   \end{block}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Equational Reasoning and Referential Transparency}
+  \begin{block}<+->{Haskell}
+    \begin{enumerate}
+    \item Variables have a fixed value
+    \item Functions have a fixed meaning that does not depend on
+      context\\
+      (Actually, the same as item~1!)
+    \end{enumerate}
+  \end{block}
+  \begin{block}{Consequence: Equational Reasoning}
+    \begin{itemize}
+    \item Every (sub-) expression in a program can be replaced with
+      its value and
+    \item every function call can be replaced with its definition
+    \item \dots{} without  without changing the meaning of the
+      program!
+    \item (may change the running time, though)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
 \begin{frame}[fragile]
   \frametitle{Functional vs Imperative Programming: Laziness}
   \begin{block}<+->{Haskell}
@@ -226,14 +248,16 @@ g (anotherExpensiveComputation)
 \begin{frame}
   \frametitle{Many more features that make programs more concise}
   \begin{itemize}
+  \item Static typing
   \item Algebraic datatypes
   \item Polymorphic types
   \item Parametric overloading
   \item Type inference
   \item Monads \& friends (for IO, concurrency, \dots)
   \item Comprehensions
+  \item Concurrency
   \item Metaprogramming
-  \item Domain specific languages
+  % \item Domain specific languages
   \item \dots
   \end{itemize}
 \end{frame}
@@ -242,9 +266,8 @@ g (anotherExpensiveComputation)
   \frametitle{References}
   \begin{itemize}
   \item Paper by the original developers of Haskell in the conference on History of
-    Programming Languages (HOPL III): \href{A History
-      of Haskell: Being Lazy with
-      Class}{http://dl.acm.org/citation.cfm?id=1238856}
+    Programming Languages (HOPL III):\\
+    \href{http://dl.acm.org/citation.cfm?id=1238856}{A History of Haskell: Being Lazy with Class}
   \item The Haskell home page: \url{http://www.haskell.org}
   \item Haskell libraries repository:
     \url{https://hackage.haskell.org/}
