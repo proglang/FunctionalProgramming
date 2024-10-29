@@ -1,0 +1,82 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           code2022
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/peterthiemann/code2022#readme>
+homepage:       https://github.com/peterthiemann/code2022#readme
+bug-reports:    https://github.com/peterthiemann/code2022/issues
+author:         Peter Thiemann
+maintainer:     peter.thiemann@gmail.com
+copyright:      2018 Peter Thiemann
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/peterthiemann/code2022
+
+library
+  exposed-modules:
+      Examples
+      Lib
+      M14compose
+      M17alacarte
+      M19functionaldata
+      SimplePrelude
+      V01
+      V02
+      V03
+      V05
+      V07
+      V09
+      V10
+      V11
+      V12
+      V13
+      V20241029
+  other-modules:
+      Paths_code2022
+  hs-source-dirs:
+      src
+  build-depends:
+      QuickCheck >2.14
+    , base >=4.7 && <5
+    , svg-builder >=0.1.1
+  default-language: Haskell2010
+
+executable code2022-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_code2022
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck >2.14
+    , base >=4.7 && <5
+    , code2022
+    , svg-builder >=0.1.1
+  default-language: Haskell2010
+
+test-suite code2022-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_code2022
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck >2.14
+    , base >=4.7 && <5
+    , code2022
+    , svg-builder >=0.1.1
+  default-language: Haskell2010
