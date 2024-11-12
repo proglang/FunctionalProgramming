@@ -186,3 +186,40 @@ sieve (p: xs) = p: (sieve $ filter (\x -> x `mod` p /= 0) xs)
 sieve' (p: xs) = p: (sieve' $ filter ((/= 0). (`mod` p)) xs)
 sieve'' (p: xs) = p: sieve'' [ x | x <- xs, x `mod` p /= 0]
 
+----------------------------------------
+-- the minimum tree problem
+----------------------------------------
+
+data BinTree = BLeaf Int | Node BinTree BinTree
+  deriving (Show)
+
+
+mintree :: BinTree -> BinTree
+mintree b = t
+  where
+    (t, m) = mtree b m
+
+    mtree :: BinTree -> Int -> (BinTree, Int)
+    mtree (BLeaf v) m = (BLeaf m, v)
+    mtree (Node l r) m =
+      let (tl, ml) = mtree l m
+          (tr, mr) = mtree r m
+      in  (Node tl tr, min ml mr)
+
+
+----------------------------------------
+
+data Color = Red | Black
+  deriving (Eq, Show, Enum)
+
+colors = [Red .. Black]
+
+data Suit = Spades | Hearts | Diamond | Clubs
+  deriving (Eq, Show, Enum)
+
+-- error: ambiguity
+-- ov x = show (read x)
+
+vo x = read(show x)
+
+
