@@ -34,16 +34,16 @@
 
 \section{Categories}
 \begin{frame}
-  \frametitle{(Small) Categories}
+  \frametitle{Categories}
   \begin{block}{Definition (part 1)}
-    A \alert{small category} is given by
+    A \alert{small category} $\mathcal C$ is given by
     \begin{itemize}
     \item a set of \alert{objects},
     \item for each pair of objects $A,B$, a set $Hom(A,B)$ of
       \alert{arrows} (morphisms) between $A$ and $B$,
     \item for each pair of arrows $f \in Hom(A,B)$ and $g \in Hom (B,
       C)$ (for objects $A,B,C$), there is an arrow $(f;g) \in Hom (A,
-      C)$, the \alert{composition} of $f$ and $g$ (alternativel, write
+      C)$, the \alert{composition} of $f$ and $g$ (alternatively), write
       $g\circ f$).
     \end{itemize}
     Moreover, the following laws are expected to hold
@@ -93,7 +93,7 @@
     $a \le b$. 
   \end{block}
   \begin{block}<+->{Graphs}
-    Every graph $(N, E)$ gives rise to category with objects $n\in N$
+    Every directed graph $(N, E)$ gives rise to category with objects $n\in N$
     and morphisms paths in $N$.
   \end{block}
   \begin{block}<+->{Hask (small?)}
@@ -101,10 +101,37 @@
   \end{block}
 \end{frame}
 \section{Functors}
-\begin{frame}[fragile]
-  \frametitle{Functors (on Hask)}
+\begin{frame}
+  \frametitle{Functors (in general)}
   \begin{block}<+->{Definition}
-    A \alert{Functor} is a mapping \lstinline{f} between types such that for
+    Suppose $\mathcal C$ and $\mathcal D$ are categories. 
+    A \alert{functor} $F : \mathcal{C} \to \mathcal{D}$ consists of
+    \begin{itemize}
+    \item a mapping from objects of $\mathcal{C}$ to objects of
+      $\mathcal{D}$ and
+    \item a mapping from arrows of  $\mathcal{C}$ to arrows of
+      $\mathcal{D}$
+    \end{itemize}
+    such that
+    \begin{itemize}
+    \item $f \in HOM_{\mathcal{C}}(A,B)$ is mapped to
+      $F(f) \in HOM_{\mathcal{D}} (FA, FB)$,
+    \item $i_A \in HOM_{\mathcal{C}}(A,A)$ is mapped to
+      $i_{FA} \in HOM_{\mathcal{D}} (FA, FA)$,
+    \item $f \in HOM_{\mathcal{C}}(A,B)$ and  $g \in
+      HOM_{\mathcal{C}}(B,C)$ implies that
+      $F (f; g) = F(f); F(g) : HOM_{\mathcal{D}} (FA, FC)$
+    \end{itemize}
+    for all objects $A$, $B$, $C$ of $\mathcal C$.
+  \end{block}
+  \begin{exampleblock}<+->{Remark}
+    An \alert{Endofunctor} on a category $\mathcal{C}$ is a functor from $\mathcal{C} \to \mathcal{C}$.
+  \end{exampleblock}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Functors (Endofunctors on Hask)}
+  \begin{block}<+->{Definition}
+    A \alert{functor} is a mapping \lstinline{f} between types such that for
     every pair of type \lstinline{a} and \lstinline|b| there is a
     function 
     \lstinline|fmap :: (a -> b) -> (f a -> f b)|
@@ -179,36 +206,36 @@ class Functor f where
     \item \lstinline|map id (x:xs) == id x : map id xs == x : xs == id (x : xs)|
     \end{itemize}
   \end{block}
-  \begin{block}<+->{\lstinline$fmap (f . g) == fmap f . fmap g$}
-    Must hold when applied to any list \lstinline$fx$
+  \begin{block}<+->{\lstinline/fmap (f . g) == fmap f . fmap g/}
+    Must hold when applied to any list \lstinline/fx/
     \begin{itemize}
-    \item \lstinline$map (f . g) [] == [] == map f (map g [])$
-    \item \lstinline$map (f . g) (x : xs) == (f . g) x : map (f . g) xs$ \\
-      \lstinline$== f (g x) : (map f . map g) xs$ by function
+    \item \lstinline/map (f . g) [] == [] == map f (map g [])/
+    \item \lstinline/map (f . g) (x : xs) == (f . g) x : map (f . g) xs/ \\
+      \lstinline/== f (g x) : (map f . map g) xs/ by function
       composition and induction \\
-      \lstinline$== f (g x) : map f (map g xs)$ by function composition
+      \lstinline/== f (g x) : map f (map g xs)/ by function composition
       \\
-      \lstinline$== map f (g x : map g xs)$ by \lstinline$map f$
+      \lstinline/== map f (g x : map g xs)/ by \lstinline/map f/
       \\
-      \lstinline$== map f (map g (x : xs))$ by \lstinline$map g$
+      \lstinline/== map f (map g (x : xs))/ by \lstinline/map g/
       \\
-      \lstinline$== (map f . map g) (x : xs)$
+      \lstinline/== (map f . map g) (x : xs)/
     \end{itemize}
   \end{block}
 \end{frame}
 \begin{frame}
   \frametitle{Maybe is a functor}
   \begin{itemize}[<+->]
-  \item Reminder: \lstinline$data Maybe a = Nothing | Just a$
-  \item To make \lstinline$Maybe$ an instance of functor, we need to instantiate
-    the type \lstinline$f$ in the type of \lstinline|fmap| by the type constructor
+  \item Reminder: \lstinline/data Maybe a = Nothing | Just a/
+  \item To make \lstinline/Maybe/ an instance of functor, we need to instantiate
+    the type \lstinline/f/ in the type of \lstinline|fmap| by the type constructor
     \lstinline|Maybe|
   \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
   \item \lstinline|mapMaybe :: (a -> b) -> (Maybe a -> Maybe b)|
   \item There is actually no real choice for its definition
   \item \lstinline|mapMaybe g Nothing = Nothing|
   \item \lstinline|mapMaybe g (Just a) = Just (g a)| 
-  \item Second equation could return \lstinline$Nothing$, but that
+  \item Second equation could return \lstinline|Nothing|, but that
     would violate the functorial laws
   \item It remains to check the functorial laws on \lstinline|mapMaybe|
   \end{itemize}
@@ -222,8 +249,8 @@ class Functor f where
     \item \lstinline$mapMaybe id (Just x) == Just x == id (Just x)$
     \end{itemize}
   \end{block}
-  \begin{block}<+->{\lstinline$fmap (f . g) == fmap f . fmap g$}
-    Must hold when applied to any Maybe \lstinline$fx$
+  \begin{block}<+->{\lstinline/fmap (f . g) == fmap f . fmap g/}
+    Must hold when applied to any Maybe \lstinline/fx/
     \begin{itemize}
     \item \lstinline$mapMaybe (f . g) Nothing == Nothing == map f (map g Nothing)$
     \item \lstinline$mapMaybe (f . g) (Just x)$ \\
@@ -235,7 +262,7 @@ class Functor f where
       \\
       \lstinline$== mapMaybe f (mapMaybe g (Just x))$ by \lstinline$map g$
       \\
-      \lstinline$== (mapMaybe f . mapMaybe g) (Just x)$
+      \lstinline/== (mapMaybe f . mapMaybe g) (Just x)/
     \end{itemize}
   \end{block}
 \end{frame}
@@ -244,9 +271,9 @@ class Functor f where
   \frametitle{BTree is a functor}
   \begin{itemize}[<+->]
   \item Reminder:
-    \lstinline$data BTree a = Leaf | Node (BTree a) a (BTree a)$
-  \item To make \lstinline$BTree$ an instance of functor, we need to instantiate
-    the type \lstinline$f$ in the type of \lstinline|fmap| by the type constructor
+    \lstinline/data BTree a = Leaf | Node (BTree a) a (BTree a)/
+  \item To make \lstinline/BTree/ an instance of functor, we need to instantiate
+    the type \lstinline|f| in the type of \lstinline|fmap| by the type constructor
     \lstinline|BTree|
   \item \lstinline|fmap :: (a -> b) -> (f a -> f b)|
   \item \lstinline|mapBTree :: (a -> b) -> (BTree a -> BTree b)|
@@ -256,9 +283,9 @@ mapBTree g Leaf = Leaf
 mapBTree g (Node l a r) = Node (mapBTree g l) (g a) (mapBTree g r)
 \end{lstlisting}
   \item In the second equation we need to transform the data at the
-    node by \lstinline$g$ and the subtrees of type
-    \lstinline$BTree a$ recursively to \lstinline$BTree b$ using the
-    \lstinline$mapBTree$ function
+    node by \lstinline/g/ and the subtrees of type
+    \lstinline/BTree a/ recursively to \lstinline/BTree b/ using the
+    \lstinline/mapBTree/ function
   \item It remains to check the functorial laws on
     \lstinline|mapBTree|, but we'll leave this inductive proof to you.
   \end{itemize}
@@ -272,7 +299,11 @@ mapBTree g (Node l a r) = Node (mapBTree g l) (g a) (mapBTree g r)
   \item For instance \lstinline|instance Functor ((,) a)| makes the pair
     type into a functor by defining \texttt{fmap} on the second
     component
-  \item Mapping on the first component would also define a (different) functor!
+  \item Mapping on the first component would also define a (different)
+    functor!
+  \item (There are also functors with more than one argument. They
+    have to fulfill the functorial laws in all arguments. The pair
+    type constructor \lstinline|(,)| is an example of a binary functor.)
   \end{itemize}
 \end{frame}
 \section{Applicatives}
@@ -439,7 +470,7 @@ data Op    = Add | Sub | Mul | Div
              deriving (Eq, Show)
 \end{lstlisting}
 \end{block}
-\begin{alertblock}<+->{Parsing expressions}
+\begin{alertblock}<+->{Task: Parsing expressions}
   \begin{itemize}
   \item Read a string like \texttt{"3+42/6"}
   \item Recognize it as a valid term
