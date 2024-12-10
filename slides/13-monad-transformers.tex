@@ -134,14 +134,19 @@ Comp :: (* -> *) -> (* -> *) -> (* -> *)
 
   \begin{block}{The State monad}
 \begin{lstlisting}
-data ST s a = ST (s -> (a, s))
-runST (ST sas) = sas
+data ST s a = ST { runST :: s -> (s, a) }
+
+instance Functor (ST s) where
+  fmap h sg = ST (fmap h . runST sg)
+
+instance Applicative (ST s) where
+  pure a = ST (, a)
+  ST fab <*> ST fa = ST $ \s -> let (s', f) = fab s in
+                                fmap f $ fa s'
 
 instance Monad (ST s) where
-  return a = ST (\s -> (a, s))
-  m >>= f  = ST (\s ->
-                     let (a, s') = runST m s in
-                     runST (f a) s')
+  ST fa >>= h = ST $ \s -> let (s', a) = fa s in
+                           runST (h a) s'
 \end{lstlisting}
   \end{block}
 \end{frame}
@@ -150,14 +155,14 @@ instance Monad (ST s) where
   \frametitle{Let's combine Monads! - Maybe+State}
   \begin{block}<+->{Consider  \lstinline{Comp (ST s) Maybe}}
     \begin{itemize}
-    \item Corresponds to \lstinline{s -> (Maybe a, s)}, a stateful
+    \item Corresponds to \lstinline{s -> (s, Maybe a)}, a stateful
       computation that may fail
     \item \lstinline{return} and \lstinline{>>=} are easy to define
     \end{itemize}
   \end{block}
   \begin{block}<+->{Consider \lstinline{Comp Maybe (ST s)}}
   \begin{itemize}
-  \item Corresponds to \lstinline{Maybe (s -> (a, s))} 
+  \item Corresponds to \lstinline{Maybe (s -> (s, a))} 
     \item \lstinline{return a = return_Maybe (return_ST a)}
     \item But there's not way to write the bind function:
 \begin{lstlisting}
@@ -183,13 +188,13 @@ Just sta >>= f = ???
     \item Attention: the state is lost
     \end{itemize}
       \begin{lstlisting}
-data MaybeState s a = MST { runMST :: s -> Maybe (a, s) }
+data MaybeState s a = MST { runMST :: s -> Maybe (s, a) }
 
 ....
 
 instance Monad (MST s) where
-  return a = MST (\s -> return (a, s))
-  ms >>= f = MST (\s -> runMST ms s >>= \(a, s') -> runMST (f a) s')
+  return a = MST (\s -> return (s, a))
+  ms >>= f = MST (\s -> runMST ms s >>= \(s', a) -> runMST (f a) s')
       \end{lstlisting}
   \end{block}
   \begin{itemize}
@@ -260,16 +265,16 @@ type MaybeLike = MaybeT Identity
   \frametitle{The \texttt{StateT} monad transformer}
   \begin{block}{Definition}
 \begin{lstlisting}
-newtype StateT s m a = StateT { runStateT :: s -> m (a,s) }
+newtype StateT s m a = StateT { runStateT :: s -> m (s, a) }
 
-instance (Monad m) => Monad (StateT m) where
-  return a = StateT $ \s -> return (a, s)
+instance (Monad m) => Monad (StateT s m) where
+  return a = StateT $ \s -> return (s, a)
   m >>= f  = StateT $ \s -> do
-      (a, s') <- runStateT m s
+      (s', a) <- runStateT m s
       runStateT (f a) s'
 
-instance MonadTrans StateT where
-  lift ma = StateT $ \s -> do { a <- ma ; return (a, s) }
+instance MonadTrans (StateT s) where
+  lift ma = StateT $ \s -> do { a <- ma ; return (s, a) }
 \end{lstlisting}
   \end{block}
 \end{frame}

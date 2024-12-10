@@ -20,10 +20,10 @@ instance (Applicative f, Applicative g) =>
   --      ^-> :: g (a -> b) -> (g a -> g b)
   -- fmap (<*>) fga_b <*> fga :: f (g b)
 
-data ST s a = ST (s -> (s, a))
+data ST s a = ST { runST :: s -> (s, a) }
 
 instance Functor (ST s) where
-  fmap h (ST g) = ST (fmap h . g)
+  fmap h sg = ST (fmap h . runST sg)
 
 instance Applicative (ST s) where
   pure a = ST (, a)
@@ -31,9 +31,8 @@ instance Applicative (ST s) where
                                 fmap f $ fa s'
 
 instance Monad (ST s) where
-  ST fa >>= h = ST (\s -> let (s', a) = fa s in
-                          let ST ha = h a in
-                            ha s')
+  ST fa >>= h = ST $ \s -> let (s', a) = fa s in
+                           runST (h a) s'
 
 type STM s a = Comp Maybe (ST s) a
 
