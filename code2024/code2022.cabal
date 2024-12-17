@@ -46,6 +46,9 @@ library
       V20241112
       V20241119
       V20241126
+      V20241203
+      V20241210
+      V20241217
   other-modules:
       Paths_code2022
   hs-source-dirs:

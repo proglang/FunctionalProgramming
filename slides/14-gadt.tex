@@ -67,7 +67,7 @@ data Term  = I Integer
   \frametitle{A language with multiple types}
   \begin{block}{Evaluation}
     \begin{lstlisting}
-type Value = Int Integer | Bool Bool
+data Value = Int Integer | Bool Bool
              deriving Show
       
 eval           :: Term -> Value
@@ -85,7 +85,7 @@ eval (Eql t t')  = case (eval t, eval t') of
 \begin{frame}{Issues with the interpreter}
   \begin{itemize}[<+->]
 \item The interpreter can fail because of type mismatch.
-\item We need to deal with failures manually (for instance by making
+\item We can to deal with failures manually (for instance by making
   the interpreter monadic).
 \item The more values we have in the language, the more complicated it becomes.
 \item The Haskell type system does not help us.
@@ -120,8 +120,9 @@ data Maybe a where
   \end{block}\pause
   \begin{itemize}
   \item Now we also specify the return type of the data constructors!
-  \item We cannot change the type constructor \lstinline{Maybe}, but
-    its arguments may vary
+  \item We cannot change the type constructor \lstinline{Maybe}, \emph{but
+    its arguments may vary}
+  \item Inspired by inductive datatypes in type theory
   \end{itemize}
 \end{frame}
 
@@ -231,7 +232,7 @@ data FExp a where
     \end{lstlisting}
   \end{block}\pause
 
-  This doesn't work: not enough type information for variables and lambdas.
+  Problem: the types of a lambda and its bound variable are not connected!
 \end{frame}
 
 \begin{frame}[fragile]
@@ -254,14 +255,19 @@ data FExp a where
   \frametitle{Back to functions!}
   \begin{block}{Type definition}
   \begin{lstlisting}
-data FExp e a where
-  App :: FExp e (a -> b) -> FExp e a -> FExp e b --$\pause$
-  Lam :: FExp (a, e) b -> FExp e (a -> b) --$\pause$
-  Var :: Nat e a -> FExp e a
+data env :- a where
+  App  :: env :- (a -> b) 
+       -> env :- a 
+       -> env :- b --$\pause$
+  Lam  :: (a, env) :- b
+       -> env :- (a -> b) --$\pause$
+  Var  :: env :> a 
+       -> env :- a
 
-data Nat e a where
-  Zero :: Nat (a, b) a
-  Succ :: Nat e a -> Nat (b, e) a
+data env :> a where
+  Zero  :: (a, env) :> a
+  Succ  :: env :> a 
+        -> (b, env) :> a
 \end{lstlisting}
 \end{block}\pause
 Demo!
@@ -269,7 +275,7 @@ Demo!
 
 \begin{frame}{Origin of GADTs}
   \begin{itemize}
-  \item<1-> Comparatively recent extension to Haskell's type system.\\
+  \item<1->
     Invented by 3 different groups:
     \begin{itemize}
     \item Augustsson \& Petersson (1994): Silly Type Families
@@ -288,7 +294,10 @@ Demo!
   \begin{itemize}[<+->]
   \item GADTs can express extra properties in types:
     \begin{itemize}
-    \item 
+    \item typing of an embedded language
+    \item structural properties of data: non-empty lists, red-black
+      trees
+    \item more examples: \url{https://github.com/upenn-cis5520/07-GADTs}
     \end{itemize}
   \item We leverage Haskell's type system.
   \item GADTs do not solve \emph{all} the problems.
@@ -297,9 +306,14 @@ Demo!
       parse :: String -> Expr a
     \end{lstlisting}
     \pause
+    But we can get close:
+    Richard A. Eisenberg.
+    Stitch: the sound type-indexed type checker (functional
+    pearl). Haskell@ICFP 2020: 39-53.
+  \item 
     GADTs can be combined with other Haskell features such as type
     classes and type families. 
-  \item GADTs become very complex when the domain grows!
+  % \item GADTs become very complex when the domain grows!
   \end{itemize}
 \end{frame}
 
