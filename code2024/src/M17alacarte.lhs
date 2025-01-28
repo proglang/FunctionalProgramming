@@ -33,7 +33,9 @@ These functions extend automatically to all types as long as they are defined on
 >   | Add0 Exp0 Exp0
 
 This definition can be read as defining a type Exp0 such that
+
 Exp0 = Int0 Int | Add0 Exp0 Exp0
+
 or (if we discard the constructor names)
 
 Exp0 = Int + Exp0 x Exp0
@@ -70,12 +72,15 @@ However, the fixed point is defineable with a recursive definition:
 > fix :: (a -> a) -> a
 > fix f = f (fix f)
 
+
 Interestingly, the same construction works at the type level, too:
 
 > data Mu f = In (f (Mu f))
 
 Here, f :: * -> * does *not* stand for a type, but for a type function!
 BTW: Mu :: (* -> *) -> *
+
+
 
 Now we can construct a type which behaves like (is  "isomorphic" to) Exp0:
 
@@ -85,7 +90,7 @@ Exp1
 = Mu ExpF
 = In (ExpF (Mu ExpF))
 = In (ExpF Exp1)
-= In (IntF Int | AddF Exp1 Exp1)
+= In (IntF Int | AddF Exp1 Exp1 | NegF Exp1)
 
 Same as Exp0, except for the additional In constructor!
 
@@ -96,6 +101,9 @@ Exp0 = Int0 Int | Add0 Exp0 Exp0
 >
 > add01 :: Exp1 -> Exp1 -> Exp1
 > add01 x y = In (AddF x y)
+>
+> neg01 :: Exp1 -> Exp1
+> neg01 x = In (NegF x)
 
 
 
@@ -122,6 +130,11 @@ of an f-algebra as in this example:
 > evalExpAlg (IntF i) = i
 > evalExpAlg (AddF x1 x2) = x1 + x2
 > evalExpAlg (NegF x) = -x
+>
+> printExpAlg :: Algebra ExpF String
+> printExpAlg (IntF i) = show i
+> printExpAlg (AddF x1 x2) = "(" ++ x1 ++ " + " ++ x2 ++ ")"
+> printExpAlg (NegF x) = "(- " ++ x ++")"
 
 This definition is *not* recursive!
 
@@ -132,7 +145,7 @@ described by an initial f-algebra for suitable f.
 The point of this development is that we can define
 a generic recursion operator that lifts any f-algebra to the fixpoint of f, Mu f.
 
-> foldMu :: Functor f => Algebra f a -> Mu f -> a
+> foldMu :: Functor f => Algebra f a -> (Mu f -> a)
 > foldMu alg (In x) = alg (fmap (foldMu alg) x)
 
 Type checking...
@@ -164,6 +177,7 @@ If we use a different algebra, we obtain another interpretation of the Exp1 data
 
 > one' = In $ IntF 1
 > two' = In $ AddF one' one'
+> three' = In $ AddF one' two'
 
 > prAlg :: Algebra ExpF String
 > prAlg (IntF i) = show i
@@ -204,6 +218,14 @@ Examples of ListF algebras
 >
 > ilength :: Mu ListF -> Int
 > ilength = foldMu lengthAlg
+>
+> isum :: List1 -> Int
+> isum = foldMu sumAlg
+>
+> prListAlg :: Algebra ListF String
+> prListAlg NilF = "[]"
+> prListAlg (ConsF i x) = "(" ++ show i ++ " : " ++ x ++ ")"
+
 
 Type-parametric lists
 
@@ -218,7 +240,12 @@ Type-parametric lists
 
 * Yet another example: binary trees
 
-...
+> data BTreeF a x = BEmptyF | BNodeF x a x
+>   deriving (Functor)
+>
+> bsumAlg :: (Num a) => Algebra (BTreeF a) a
+> bsumAlg BEmptyF = 0
+> bsumAlg (BNodeF l a r) = l + a + r
 
 
 As another example, consider a data type representing abstract syntax and
@@ -229,6 +256,7 @@ some functions on that syntax, e.g., a pretty printer, an interpreter,
 
 We can define a range of data types just by providing different
 functors.
+Start with the constant functor.
 
 > data Val e = Val Int
 > type ConstExpr = Mu Val
@@ -242,6 +270,9 @@ Mu Val ~= Val (Mu Val) ~= Int
 
 > data Add e = Add e e
 > type AddExpr = Mu Add
+
+> instance Functor Add where
+>   fmap f (Add x y) = Add (f x) (f y)
 
 Mu Add ~= Add (Mu Add) (Mu Add) ~= ...
 
@@ -262,6 +293,7 @@ To combine the two functors, we need to take their
 f :: * -> *
 g :: * -> *
 e :: *
+(f :+: g) :: * -> *
 
 
 What would an example expression look like?
@@ -281,9 +313,6 @@ the coproduct of two functors is again a functor.
 
  instance Functor Val where
    fmap f (Val i) = (Val i)
-
-> instance Functor Add where
->   fmap f (Add x y) = Add (f x) (f y)
 
 > instance (Functor f, Functor g) => (Functor (f :+: g)) where
 >   fmap h (Inl e) = Inl (fmap h e)
@@ -413,7 +442,13 @@ Hack: make eval instance for ListF
 
 > instance Eval ListF Int where
 >   evalAlgebra (NilF) = 0
->   evalAlgebra (ConsF _ x) = 1+x
+>   evalAlgebra (ConsF i x) = i+x
+>
+> xnil :: (ListF :<: f) => Mu f
+> xnil = inject NilF
+>
+> xcons :: (ListF :<: f) => Int -> Mu f -> Mu f
+> xcons i x = inject (ConsF i x)
 
 ** Extension
 
