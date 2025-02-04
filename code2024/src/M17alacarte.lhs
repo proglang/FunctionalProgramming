@@ -483,6 +483,7 @@ inj = Inr . Inl
 
 ** Extension II
 
+
 Adding new functions may be done either by defining more algebras and
 using foldMu or by using *open-ended recursion*  directly.
 
@@ -552,6 +553,10 @@ ftf :: f (Term f a)
 > thenTerm (Pure a) g = g a
 > thenTerm (Impure ftfa) g = Impure (fmap (`thenTerm` g) ftfa)
 
+
+
+
+
 > instance Functor f => Applicative (Term f) where
 >   pure a = Pure a
 >   ag <*> ax = ag `thenTerm` (\g -> ax `thenTerm` (\x -> Pure $ g x))
@@ -570,7 +575,49 @@ not. But some well-known monads may be constructed as free monads:
 > data One a = One
 > data Const e a = Const e
 
+
+
 Can we construct elements of `Term Zero a`?
+
+
+Pure a
+Impure :: f (Term f a) -> Term f a
+       :: Zero (Term f a) -> Term f a
+
+--> Identity monad
+
+What about `Term One a`
+
+Pure a                                -- Just
+Impure :: One (Term f a) -> Term f a  -- Nothing
+
+--> Maybe
+
+`Const e a`
+
+Pure a
+Impure :: Const e (Term f a) -> Term f a
+
+--> Either e a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 - Pure 1 :: Term Zero Int
 Isomorphic to the Identity functor.
 
@@ -622,6 +669,8 @@ functor from monads to functors and thus preserves coproducts. Hence,
 coproducts of functors (that we just constructed in the previous
 sections) map to coproducts of monads!
 Thus, the syntax defined in this way is directly monadic.
+
+
 
 
 As an example, consider a calculator with three actions on a memory cell.
@@ -710,6 +759,9 @@ run :: (...) => Term f a -> Mem -> (a, Mem)
 > instance Run Recall where
 >   runAlgebra (Recall callback) = \ (Mem i) -> (callback i) (Mem i)
 
+  callback :: Int -> (Mem -> (a, Mem))
+
+
 > instance Run Clear where
 >   runAlgebra (Clear cont) = \ (Mem i) -> cont (Mem 0)
 
@@ -723,7 +775,7 @@ run :: (...) => Term f a -> Mem -> (a, Mem)
 > run :: Run f => Term f a -> Mem -> (a, Mem)
 > run = foldTerm (,) runAlgebra
 
-(,) :: a -> b -> (a, b)
+(,) :: a -> (b -> (a, b))
 return :: a -> Mem -> (a, Mem)
 
 
@@ -736,3 +788,32 @@ What did we gain?
 > tick5 = do y <- recall
 >            put 4711
 >            return y
+
+Another semantics: trace of the operations
+
+> type Trace = [String]
+> class Functor f => Tracing f where
+>   traceAlgebra :: f Trace -> Trace
+
+> instance Tracing Incr where
+>   traceAlgebra (Incr k tr) = ("Incr " ++ show k) : tr
+>
+> instance Tracing Recall where
+>   traceAlgebra (Recall callback) = "Recall" : callback 0
+>
+> instance Tracing Clear where
+>   traceAlgebra (Clear tr) = "Clear" : tr
+>
+> instance Tracing Put where
+>   traceAlgebra (Put k tr)  = ("Put " ++ show k) : tr
+>
+> instance (Tracing f, Tracing g) => Tracing (f :+: g) where
+>   traceAlgebra (Inl t) = traceAlgebra t
+>   traceAlgebra (Inr t) = traceAlgebra t
+>
+> trace :: Tracing f => Term f a -> Trace
+> trace = foldTerm (const ["ret"]) traceAlgebra
+>
+> 
+
+
