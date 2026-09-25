@@ -1,0 +1,9 @@
+.lake/
+lake-manifest.json
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
