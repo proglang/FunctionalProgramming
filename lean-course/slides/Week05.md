@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Read a polymorphic class constraint
-- Define one class and two instances
-- Trace instance selection at a call site
+- `class` declarations
+- `instance` declarations
+- Instance synthesis
 
-## Central idea
+## Core concepts
 
-A class describes an operation available for several types.
+- `Label α`: overloaded operation
+- `[Label α]`: class parameter
+- `instance`: implementation for a type
 
 ## Lean example
 
@@ -26,24 +28,23 @@ def describe [Label α] (x : α) : String :=
   Label.label x
 ```
 
-## What to notice
+## Lean details
 
-- A class is an interface of operations
-- An instance supplies those operations for a type
-- The argument in square brackets is resolved by instance search
+- Type class constraint at `describe`
+- Instance synthesis at each call site
+- Missing-instance diagnostic
 
 ## Live coding
 
-1. Write the `TrafficLight` instance
-2. Call `describe` on a light and a natural number
-3. Inspect the inferred type with `#check`
+- `Label TrafficLight` instance
+- `Label Nat` instance
+- `#check describe`
 
-## Pause and predict
+## Check
 
-Where does Lean obtain `Label TrafficLight`?
+Instance used by `describe TrafficLight.green`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week05.md` after the lecture.
-
-The complete example is `Course/Week05.lean`; the fill-in version is `Templates/Week05.lean`.
+- Instance for a second type
+- Missing-instance diagnosis

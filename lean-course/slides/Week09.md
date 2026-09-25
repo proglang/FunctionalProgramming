@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Read a theorem as a specification
-- Follow the base and induction cases
-- Audit which axioms a proof uses
+- Theorem statements as specifications
+- Induction on a list
+- Axiom audit
 
-## Central idea
+## Core concepts
 
-A recursive function suggests the induction structure for a property about it.
+- Base case: empty list
+- Cons case: head and induction hypothesis
+- Goal simplification with definitions
 
 ## Lean example
 
@@ -26,24 +28,23 @@ theorem append_nil (xs : List α) :
   | cons x xs ih => simp [append, ih]
 ```
 
-## What to notice
+## Lean details
 
-- The induction hypothesis speaks about the tail
-- `simp` uses definitions and known equalities
-- `#print axioms` exposes proof dependencies
+- `ih`: property of the tail
+- `simp [append, ih]`: definition and hypothesis
+- `#print axioms`: transitive axiom dependencies
 
 ## Live coding
 
-1. Read the goal after `induction xs`
-2. Complete the cons case
-3. Explain the final theorem in English
+- Goals after `induction xs`
+- Cons-case proof
+- Axiom report
 
-## Pause and predict
+## Check
 
-What exactly does `ih` state in the cons case?
+Statement of `ih` in the cons case
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week09.md` after the lecture.
-
-The complete example is `Course/Week09.lean`; the fill-in version is `Templates/Week09.lean`.
+- `append [] ys = ys`
+- Associativity of `append`

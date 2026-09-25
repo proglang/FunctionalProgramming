@@ -1,5 +1,5 @@
 ---
-title: "Week 03: Higher-order functions and folds"
+title: "Week 03: Polymorphism and folds"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Use a function as an argument
-- Write polymorphic list operations
-- Express a traversal as a fold
+- Higher-order function arguments
+- Polymorphic list functions
+- `foldRight`
 
-## Central idea
+## Core concepts
 
-`map` changes each element. A fold replaces constructors with operations.
+- `mapList`: elementwise function application
+- `foldRight`: replacement of list constructors
+- Independent element and result types
 
 ## Lean example
 
@@ -25,24 +27,23 @@ def foldRight (f : α → β → β)
   | x :: xs => f x (foldRight f base xs)
 ```
 
-## What to notice
+## Lean details
 
-- `α` and `β` may be different types
-- Currying makes partial application possible
-- The fold result type need not match the element type
+- Type parameters `α` and `β`
+- Curried function arguments
+- Recursive result as fold accumulator
 
 ## Live coding
 
-1. Write `mapList` by recursion
-2. Complete `foldRight`
-3. Define `sum` with `foldRight`
+- `mapList` by recursion
+- `foldRight` by recursion
+- `sum` from `foldRight`
 
-## Pause and predict
+## Check
 
-What is the type of `foldRight (· + ·) 0`?
+Type of `foldRight (· + ·) 0`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week03.md` after the lecture.
-
-The complete example is `Course/Week03.lean`; the fill-in version is `Templates/Week03.lean`.
+- `length` from `foldRight`
+- List identity law

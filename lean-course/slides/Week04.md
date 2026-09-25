@@ -1,5 +1,5 @@
 ---
-title: "Week 04: Trees, evaluation and termination"
+title: "Week 04: Trees and strict evaluation"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Define operations on a persistent tree
-- Compare ordinary and accumulator recursion
-- Explain strict evaluation in Lean
+- Recursion on an inductive tree
+- Accumulator-based recursion
+- Strict evaluation in Lean
 
-## Central idea
+## Core concepts
 
-A tree operation follows the shape of the tree. Accumulators can change the cost of a traversal.
+- Tree cases: leaf and node
+- Size from recursive subtree results
+- Delayed computation: `Unit → α`
 
 ## Lean example
 
@@ -25,24 +27,23 @@ def Tree.size : Tree α → Nat
       left.size + 1 + right.size
 ```
 
-## What to notice
+## Lean details
 
-- Lean evaluates function arguments before a call
-- An explicit `Unit → α` function can delay a computation
-- A terminating recursive definition can participate in proofs
+- Persistent tree values
+- Tail-recursive list reversal
+- Termination from smaller subtrees
 
 ## Live coding
 
-1. Complete `Tree.size`
-2. Write `reverseAcc` with a local helper
-3. Compare the order of results with `List.reverse`
+- `Tree.size`
+- `reverseAcc`
+- Comparison with `List.reverse`
 
-## Pause and predict
+## Check
 
-Why is the recursive call on a subtree accepted?
+Termination argument for `Tree.size`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week04.md` after the lecture.
-
-The complete example is `Course/Week04.lean`; the fill-in version is `Templates/Week04.lean`.
+- `Tree.height`
+- Tree-map size property

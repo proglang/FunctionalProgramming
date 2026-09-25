@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Read a transformer stack as a result type
-- Compare two orders of state and error
-- Predict whether state survives failure
+- `StateT` and `ExceptT`
+- Effect-stack result types
+- State after an error
 
-## Central idea
+## Core concepts
 
-The order of effects changes observable results.
+- `StateT Nat (Except String) A`: error or value with state
+- `ExceptT String (StateM Nat) A`: error or value, plus state
+- Transformer order and failure semantics
 
 ## Lean example
 
@@ -25,24 +27,23 @@ abbrev KeepState :=
   ExceptT String (StateM Nat)
 ```
 
-## What to notice
+## Lean details
 
-- The first stack may lose the final state
-- The second returns state alongside an error
-- A shared evaluator can use an effect interface
+- `failLose`: discarded final state
+- `failKeep`: final state `1`
+- Result type as the explanation
 
 ## Live coding
 
-1. Complete both failing computations
-2. Run each from state zero
-3. Explain the different outputs by expanding the types
+- State increment before error
+- Evaluation of both stacks
+- Comparison of outputs
 
-## Pause and predict
+## Check
 
-Which stack can return a final state after an error?
+Stack retaining state after failure
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week15.md` after the lecture.
-
-The complete example is `Course/Week15.lean`; the fill-in version is `Templates/Week15.lean`.
+- Expansion of both result types
+- Error trace

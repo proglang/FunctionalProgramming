@@ -1,5 +1,5 @@
 ---
-title: "Week 12: Lean metaprogramming"
+title: "Week 12: Lean macros"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Separate syntax from elaborated expressions
-- Read a quotation and an antiquotation
-- Define a small macro for terms and tactics
+- Syntax quotations
+- Antiquotations
+- Term and tactic macros
 
-## Central idea
+## Core concepts
 
-A macro transforms parsed syntax into new syntax that Lean then elaborates.
+- Macro expansion: `Syntax` to `Syntax`
+- Quotation: parsed syntax as data
+- Antiquotation: captured syntax insertion
 
 ## Lean example
 
@@ -25,24 +27,23 @@ macro_rules
 #eval twice(21)
 ```
 
-## What to notice
+## Lean details
 
-- Quotation produces syntax data
-- `$x` inserts captured syntax into a quotation
-- The kernel still checks the generated term or proof
+- `twice`: term macro
+- `close_simple`: tactic macro
+- Kernel checking after elaboration
 
 ## Live coding
 
-1. Complete the `twice` macro
-2. Add a `close_simple` tactic macro
-3. Inspect one successful and one failed expansion
+- `twice` expansion
+- `close_simple` expansion
+- Unsolved goal after tactic failure
 
-## Pause and predict
+## Check
 
-Does a macro itself prove the theorem it generates?
+Role of the kernel after macro expansion
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week12.md` after the lecture.
-
-The complete example is `Course/Week12.lean`; the fill-in version is `Templates/Week12.lean`.
+- `thrice` macro
+- A goal outside `close_simple`

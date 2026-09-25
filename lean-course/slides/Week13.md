@@ -1,5 +1,5 @@
 ---
-title: "Week 13: Programs from formal specifications"
+title: "Week 13: Specification-driven programming"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Keep the formal statement fixed
-- Review generated code and proof separately
-- Check axiom dependencies after compilation
+- Fixed formal specification
+- Generated implementation and proof
+- Proof dependency audit
 
-## Central idea
+## Core concepts
 
-A specification states observable behavior. An implementation and its proof must satisfy that statement.
+- `partitionBy`: stable order in both outputs
+- `List.filter`: reference behavior
+- Implementation and theorem statements as separate objects
 
 ## Lean example
 
@@ -25,24 +27,23 @@ theorem partitionBy_yes
   sorry
 ```
 
-## What to notice
+## Lean details
 
-- A checked proof addresses the formal statement
-- The statement must still match the intended behavior
-- `sorryAx` in an axiom report means the proof is incomplete
+- Intentional `sorry` in the displayed template
+- `sorryAx` in an axiom report: incomplete proof
+- Human review of the specification
 
 ## Live coding
 
-1. Show the teacher-owned specification
-2. Ask the LLM for a program and proofs
-3. Audit the response, then compile and check axioms
+- Fixed theorem statements
+- Candidate from an LLM
+- Compilation and `#print axioms`
 
-## Pause and predict
+## Check
 
-Would membership alone specify the order of each output list?
+Output order under a membership specification
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week13.md` after the lecture.
-
-The complete example is `Course/Week13.lean`; the fill-in version is `Templates/Week13.lean`.
+- Counterexample to `(xs, [])`
+- Review of generated proof

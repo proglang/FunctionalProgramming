@@ -1,5 +1,5 @@
 ---
-title: "Week 01: Lean as a functional language"
+title: "Week 01: Functions and types"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,14 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Read a Lean type and a function definition
-- Use `#eval` and `#check` for feedback
-- Explain why a pure expression can be replaced by its value
+- Function definitions and type signatures
+- `#eval` and `#check`
+- Pure expressions
 
-## Central idea
+## Core concepts
 
-A function maps inputs to outputs. Its type is a compact contract.
+- Input types and result type
+- Expression evaluation without side effects
 
 ## Lean example
 
@@ -24,24 +25,23 @@ def double (n : Nat) : Nat := n + n
 #check double
 ```
 
-## What to notice
+## Lean details
 
-- Lean checks definitions as the file changes
-- A type error identifies a mismatch between expected and actual types
-- `#eval` runs code; `#check` reports a type
+- `#eval`: evaluate an expression
+- `#check`: display an expression’s type
+- Type errors: expected type and actual type
 
 ## Live coding
 
-1. Complete `double` in `Templates/Week01.lean`
-2. Write `larger` using `if`
-3. Predict both evaluations before running them
+- `double`: addition on `Nat`
+- `larger`: conditional expression
+- Predicted results before `#eval`
 
-## Pause and predict
+## Check
 
-What is the type of `fun n : Nat => n + 1`?
+Inferred type of `fun n : Nat => n + 1`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week01.md` after the lecture.
-
-The complete example is `Course/Week01.lean`; the fill-in version is `Templates/Week01.lean`.
+- `clamp` on `Nat`
+- Type error diagnosis

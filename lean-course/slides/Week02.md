@@ -1,5 +1,5 @@
 ---
-title: "Week 02: Data and structural recursion"
+title: "Week 02: Inductive types and recursion"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Define a sum type and a structure
-- Use pattern matching to cover constructors
-- Recognize a recursive call on a smaller value
+- `inductive` constructors
+- `structure` fields
+- Structural recursion on `List`
 
-## Central idea
+## Core concepts
 
-A datatype lists the shapes of its values. A recursive function handles each shape.
+- `Suit`: alternatives defined by constructors
+- `Card`: a structure with two fields
+- List cases: `[]` and `x :: xs`
 
 ## Lean example
 
@@ -27,24 +29,23 @@ def isRed : Suit → Bool
   | .clubs | .spades => false
 ```
 
-## What to notice
+## Lean details
 
-- `Card` groups a suit and a rank
-- `List Card` is either empty or a head followed by a tail
-- A recursive call on the tail supplies the termination argument
+- Pattern matching on every constructor
+- Recursive call on the list tail
+- Termination from structural recursion
 
 ## Live coding
 
-1. Complete `isRed` by cases
-2. Define `countRed` on a card list
-3. Add a two-card `#eval` example
+- `isRed`: cases for each suit
+- `countRed`: empty and cons cases
+- Evaluation on a short card list
 
-## Pause and predict
+## Check
 
-Which case of `countRed` handles the empty deck?
+Base case of `countRed`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week02.md` after the lecture.
-
-The complete example is `Course/Week02.lean`; the fill-in version is `Templates/Week02.lean`.
+- `countSuit` on a card list
+- Termination argument

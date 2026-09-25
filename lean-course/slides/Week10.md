@@ -1,5 +1,5 @@
 ---
-title: "Week 10: Lambda calculus and evaluation"
+title: "Week 10: Lambda terms and evaluation"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Read lambda terms as an inductive datatype
-- Explain free versus bound variables
-- Compare evaluation strategies on one term
+- Inductive lambda-term syntax
+- De Bruijn indices
+- Call-by-value evaluation with fuel
 
-## Central idea
+## Core concepts
 
-A lambda term is a variable, abstraction or application. Binding makes substitution delicate.
+- Variable, abstraction, application
+- Index zero: nearest binder
+- Closure: body and defining environment
 
 ## Lean example
 
@@ -25,33 +27,33 @@ inductive Term where
   | app (function argument : Term)
 ```
 
-## Evaluation with an environment
+## Call-by-value evaluator
 
 ```lean
 def evalCBV :
     Nat → List Value → Term → Option Value
 ```
 
-A closure stores its body and defining environment. The fuel bounds evaluation of applications.
+- Closure: body and environment
+- Fuel: evaluation bound
 
-## What to notice
+## Lean details
 
-- De Bruijn index zero refers to the nearest binder
-- A term can be checked for well-scoped variables
-- Call-by-value and call-by-name can reduce different subterms first
+- `wellScoped`: bound-variable check
+- `evalCBV`: environment-based evaluator
+- Call-by-value versus call-by-name traces
 
 ## Live coding
 
-1. Build the identity term
-2. Complete `wellScoped`
-3. Trace two reductions on paper before coding more
+- Identity term
+- `wellScoped`
+- `evalCBV` on self-application
 
-## Pause and predict
+## Check
 
-Is `Term.var 0` closed at depth zero?
+`wellScoped 0 (.var 0)`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week10.md` after the lecture.
-
-The complete example is `Course/Week10.lean`; the fill-in version is `Templates/Week10.lean`.
+- De Bruijn translations
+- Evaluation trace

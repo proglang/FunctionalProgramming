@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Generate constraints from simple terms
-- Decompose an arrow-type equation
-- Reject a cyclic type with an occurs check
+- Type constraints
+- Constraint decomposition for simple types
+- Occurs check
 
-## Central idea
+## Core concepts
 
-Unification solves equality constraints on types. Let-polymorphism adds generalization.
+- Type variables and arrow types
+- Arrow equality: input and output constraints
+- Let-polymorphism: generalization and instantiation
 
 ## Lean example
 
@@ -25,24 +27,23 @@ inductive Ty where
   | arrow (input output : Ty)
 ```
 
-## What to notice
+## Lean details
 
-- `α → Nat = Nat → β` yields two smaller equations
-- `α = α → Nat` fails the occurs check
-- Lean elaboration solves a richer problem than this teaching model
+- `α → Nat = Nat → β`: two constraints
+- `α = α → Nat`: occurs-check failure
+- Toy constraint solver versus Lean elaborator
 
 ## Live coding
 
-1. Trace constraints for identity
-2. Complete `occurs`
-3. Decompose an arrow equality
+- Constraints for identity
+- `occurs`
+- Arrow-type decomposition
 
-## Pause and predict
+## Check
 
-Why can `α` not stand for `α → Nat`?
+Occurs-check result for `α = α → Nat`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week14.md` after the lecture.
-
-The complete example is `Course/Week14.lean`; the fill-in version is `Templates/Week14.lean`.
+- Constraint decomposition
+- Let-polymorphism example

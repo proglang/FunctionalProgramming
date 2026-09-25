@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- State identity and associativity laws
-- Connect a functor to a type and function mapping
-- Prove an identity and composition law in Lean
+- Identity and composition
+- Category laws
+- Functor laws for `Option`
 
-## Central idea
+## Core concepts
 
-Composition gives a common account of functions. A functor preserves that structure.
+- Objects: types
+- Morphisms: functions
+- Functor mapping: types and morphisms
 
 ## Lean example
 
@@ -28,24 +30,23 @@ theorem option_map_id (x : Option α) :
   cases x <;> rfl
 ```
 
-## What to notice
+## Lean details
 
-- Objects can be types and arrows can be functions
-- `Option.map` preserves identity and composition
-- Law proofs add a contract to an implementation
+- Composition associativity
+- `Option.map` preserves identity
+- `Option.map` preserves composition
 
 ## Live coding
 
-1. Prove associativity with `funext`
-2. Prove `Option.map` identity by cases
-3. State the composition law before revealing the proof
+- `compose_assoc` with `funext`
+- `option_map_id` by cases
+- `option_map_comp` by cases
 
-## Pause and predict
+## Check
 
-What must `map` do to an identity function?
+`Option.map` applied to `id`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week16.md` after the lecture.
-
-The complete example is `Course/Week16.lean`; the fill-in version is `Templates/Week16.lean`.
+- Composition-law proof
+- Tree-map law

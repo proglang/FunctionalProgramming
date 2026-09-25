@@ -1,5 +1,5 @@
 ---
-title: "Week 07: Functor and applicative parsers"
+title: "Week 07: Parser combinators"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Represent a parser as a function
-- Map a parsed value without consuming more input
-- Sequence parsers that consume input in order
+- Parser result and remaining input
+- Mapping a parser result
+- Sequencing parsers
 
-## Central idea
+## Core concepts
 
-A parser returns a value and the unconsumed input, or fails.
+- `Parser α`: input to `Option` result and remainder
+- `mapParser`: result transformation
+- `sequence`: ordered input consumption
 
 ## Lean example
 
@@ -29,24 +31,24 @@ def character (wanted : Char) : Parser Char
   | [] => none
 ```
 
-## What to notice
+## Lean details
 
-- Mapping changes only the result
-- Sequencing passes remaining input to the next parser
-- The same operations motivate `Functor` and `Applicative`
+- Failure represented by `none`
+- Unconsumed input preserved by mapping
+- Remaining input passed to the next parser
+- Mapping and sequencing as `Functor` and `Applicative` operations
 
 ## Live coding
 
-1. Complete `character`
-2. Write `mapParser`
-3. Combine two character parsers
+- `character`
+- `mapParser`
+- Parser for two characters
 
-## Pause and predict
+## Check
 
-What remains after parsing `ab` from `abc`?
+Remainder after parsing `ab` from `abc`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week07.md` after the lecture.
-
-The complete example is `Course/Week07.lean`; the fill-in version is `Templates/Week07.lean`.
+- Alternative character parser
+- Parser trace

@@ -1,5 +1,5 @@
 ---
-title: "Week 08: Interpreters with explicit errors"
+title: "Week 08: Interpreters with errors"
 subtitle: "Functional Programming in Lean"
 date: ""
 aspectratio: 169
@@ -8,13 +8,15 @@ fontsize: 17pt
 
 ## Learning goals
 
-- Model expression syntax as a datatype
-- Write a compositional evaluator
-- Locate the precise point where an error arises
+- Inductive expression syntax
+- Recursive evaluation
+- Error propagation
 
-## Central idea
+## Core concepts
 
-An interpreter follows the syntax tree. Each recursive result is available inside `do`.
+- `Expr`: syntax tree
+- `eval`: meaning of each constructor
+- `Except String Int`: value or error
 
 ## Lean example
 
@@ -27,24 +29,23 @@ def eval : Expr → Except String Int
       pure (a + b)
 ```
 
-## What to notice
+## Lean details
 
-- The AST separates syntax from meaning
-- An error can stop an evaluation branch
-- Adding syntax requires a new evaluator case
+- Left subexpression before right subexpression
+- Division-by-zero branch
+- New constructor, new evaluator case
 
 ## Live coding
 
-1. Add the division constructor
-2. Reject a zero divisor
-3. Trace the evaluation of a nested expression
+- Division constructor
+- Division evaluator case
+- Nested error trace
 
-## Pause and predict
+## Check
 
-Which subexpression is evaluated first in `add x y`?
+Evaluation order of `.add x y`
 
-## Exercise connection
+## Exercise
 
-Open `exercises/Week08.md` after the lecture.
-
-The complete example is `Course/Week08.lean`; the fill-in version is `Templates/Week08.lean`.
+- Multiplication constructor
+- Nested error trace
