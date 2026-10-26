@@ -20,19 +20,22 @@ Explaining the meaning of data in comments is bad!
 
 Introduce new, self explaining types.
 \begin{lstlisting}
-type Name = String
-type Title = String
-type Year = Int
-type Age = Int
+abbrev Name := String
+abbrev Title := String
+abbrev Year := Int
+abbrev Age := Int
 
-type User = (Name,    Year)
---           name,   year of birth 
-type Film = (Title, Age)
---                  ^ fsk           
-type Purchase = (Name    -- use name
-                , Title  -- item name
-                , Year)  -- date of purchase
-users :: [User]
+abbrev User := Name × Year
+--             name   year of birth
+
+abbrev Film := Title × Age
+--                     FSK age rating
+
+abbrev Purchase := Name × Title × Year
+--                 user   item    year of purchase
+def users : List User :=
+  [("Alice", 1990), ("Bob", 1985)]
+def purchase : Purchase := ("Alice", "Casablanca", 2026)
 \end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
@@ -100,62 +103,55 @@ users :: [User]
   \frametitle{Model using algebraic datatypes}
   \begin{block}{A card has a Suit}
 \begin{lstlisting}
-data Suit = Spades | Hearts | Diamonds | Clubs
+inductive Suit where | spades | hearts | diamonds | clubs
 \end{lstlisting}
   \end{block}
   \begin{alertblock}{Explanation}
     \begin{itemize}
-    \item define an \emph{algebraic datatype}
+    \item define an \emph{inductive datatype}
     \item new type consisting of (exactly) four values
     \item \lstinline{Suit}: the name of the new type
-    \item \lstinline{Spades}, \lstinline{Hearts}, \dots: the names of its
+    \item \lstinline{spades}, \lstinline{hearts}, \dots: the names of its
       \textbf{constructors}
     \item constructors can be used in expressions and patterns
-    \item names of types and constructors must be capitalized
+    \item convention: names of types in UpperCamlCase,  constructors in
+      lowerCamlCase 
     \end{itemize}
   \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Printing algebraic datatypes}
-\begin{verbatim}
-Main> Spades
+% \begin{frame}[fragile]
+%   \frametitle{Printing algebraic datatypes}
+% \begin{verbatim}
+% Main> Spades
 
-<interactive>:3:1:
-  No instance for (Show Suit) arising from
-  a use of `print'
-  Possible fix: [...] 
-\end{verbatim}
+% <interactive>:3:1:
+%   No instance for (Show Suit) arising from
+%   a use of `print'
+%   Possible fix: [...] 
+% \end{verbatim}
 
-  \begin{alertblock}{Oops!}
-    \begin{itemize}
-    \item Haskell does not know how to print a \texttt{Suit}
-    \item but we can ask for a default (or write our own printer)
-    \end{itemize}
-  \end{alertblock}
-\end{frame}
+%   \begin{alertblock}{Oops!}
+%     \begin{itemize}
+%     \item Haskell does not know how to print a \texttt{Suit}
+%     \item but we can ask for a default (or write our own printer)
+%     \end{itemize}
+%   \end{alertblock}
+% \end{frame}
 
 \begin{frame}[fragile,fragile]
-  \frametitle{Printing derived}
+  \frametitle{Printing and Equality derived}
 \begin{lstlisting}
-data Suit = Spades | Hearts | Diamonds | Clubs
-  deriving (Show) -- makes `Suit' printable
+inductive Suit where | spades | hearts | diamonds | clubs
+  deriving Repr, DecidableEq
 \end{lstlisting}
-Defines a function \lstinline{show} for \lstinline{Suit}, which is
-automatically called by Haskell's printer
-\begin{verbatim}
-Main> Spades
-Spades
-Main> show Spades
-"Spades"
-Main> :t show 
-show :: Show a => a -> String
-\end{verbatim}
+Defines functions for \lstinline{Suit}, which is
+automatically called by the printer and by equality
 \begin{exampleblock}{Remark}
   \begin{itemize}
-  \item \lstinline{Show} is a \emph{type class}
+  \item \lstinline{Repr} and \lstinline{DecidableEq} are \emph{type classes}
   \item a type class associates one or more functions with a type; in
-    case of \lstinline{Show}, the function is \lstinline{show}
+    case of \lstinline{DecidableEq}, the function is \lstinline{==}
   \end{itemize}
 \end{exampleblock}
 \end{frame}
@@ -163,27 +159,22 @@ show :: Show a => a -> String
   \frametitle{Functions on data types}
    Each suit has a color:
 \begin{lstlisting}
- data Color = Black | Red
-  deriving (Show)
+inductive Color where | black | red
+  deriving Repr, DecidableEq
 \end{lstlisting}
    Define a color function by pattern matching
 \begin{lstlisting}
-color :: Suit -> Color
-color = undefined
+def color : Suit := sorry
 \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile,fragile]
   \frametitle{More data}
   A card has a suit and a \textbf{rank}:
 \begin{lstlisting}
-data Rank = Numeric Integer | Jack | Queen | King | Ace
-  deriving Show
+inductive Rank where
+  | numeric (val : Nat) | jack | queen | king | ace
 \end{lstlisting}
-The constructor \lstinline{Numeric} is different: it takes an argument.
-\begin{verbatim}
-Main> :t Numeric
-Numeric :: Integer -> Rank
-\end{verbatim}
+The constructor \lstinline{numeric} is different: it takes an argument.
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Comparing ranks}
@@ -199,8 +190,7 @@ Numeric :: Integer -> Rank
 -- |rankBeats r1 r2
 -- returns True, if r1 beats r2
 -- i.e. r1 is strictly greater than r2
-rankBeats :: Rank -> Rank -> Bool
-rankBeats r1 r2 = undefined
+def rankBeats : Rank -> Rank -> Bool := sorry
 \end{lstlisting}
   \end{block}
 \end{frame}
@@ -208,204 +198,119 @@ rankBeats r1 r2 = undefined
   \frametitle{Ordering ranks by pattern matching}
 \begin{lstlisting}
 -- rankBeats r1 r2 returns True, if r1 beats r2
-rankBeats :: Rank -> Rank -> Bool
-rankBeats _  Ace    = False
-rankBeats Ace _     = True
-rankBeats _ King    = False
-rankBeats King _    = True
-rankBeats _  Queen  = False
-rankBeats Queen _   = True
-rankBeats _ Jack    = False
-rankBeats Jack _    = True
-rankBeats (Numeric n1) (Numeric n2) = n1 > n2
--- pattern match on Numeric constructor yields its argument
+def rankBeats : Rank → Rank → Bool
+  | .numeric n, .numeric m => n > m
+  | .ace, _ => true
+  | _, .ace => false
+  | .jack, _ => true
+  | _, .jack => false
+  | .queen, _ => true
+  | _, .queen => false
+  | .king, _ => true
+  | _, .king => false
 \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Letting Haskell order the ranks}
-  \begin{itemize}
-  \item definition of \texttt{rankBeats} is repetitive
-  \item boilerplate code
-  \item let Haskell generate it for us!
-  \end{itemize}
-  \begin{block}<+->{Deriving an order}
-    The comparison operators \lstinline{<=}, \lstinline{<} etc are overloaded and can be extended to
-    new types
+  \frametitle{Telling Lean about rank order}
+  \begin{block}<+->{The classes LT and LE}
 \begin{lstlisting}
-data Rank = Numeric Integer | Jack | Queen | King | Ace
-  deriving (Show, Ord)
-
-rankBeats' r1 r2 = r1 > r2
+instance LT : LT Rank where
+  lt r1 r2 := rankBeats r2 r1
+instance LE : LE Rank where
+  le r1 r2 := ¬ rankBeats r1 r2
 \end{lstlisting}
   \end{block}
   \begin{exampleblock}{Remark}
     \begin{itemize}
-    \item \lstinline{Ord} is another type class that governs
-      \lstinline{<}, \lstinline{<=}, etc
+    \item \lstinline{LE} and \lstinline{LT} are further type classes that
+      govern \lstinline{≤} and \lstinline{<}, respectively
     \end{itemize}
   \end{exampleblock}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Oops\dots}
-\begin{verbatim}
-M04Cards.hs:17:27: error:
-    • No instance for (Eq Rank)
-        arising from the 'deriving' clause of a data type declaration
-      Possible fix:
-        use a standalone 'deriving instance' declaration,
-          so you can specify the instance context yourself
-    • When deriving the instance for (Ord Rank)
-\end{verbatim}
-  \begin{block}<2->{Explanation}
-    Type class \lstinline{Ord} defines \texttt{<} and then
-\begin{lstlisting}
-x <= y = x < y || x == y
-\end{lstlisting}
-    but how do we compare two ranks for equality?
-  \end{block}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Equality of ranks}
-  \begin{itemize}
-  \item could be defined by pattern matching, but
-  \item let Haskell generate this boilerplate code for us!
-  \end{itemize}
-  \begin{block}<+->{Deriving equality}
-    \lstinline{==}, \lstinline{/=} are overloaded and can be extended to
-    new types
-\begin{lstlisting}
-data Rank = Numeric Integer | Jack | Queen | King | Ace
-  deriving (Show, Eq, Ord)
-
-rankBeats' r1 r2 = r1 > r2
-\end{lstlisting}
-  \end{block}
-  \begin{block}<+->{Are they the same?}
-    How do we know that \lstinline{rankBeats} $=$ \lstinline{rankBeats'}?
-    Let's defer that.
-
-  \end{block}
-\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Cards, finally}
   A card has a \lstinline{Suit} and a \lstinline{Rank}
 \begin{lstlisting}
-data Card = Card Rank Suit
-  deriving (Show)
-
-rank :: Card -> Rank
-rank (Card r s) = r
-
-suit :: Card -> Suit
-suit (Card r s) = s
+structure Card where
+  suit : Suit
+  rank : Rank
 \end{lstlisting}
   \begin{itemize}
   \item \lstinline{Card} has single constructor with two parameters
-  \item  (in principle, a tuple with a special name)
-  \item \lstinline{rank}, \lstinline{suit} are \textbf{selector functions}
+  \item \lstinline{Card.rank}, \lstinline{Card.suit} are \textbf{selector
+      functions} 
+  \item alternatively, use dot notation: if \lstinline{card : Card}, then
+    \lstinline{card.suit} etc
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Alternative definition of Cards}
-  There is a way to define the type along with its selector
-  functions using Haskell's (hated) records types:
-\begin{lstlisting}
-data Card = Card { rank :: Rank, suit :: Suit }
-  deriving (Show)
-\end{lstlisting}
-  \begin{itemize}
-  \item defines type \lstinline{Card} and its constructor
-    \lstinline{Card}
-  \item defines selectors \lstinline{rank :: Card -> Rank} and
-    \lstinline{suit :: Card -> Suit}
-  \item we can use \emph{record notation} to construct values:
-\begin{lstlisting}[numbers=none]
-queenOfSpades = Card{ rank= Queen, suit= Spades }
-\end{lstlisting}
-  \item and \emph{record updates}:
-\begin{lstlisting}[numbers=none]
-queenOfHearts = queenOfSpades { suit= Hearts }
-\end{lstlisting}
-  \end{itemize}
-\end{frame}
 \begin{frame}[fragile]
   \frametitle{Comparing Cards}
   A card \textbf{beats} another card, if it has the same
   suit, but a higher rank
 \begin{lstlisting}
-cardBeats :: Card -> Card -> Bool
-cardBeats givenCard c = suit givenCard == suit c
-                        && rankBeats (rank givenCard) (rank c)
+def cardBeats : Card -> Card -> Bool := sorry
 \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Hand of Cards}
 \begin{lstlisting}
-type Hand = [Card]
+abbrev Hand := List Card
 
-chooseCard :: Card -> Hand -> Card
-chooseCard givenCard h = undefined
+def chooseCard : Hand -> Card := sorry
 \end{lstlisting}
   To develop \texttt{chooseCard} refine \texttt{h} by pattern matching
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Choose a card}
 \begin{lstlisting}
-type Hand = [Card]
+abbrev Hand := List Card
 
-chooseCard :: Card -> Hand -> Card
-chooseCard givenCard [] = undefined -- ???
-chooseCard givenCard (x:xs) = undefined
+def chooseCard : Hand -> Card
+  | [] => sorry
+  | c :: _ => c
 \end{lstlisting}
   \begin{itemize}
-  \item What should we do if the hand is empty?
+  \item Can't finish! What should we do if the hand is empty?
   \item Avoid by defining only non-empty hands!
   \end{itemize}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Non-empty hands}
 \begin{lstlisting}
-data Hand = Last Card | Next Card Hand
-  deriving (Show, Eq)
+inductive Hand' where
+  | last : Card -> Hand'
+  | next : Card -> Hand' -> Hand'
 \end{lstlisting}
-  \begin{itemize}
-  \item  Recursive datatype definition
-  \item  \lstinline{Last Card} is the \emph{base case}
-  \end{itemize}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Get card from non-empty hand}
   \begin{itemize}
-  \item  A \lstinline{Hand} is never empty
+  \item  A \lstinline{Hand'} is never empty
   \item  Thus we can always obtain a card
   \end{itemize}
 \begin{lstlisting}
-topCard :: Hand -> Card
-topCard (Last c)  = c
-topCard (Next c _) = c
+def topCard : Hand' -> Card
+  | .last c => c
+  | .next c _ => c
 \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Choosing from non-empty hand}
 \begin{lstlisting}
 -- choose a beating card, if possible
-chooseCard :: Card -> Hand -> Card
-chooseCard = undefined
+def chooseCard' : Card -> Hand' -> Card := sorry
 \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Choosing from non-empty hand}
 \begin{lstlisting}
--- choose a beating card, if possible
-chooseCard :: Card -> Hand -> Card
-chooseCard gc (Last c) = c -- may beat, or not
-chooseCard gc (Next c h) | cardBeats gc c = c
-                         | otherwise      = chooseCard gc h
+def chooseCard' : Card → Hand' → Card
+  | c, .last c' => if cardBeats c' c then c' else c
+  | c, .next c' h' => if cardBeats c' c then c' else chooseCard' c h'
 \end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------

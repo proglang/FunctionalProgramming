@@ -10,7 +10,15 @@
 \usepackage[utf8]{inputenc}
 %\usepackage{german}
 \usepackage{listings}
-\lstset{language=Haskell}
+\definecolor{keywordcolor}{rgb}{0.7,0.1,0.1}
+\definecolor{tacticcolor}{rgb}{0.0,0.1,0.6}
+\definecolor{commentcolor}{rgb}{0.4,0.4,0.4}
+\definecolor{symbolcolor}{rgb}{0.0,0.1,0.6}
+\definecolor{sortcolor}{rgb}{0.1,0.5,0.1}
+\definecolor{attributecolor}{rgb}{0.7,0.1,0.1}
+
+\def\lstlanguagefiles{lstlean.tex}
+\lstset{language=Lean}
 \lstset{sensitive=true}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true}
