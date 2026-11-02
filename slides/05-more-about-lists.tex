@@ -18,35 +18,38 @@
   \frametitle{Lists recap}
   \begin{block}{Zero or more values}
 \begin{verbatim}
-[]   [1]   [True, False]    ["a", "bunch", "of", "flowers"]
+[]   [1]   [true, false]    ["a", "bunch", "of", "flowers"]
 \end{verbatim}
   \end{block}
-  \begin{block}{All have the same type}
+  \begin{block}{All elements have the same type}
 \begin{verbatim}
-[True, False] -- good
-[1, "two", False] -- bad, type error
+[true, false] -- good
+[1, "two", false] -- bad, type error
 \end{verbatim}
   \end{block}
   \begin{block}{Order matters}
 \begin{verbatim}
-[1,2,3] /= [3,2,1]
+[1,2,3] != [3,2,1]
 \end{verbatim}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{List syntax}
-\begin{verbatim}
-(1 : (2 : (3 : []))) 
+\begin{lstlisting}
+(1 :: (2 :: (3 :: []))) 
 ==
-1 : 2 : 3 : [] 
+1 :: 2 :: 3 :: [] 
 ==
 [1,2,3]
-\end{verbatim}
-  Strings are lists of characters
-\begin{verbatim}
-"Hearts" == ['H','e','a','r','t','s']
-\end{verbatim}
+\end{lstlisting}
+  Alternatively use \lstinline|List.cons| and \lstinline|List.nil| as list constructors.
+  
+  Strings are distinct from characters, but conversion is possible.
+\begin{lstlisting}
+"Hearts".toList == ['H','e','a','r','t','s']
+String.ofList ['H','e','a','r','t','s'] == "Hearts"
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
@@ -54,140 +57,173 @@
     \begin{block}<+->{The values of type [a] are \dots}
     \begin{itemize}
     \item either \texttt{[]}, the empty list
-    \item or \texttt{x:xs} where \texttt{x} has type \texttt{a} and
+    \item or \texttt{x::xs} where \texttt{x} has type \texttt{a} and
       \texttt{xs} has type \texttt{[a]} \\
-      ``\texttt{:}'' is pronounced ``cons''
+      ``\texttt{::}'' is pronounced ``cons''
     \end{itemize}
   \end{block}
-\begin{verbatim}
-data List a = ...
-\end{verbatim}
   \begin{block}<+->{Corresponding definition}
-\begin{verbatim}
-data List a = Nil | Cons a (List a)
-\end{verbatim}
+\begin{lstlisting}
+inductive List (α : Type) where
+  | nil : List α
+  | cons : α → List α → List α
+\end{lstlisting}
     \begin{itemize}
-    \item New: \texttt{List} is a parametric datatype with type
-      parameter \texttt{a}
+    \item New: \lstinline{List} is a parametric datatype with type
+      parameter \lstinline{α}
     \item Many functions on lists are also parametric (i.e., \textbf{polymorphic}) 
   \end{itemize}
   \end{block}  
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{Polymorphic functions on lists}
-\begin{verbatim}
-length :: [a] -> Int
-(++)   :: [a] -> [a] -> [a]
-concat :: [[a]] -> [a]
-take   :: Int -> [a] -> [a]
-zip    :: [a] -> [b] -> [(a,b)]
+  \frametitle{Predefined polymorphic functions on lists}
+\begin{lstlisting}
+List.length   : List α -> Int
+List.append   : List α -> List α -> List α
+List.flatten  : List (List α) -> List α
+List.take     : Nat -> List α -> List α
+List.drop     : Nat -> List α -> List α
+List.zip      : List α → List β → List (α × β)
 
-map    :: (a -> b)    -> [a] -> [b]
-filter :: (a -> Bool) -> [a] -> [a]
-\end{verbatim}
+List.map      : (α → β) → List α → List β 
+List.filter   : (α → Bool) → List α → List α
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{Prelude functions on lists}
+  \frametitle{Std functions on lists}
   \begin{block}<+->{Functions on specific lists}
-\begin{verbatim}
-and, or          :: [Bool] -> Bool
-words, lines     :: String -> [String]
-unwords, unlines :: [String] -> String
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{Overloaded functions on lists}
-\begin{verbatim}
-sum, product     :: Num a => [a] -> a
-elem             :: Eq a => a -> [a] -> Bool
-sort             :: Ord a => [a] -> [a]
-\end{verbatim}
+\begin{lstlisting}
+List.and  : List Bool -> Bool
+List.or   : List Bool -> Bool
+
+def words (s : String) : List String :=
+  ((s.split Char.isWhitespace).toStringList).filter (· != "")
+
+def lines (s : String) : List String :=
+  s.lines.toStringList
+
+def unwords (ss : List String) : String :=
+  " ".intercalate ss
+
+def unlines (ss : List String) : String :=
+  String.join (ss.map (fun s => s ++ "\n"))
+\end{lstlisting}
   \end{block}
 \end{frame}
-%----------------------------------------------------------------------
-%----------------------------------------------------------------------
+
 \begin{frame}[fragile]
-  \frametitle{Some examples \dots}
-  \begin{itemize}
-  \item append, reverse
-  \item sum, product
-  \item take, drop, splitAt
-  \item zip, unzip
-  \item insert, isort, qsort
-  \item QuickCheck: collect, classify
-  \end{itemize}
+  \frametitle{Std functions on lists}
+  \begin{block}<+->{Overloaded functions on lists}
+\begin{lstlisting}
+#eval ([1, 2, 3, 4] : List Nat).sum      -- 10
+#eval ([1, 2, 3, 4] : List Nat).prod     -- 24
+#eval ([1, 2, 3, 4] : List Nat).elem 3   -- true
+#eval ([3, 1, 4, 2] : List Nat).mergeSort -- [1, 2, 3, 4]
+\end{lstlisting}
+  \end{block}
+  
 \end{frame}
+%----------------------------------------------------------------------
+%----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{Some examples \dots}
+%   \begin{itemize}
+%   \item append, reverse
+%   \item sum, product
+%   \item take, drop, splitAt
+%   \item zip, unzip
+%   \item insert, isort, qsort
+%   \item QuickCheck: collect, classify
+%   \end{itemize}
+% \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Quicksort!}
-\begin{verbatim}
-qsort :: Ord a => [a] -> [a]
-qsort [] = []
-qsort (x:xs) = qsort smaller ++ [x] ++ qsort bigger
-  where
-    smaller = filter (<= x) xs
-    bigger  = filter (> x) xs
-\end{verbatim}
+\begin{lstlisting}
+def qsort {α : Type} [LT α] [LE α] [DecidableLT α] [DecidableLE α] : List α → List α
+  | [] => []
+  | x :: xs =>
+    let smaller := xs.filter (fun y ↦ decide (y ≤ x))
+    let larger := xs.filter (fun y ↦ decide (y > x))
+    qsort smaller ++ [x] ++ qsort larger
+\end{lstlisting}
+  \dots{} is not accepted as is \dots
 \end{frame}
-%----------------------------------------------------------------------
+% ----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{An unfortunate QuickCheck --- ghci interaction}
-  \begin{block}<+->{Two properties}
-\begin{verbatim}
-prop_take_drop n xs = take n xs ++ drop n xs == xs
-nonprop_take_drop n xs = drop n xs ++ take n xs == xs
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{Testing  \dots}
-\begin{verbatim}
-*Main> quickCheck prop_take_drop
-+++ OK, passed 100 tests.
-*Main> quickCheck nonprop_take_drop
-+++ OK, passed 100 tests.
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{Oops! what went wrong?}
-\begin{verbatim}
-prop_take_drop :: Eq a => Int -> [a] -> Bool
-nonprop_take_drop :: Eq a => Int -> [a] -> Bool
-\end{verbatim}
-    \vspace{-\baselineskip}
-    \begin{itemize}
-    \item The properties have polymorphic types, but\dots
-    \item QuickCheck does not work with polymorphic types!
-    \end{itemize}
-  \end{block}
+  \frametitle{Quicksort terminates \dots}
+  We have to explain Lean that it terminates (details later)
+\begin{lstlisting}
+termination_by xs => xs.length
+decreasing_by
+  all_goals
+    simp_wf
+    apply Nat.lt_succ_of_le
+    calc
+      _ ≤ xs.attach.length := List.length_filter_le ..
+      _ = xs.length := by simp
+\end{lstlisting}
 \end{frame}
+% ----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{An unfortunate QuickCheck --- ghci interaction}
+%   \begin{block}<+->{Two properties}
+% \begin{verbatim}
+% prop_take_drop n xs = take n xs ++ drop n xs == xs
+% nonprop_take_drop n xs = drop n xs ++ take n xs == xs
+% \end{verbatim}
+%   \end{block}
+%   \begin{block}<+->{Testing  \dots}
+% \begin{verbatim}
+% *Main> quickCheck prop_take_drop
+% +++ OK, passed 100 tests.
+% *Main> quickCheck nonprop_take_drop
+% +++ OK, passed 100 tests.
+% \end{verbatim}
+%   \end{block}
+%   \begin{block}<+->{Oops! what went wrong?}
+% \begin{verbatim}
+% prop_take_drop :: Eq a => Int -> [a] -> Bool
+% nonprop_take_drop :: Eq a => Int -> [a] -> Bool
+% \end{verbatim}
+%     \vspace{-\baselineskip}
+%     \begin{itemize}
+%     \item The properties have polymorphic types, but\dots
+%     \item QuickCheck does not work with polymorphic types!
+%     \end{itemize}
+%   \end{block}
+% \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Ghci ``helps''}
-  \begin{itemize}
-  \item Instead of indicating the problem, ghci chooses a more specific \textbf{default type} 
-  \item In this case, it plugs the unit type for \texttt{a}
-  \item QuickCheck tests
-\begin{verbatim}
-prop_take_drop :: Eq a => Int -> [()] -> Bool
-nonprop_take_drop :: Eq a => Int -> [()] -> Bool
-\end{verbatim}
-  \item Order does not matter when all elements are the same\dots
-  \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Ghci ``helps''}
+%   \begin{itemize}
+%   \item Instead of indicating the problem, ghci chooses a more specific \textbf{default type} 
+%   \item In this case, it plugs the unit type for \texttt{a}
+%   \item QuickCheck tests
+% \begin{verbatim}
+% prop_take_drop :: Eq a => Int -> [()] -> Bool
+% nonprop_take_drop :: Eq a => Int -> [()] -> Bool
+% \end{verbatim}
+%   \item Order does not matter when all elements are the same\dots
+%   \end{itemize}
+% \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Force ghci to be unhelpful}
-  \begin{itemize}
-  \item Use type signatures
-  \item Disable defaulting
-\begin{verbatim}
-*Main> :set -XNoExtendedDefaultRules
-\end{verbatim}
-  \item Restrict types used in defaulting
-\begin{verbatim}
-*Main> default (Integer, Double)
-\end{verbatim}
-  \end{itemize}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Force ghci to be unhelpful}
+%   \begin{itemize}
+%   \item Use type signatures
+%   \item Disable defaulting
+% \begin{verbatim}
+% *Main> :set -XNoExtendedDefaultRules
+% \end{verbatim}
+%   \item Restrict types used in defaulting
+% \begin{verbatim}
+% *Main> default (Integer, Double)
+% \end{verbatim}
+%   \end{itemize}
+% \end{frame}
 %----------------------------------------------------------------------
 
 \begin{frame}

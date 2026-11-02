@@ -143,15 +143,15 @@ inductive Suit where | spades | hearts | diamonds | clubs
   \frametitle{Printing and Equality derived}
 \begin{lstlisting}
 inductive Suit where | spades | hearts | diamonds | clubs
-  deriving Repr, DecidableEq
+  deriving BEq
 \end{lstlisting}
-Defines functions for \lstinline{Suit}, which is
-automatically called by the printer and by equality
+Defines functions for \lstinline{Suit}, which are
+automatically called by equality
 \begin{exampleblock}{Remark}
   \begin{itemize}
-  \item \lstinline{Repr} and \lstinline{DecidableEq} are \emph{type classes}
+  \item \lstinline{BEq} is a \emph{type class}
   \item a type class associates one or more functions with a type; in
-    case of \lstinline{DecidableEq}, the function is \lstinline{==}
+    case of \lstinline{BEq}, the function is \lstinline{==}, which returns a \lstinline{Bool}.
   \end{itemize}
 \end{exampleblock}
 \end{frame}
@@ -211,23 +211,23 @@ def rankBeats : Rank → Rank → Bool
 \end{lstlisting}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Telling Lean about rank order}
-  \begin{block}<+->{The classes LT and LE}
-\begin{lstlisting}
-instance LT : LT Rank where
-  lt r1 r2 := rankBeats r2 r1
-instance LE : LE Rank where
-  le r1 r2 := ¬ rankBeats r1 r2
-\end{lstlisting}
-  \end{block}
-  \begin{exampleblock}{Remark}
-    \begin{itemize}
-    \item \lstinline{LE} and \lstinline{LT} are further type classes that
-      govern \lstinline{≤} and \lstinline{<}, respectively
-    \end{itemize}
-  \end{exampleblock}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Telling Lean about rank order}
+%   \begin{block}<+->{The classes LT and LE}
+% \begin{lstlisting}
+% instance LT : LT Rank where
+%   lt r1 r2 := rankBeats r2 r1
+% instance LE : LE Rank where
+%   le r1 r2 := ¬ rankBeats r1 r2
+% \end{lstlisting}
+%   \end{block}
+%   \begin{exampleblock}{Remark}
+%     \begin{itemize}
+%     \item \lstinline{LE} and \lstinline{LT} are further type classes that
+%       govern \lstinline{≤} and \lstinline{<}, respectively
+%     \end{itemize}
+%   \end{exampleblock}
+% \end{frame}
 
 
 \begin{frame}[fragile]
@@ -309,7 +309,7 @@ def chooseCard' : Card -> Hand' -> Card := sorry
   \frametitle{Choosing from non-empty hand}
 \begin{lstlisting}
 def chooseCard' : Card → Hand' → Card
-  | c, .last c' => if cardBeats c' c then c' else c
+  | c, .last c' => c'
   | c, .next c' h' => if cardBeats c' c then c' else chooseCard' c h'
 \end{lstlisting}
 \end{frame}

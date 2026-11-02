@@ -4,3 +4,8 @@ defaultTargets = ["Course"]
 
 [[lean_lib]]
 name = "Course"
+
+[[require]]
+name = "plausible"
+git = "https://github.com/leanprover-community/plausible"
+rev = "main"
