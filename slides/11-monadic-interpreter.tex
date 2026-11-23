@@ -139,10 +139,11 @@ def trace'' : α → String → Trace α
 def evalTrace : Term → Trace Nat
   | .con n => trace n s!"con {n}"
   | .bin t1 op t2 =>
-    let r1 := evalTrace t1
-    let r2 := evalTrace t2
-    let v := opEval op r1.val r2.val
-    trace v s!"evaluated {r1.val} {op} {r2.val} = {v}"
+    match evalTrace t1, evalTrace t2 with
+    | r1, r2 =>
+      let v := opEval op r1.val r2.val
+      let log := r1.log ++ r2.log ++ s!"evaluated {r1.val} {op} {r2.val} = {v}"
+      trace v log
 \end{lstlisting}  
 \end{block}
 \end{frame}
@@ -352,8 +353,7 @@ instance : Monad Count where
   bind x f :=
     ⟨ fun c =>
       let (v1, c1) := x.exCount c
-      let (v2, c2) := (f v1).exCount c1
-      (v2, c2 + 1) ⟩
+      (f v1).exCount c1 ⟩
 \end{lstlisting} 
 \end{alertblock}
 \end{frame}

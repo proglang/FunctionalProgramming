@@ -64,10 +64,11 @@ def trace'' : α → String → Trace α
 def evalTrace : Term → Trace Nat
   | .con n => trace n s!"con {n}"
   | .bin t1 op t2 =>
-    let r1 := evalTrace t1
-    let r2 := evalTrace t2
-    let v := opEval op r1.val r2.val
-    trace v s!"evaluated {r1.val} {op} {r2.val} = {v}"
+    match evalTrace t1, evalTrace t2 with
+    | r1, r2 =>
+      let v := opEval op r1.val r2.val
+      let log := r1.log ++ r2.log ++ s!"evaluated {r1.val} {op} {r2.val} = {v}"
+      trace v log
 
 -- step counting
 
@@ -161,8 +162,7 @@ instance : Monad Count where
   bind x f :=
     ⟨ fun c =>
       let (v1, c1) := x.exCount c
-      let (v2, c2) := (f v1).exCount c1
-      (v2, c2 + 1) ⟩
+      (f v1).exCount c1 ⟩
 
 def evalCountM : Term → Count Nat
   | .con n => pure n
@@ -187,7 +187,6 @@ structure Output (β : Type) (α : Type)  where
   log : β
   val : α
 open Output
-
 
 
 -- Reader monad
@@ -239,6 +238,13 @@ theorem id_map_Trace {α : Type _} (x : Trace α) : id <$> x = x := by
     change Trace.trace val (log ++ "") = Trace.trace val log
     simp [String.append_empty]
 
+theorem id_map_Trace' {α : Type _} (x : Trace α) : id <$> x = x := by
+  cases x with
+  | trace val log =>
+    dsimp [Functor.map]
+    rw [String.append_empty]
+
+
 theorem bind_assoc_Trace {α β γ : Type _} (x : Trace α) (f : α → Trace β) (g : β → Trace γ) :
   (x >>= f) >>= g = x >>= fun a => f a >>= g := by
   cases x with
@@ -249,6 +255,13 @@ theorem bind_assoc_Trace {α β γ : Type _} (x : Trace α) (f : α → Trace β
       Trace.trace (g (f val).val).val
         (log ++ ((f val).log ++ (g (f val).val).log))
     simp [String.append_assoc]
+
+theorem bind_assoc_Trace' {α β γ : Type _} (x : Trace α) (f : α → Trace β) (g : β → Trace γ) :
+  (x >>= f) >>= g = x >>= fun a => f a >>= g := by
+  cases x with
+  | trace val log =>
+    dsimp [Bind.bind]
+    rw [ String.append_assoc]
 
 
 instance : LawfulMonad Trace :=
@@ -290,5 +303,42 @@ instance : Monad List where
   bind x f := listBind x f
 
 end Experiment
+
+theorem eval_exc_eq (t : Term) : (evalExc t) = evalExcM t := by
+  induction t with
+  | con n =>
+    unfold evalExc evalExcM
+    rfl
+  | bin t1 op t2 =>
+    rename_i ih_t1 ih_t2
+    unfold evalExc evalExcM
+    rw [ih_t1, ih_t2]
+    dsimp [Bind.bind, Pure.pure]
+    cases evalExcM t1 <;> cases evalExcM t2 <;> rfl
+
+theorem eval_trace_eq (t : Term) : (evalTrace t) = evalTraceM t := by
+  induction t with
+  | con n =>
+    unfold evalTrace evalTraceM
+    dsimp [output, Pure.pure, Bind.bind]
+    rw [String.append_empty]
+  | bin t1 op t2 =>
+    rename_i ih_t1 ih_t2
+    unfold evalTrace evalTraceM
+    dsimp [output, Pure.pure, Bind.bind]
+    rw [ih_t1, ih_t2]
+    simp [String.append_assoc]
+
+theorem eval_count_eq (t : Term) : (evalCount t) = evalCountM t := by
+  induction t with
+  | con n =>
+    unfold evalCount evalCountM
+    dsimp [Pure.pure, Bind.bind]
+  | bin t1 op t2 =>
+    rename_i ih_t1 ih_t2
+    unfold evalCount evalCountM
+    dsimp [tick, Pure.pure, Bind.bind]
+    rw [ih_t1, ih_t2]
+
 
 end Course.Template06
