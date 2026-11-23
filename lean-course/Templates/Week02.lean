@@ -74,11 +74,11 @@ abbrev Hand := List Card
 def chooseCard : Hand → Card
   | [] => { suit := .hearts, rank := .ace }
   | c :: _ => c
-(*
+/--
 inductive Option (α : Type) where
   | none : Option α
   | some : α → Option α
-*)
+-/
 def chooseCard1 : Hand → Option Card
   | [] => none
   | c :: _ => some c

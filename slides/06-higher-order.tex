@@ -17,7 +17,7 @@
 \begin{frame}[fragile]
   \frametitle{Higher-order functions}
   \begin{itemize}
-  \item Functions are first-class citizens in Haskell
+  \item Functions are first-class citizens in Lean
   \item A function can be
     \begin{itemize}
     \item stored in data
@@ -31,43 +31,42 @@
   \frametitle{Examples of higher-order functions}
 
   \begin{block}<+->{Most higher-order functions are polymorphic}
-\begin{verbatim}
-map    :: (a -> b) -> [a] -> [b]
-filter :: (a -> Bool) -> [a] -> [a]
-\end{verbatim}
+\begin{lstlisting}
+List.map      : (α → β) → List α → List β 
+List.filter  : (α → Bool) → List α → List α
+\end{lstlisting}
   \end{block}
   \begin{block}<+->{Example uses}
-\begin{verbatim}
-> map even [1..5]
-[False,True,False,True,False]
-> filter even [1..10]
-[2,4,6,8,10]
-\end{verbatim}
+\begin{lstlisting}
+#eval List.map even [1, 2, 3, 4]
+#eval List.filter even [1, 2, 3, 4]
+\end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Haskell elides quantifiers in types}
-    \vspace{-\baselineskip}
-    \begin{eqnarray*}
-      \text{map} & :: & \forall a. \forall b. (a \to b) \to [a] \to [b] \\
-      \text{filter} & :: & \forall a. (a \to \text{Bool}) \to [a] \to [a]
-    \end{eqnarray*}
+  \begin{alertblock}<+->{Lean: type quantifiers are implicit}
+\begin{lstlisting}
+List.map   {α β}  : (α → β) → List α → List β 
+List.filter {α}  : (α → Bool) → List α → List α
+\end{lstlisting}
   \end{alertblock}
 \end{frame}
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Instantiation}
   \begin{block}<+->{Instances of a polymorphic type}
     Consider
-    \begin{eqnarray*}
-      \text{filter} & :: & \forall a. (a \to \text{Bool}) \to [a] \to [a]
-    \end{eqnarray*}
-    We may replace (instantiate) \texttt{a} by any type:
-    \begin{eqnarray*}
-      \text{filter} & :: & (Int \to \text{Bool}) \to [Int] \to [Int] \\
-      \text{filter} & :: & ([Char] \to \text{Bool}) \to [[Char]] \to [[Char]]
-    \end{eqnarray*}
+\begin{lstlisting}
+List.filter {α}      : (α → Bool) → List α → List α
+List.filter  : ∀ {α} , (α → Bool) → List α → List α
+\end{lstlisting}
+    We may replace (instantiate) \lstinline{α} by any type:
+\begin{lstlisting}
+List.filter (α := Int)  : (Int → Bool) → List Int → List Int
+@List.filter Char  : (Char → Bool) → List Char → List Char
+\end{lstlisting}
   \end{block}
   \begin{block}<+->{Instantiation rule}
+    \vspace{-0.5\baselineskip}
     \begin{mathpar}
-      \inferrule[Inst]{e :: \forall a. t}{e :: t[a \mapsto t']}
+      \inferrule[Inst]{e : \forall \alpha, t \\ t' : \texttt{Type}}{e : t[\alpha \mapsto t']}
     \end{mathpar}
   \end{block}
 \end{frame}
@@ -82,52 +81,67 @@ Int -> (Int -> Int)
 \end{verbatim}
   \end{block}
   \begin{block}<+->{How many arguments?}
-\begin{verbatim}
-pick 1 = fst
-pick 2 = snd
-\end{verbatim}
+\begin{lstlisting}
+def pick ( b: Bool): Prod Nat Nat → Nat :=
+  match b with
+  | true => Prod.fst
+  | false => Prod.snd
+\end{lstlisting}
   \end{block}  
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Curried functions}
-
+\small
 \begin{block}<+->{Compare these types}
-\begin{verbatim}
-type T1 = Int -> Int -> Int
-type T2 = (Int, Int) -> Int
-\end{verbatim}
+\begin{lstlisting}
+abbrev T1 := Int -> Int -> Int
+abbrev T2 := Int × Int -> Int
+\end{lstlisting}
 \begin{itemize}
 \item Both function types take two integers and return one
 \item \texttt{T1} takes the arguments one at a time
 \item \texttt{T2} takes both arguments as a pair
 \end{itemize}
 \end{block}
-\begin{block}<+->{Haskell prefers types like \texttt{T1}}
+\begin{block}<+->{Lean prefers types like \texttt{T1}}
   \begin{itemize}
   \item A \textbf{curried} type, after logician \href{https://en.wikipedia.org/wiki/Haskell_Curry}{Haskell B. Curry}
-  \item Haskell's namesake
-  \item Predefined functions \texttt{curry} and \texttt{uncurry} map between \texttt{T1} and \texttt{T2}
-  \item (an isomorphism)
+  \item Predefined functions \texttt{Function.curry} and
+    \texttt{Function.uncurry} map between \texttt{T1} and \texttt{T2}  (an isomorphism)
   \end{itemize}
+\begin{lstlisting}
+Function.curry   : (α × β → γ) → α → β → γ
+Function.uncurry : (α → β → γ) → α × β → γ
+\end{lstlisting}
 \end{block}
 \end{frame}
+%----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{Curry / Uncurry}
+% \begin{lstlisting}
+% Function.curry   : (α × β → γ) → α → β → γ
+% Function.uncurry : (α → β → γ) → α × β → γ
+% \end{lstlisting}
+% \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Typing Function Applications}
   \begin{block}<+->{Typing Rule}
     \begin{mathpar}
       \inferrule[App]
-      {e_1 :: t_2 \to t_1 \\ e_2 :: t_2}
-      {(e_1\ e_2) :: t_1}
+      {e_1 : t_2 \to t_1 \\ e_2 : t_2}
+      {(e_1\ e_2) : t_1}
     \end{mathpar}
   \end{block}
   \begin{block}<+->{Example}
     Given
+    \vspace{-\baselineskip}
     \begin{eqnarray*}
-      \text{map} & :: & \forall a. \forall b. (a \to b) \to [a] \to [b]
+      \text{map} & : & \forall\{ \alpha \beta\}, (\alpha \to \beta) \to
+                        \mathtt{List}~\alpha \to List~\beta
       \\
-      \text{even} & :: & \mathtt{Int} \to \mathtt{Bool}
+      \text{even} & : & \mathtt{Int} \to \mathtt{Bool}
     \end{eqnarray*}
     \footnotesize
     \begin{mathpar}
@@ -136,20 +150,20 @@ type T2 = (Int, Int) -> Int
         \inferrule*
         {
           \inferrule*
-          {\text{map}  ::  \forall a. \forall b. (a \to b) \to [a] \to [b]}
-          { \text{map} ::  (\texttt{Int} \to \texttt{Bool}) \to [\texttt{Int}] \to [\texttt{Bool}]}
+          {\text{map}  :  \forall\{\alpha\beta\}, (\alpha \to \beta) \to \texttt{List}~\alpha \to \texttt{List}~\beta}
+          { \text{map} :  (\texttt{Int} \to \texttt{Bool}) \to \texttt{List}~\texttt{Int} \to \texttt{List}~\texttt{Bool}}
           \\
           \inferrule*{}
-          {\text{even} :: \texttt{Int} \to \texttt{Bool}}
+          {\text{even} : \texttt{Int} \to \texttt{Bool}}
         }
-        { \text{map}\ \text{even} :: \alt<+->{[\texttt{Int}] \to [\texttt{Bool}]}{??}
+        { \text{map}\ \text{even} : \alt<+->{\texttt{List}~\texttt{Int} \to \texttt{List}~\texttt{Bool}}{??}
         }
         \\
         \inferrule*
         {}
-        {\text{[1..5]} :: \text{[Int]}}
+        {\text{[1,2,3,4,5]} : \text{List Int}}
       }
-      { \text{map}\ \text{even}\ \text{[1..5]} :: \alt<+->{\texttt{[Bool]}}{??}}
+      { \text{map}\ \text{even}\ \text{[1,2,3,4,5]} : \alt<+->{\texttt{List}~\texttt{Bool}}{??}}
     \end{mathpar}
   \end{block}
 \end{frame}
@@ -158,106 +172,116 @@ type T2 = (Int, Int) -> Int
   \frametitle{Designing a higher-order function}
   \onslide<+->{}
   \begin{block}<+->{Two functions on lists}
-\begin{verbatim}
-sum []     = 0
-sum (x:xs) = x + sum xs
-
-product []     = 1
-product (x:xs) = x * product xs
-\end{verbatim}
+    \begin{columns}
+      \begin{column}{0.48\textwidth}
+\begin{lstlisting}[basicstyle=\footnotesize]
+def sum : (xs : List Nat) → Nat
+  | [] => 0
+  | x :: xs => x + sum xs
+\end{lstlisting}
+      \end{column}
+      \begin{column}{0.48\textwidth}
+\begin{lstlisting}
+def product : (xs : List Nat) → Nat
+  | [] => 1
+  | x :: xs => x * sum xs
+\end{lstlisting}
+      \end{column}
+    \end{columns}
   \end{block}
   \begin{block}<+->{The common pattern}
-\begin{verbatim}
-g []     = z
-g (x:xs) = x `f` g xs
-\end{verbatim}
+\begin{lstlisting}[basicstyle=\footnotesize]
+def g : (xs : List α) → β
+  | [] => z
+  | x :: xs => s x (g xs)
+\end{lstlisting}
     with parameters
     \begin{itemize}
-    \item \texttt{z :: b} is a value
-    \item \texttt{f :: a -> b -> b} is a combining function
+    \item \lstinline{z : α} is a value
+    \item \lstinline{s : α -> β -> β} is a combining function
     \end{itemize}
-    $\Rightarrow$ Represent \texttt{g} by some \texttt{foldr' f z}
+    $\Rightarrow$ Represent \texttt{g} by some \texttt{foldRight f z}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
-  \frametitle{The foldr function: Intuition}
+  \frametitle{The foldRight function: Intuition}
   \begin{center}
     \includegraphics{Right-fold-transformation}
   \end{center}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{The foldr function}
+  \frametitle{The foldRight function}
   \framesubtitle{Making the pattern into a higher-order function}
   \begin{block}<+->{Abstracting over value and combining function}
-\begin{verbatim}
-foldr' f z []     = z
-foldr' f z (x:xs) = x `f` foldr' f z xs
-\end{verbatim}
+\begin{lstlisting}
+def foldRight (s : α → β → β) (z : β) : List α → β
+  | [] => z
+  | x :: xs => s x (foldRight s z xs)
+\end{lstlisting}
     where
     \begin{itemize}
-    \item \texttt{z :: b} is a value
-    \item \texttt{f :: a -> b -> b} is a combining function
+    \item \lstinline{z : β} is a value
+    \item \lstinline{s : α → β → β} is a combining function
     \end{itemize}
   \end{block}
-  \begin{alertblock}<+->{What's the type of foldr'?}
+  \begin{alertblock}<+->{What's the type of foldRight?}
     \vspace{-\baselineskip}
   \end{alertblock}
   \begin{block}<+->{}
-\begin{verbatim}
-foldr' :: (a -> b -> b) -> b -> [a] -> b
-\end{verbatim}
+\begin{lstlisting}
+foldRight : ∀ {α β}, (α → β → β) → β → List α → β
+\end{lstlisting}
   \end{block}
-  \begin{alertblock}<+->{Also known as reduce}
-    map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
-  \end{alertblock}
+  % \begin{alertblock}<+->{Also known as reduce}
+  %   map $+$ reduce $=$ \href{https://en.wikipedia.org/wiki/MapReduce}{MapReduce}
+  % \end{alertblock}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Foldr in action}
   \begin{block}<+->{sum and product}
-\begin{verbatim}
-sum xs     = foldr (+) 0 xs
-product xs = foldr (*) 1 xs
-\end{verbatim}
+\begin{lstlisting}
+def sum' : (xs : List Nat) → Nat := foldRight (· + ·) 0
+def prod' : (xs : List Nat) → Nat := foldRight (· * ·) 1
+\end{lstlisting}
   \end{block}
   \begin{block}<+->{more functions}
-\begin{verbatim}
-or      xs = undefined
-and     xs = undefined
-concat  xs = undefined
-
-maximum (x:xs) = undefined
-\end{verbatim}
+\begin{lstlisting}
+def or_list : List Bool → Bool := sorry
+def and_list : List Bool → Bool := sorry
+def concat : List (List α) → List α := sorry
+def maximum : List Nat → Nat := sorry
+\end{lstlisting}
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Foldr puzzles}
-  \begin{block}<+->{f1}
-\begin{verbatim}
-f1 xs = foldr (:) [] xs
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{f2}
-\begin{verbatim}
-f2 xs ys = foldr (:) ys xs
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{f3}
-\begin{verbatim}
-f3 xs = foldr snoc [] xs
-  where snoc x ys = ys++[x]
-\end{verbatim}
-  \end{block}
-  \begin{block}<+->{f4}
-\begin{verbatim}
-f4 f xs = foldr fc [] xs
-  where fc x ys = f x:ys
-\end{verbatim}
-  \end{block}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Foldr puzzles}
+%   \begin{block}<+->{f1}
+% \begin{verbatim}
+% f1 xs = foldr (:) [] xs
+% \end{verbatim}
+%   \end{block}
+%   \begin{block}<+->{f2}
+% \begin{verbatim}
+% f2 xs ys = foldr (:) ys xs
+% \end{verbatim}
+%   \end{block}
+%   \begin{block}<+->{f3}
+% \begin{verbatim}
+% f3 xs = foldr snoc [] xs
+%   where snoc x ys = ys++[x]
+% \end{verbatim}
+%   \end{block}
+%   \begin{block}<+->{f4}
+% \begin{verbatim}
+% f4 f xs = foldr fc [] xs
+%   where fc x ys = f x:ys
+% \end{verbatim}
+%   \end{block}
+% \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Transforming functions}
@@ -273,14 +297,14 @@ f4 f xs = foldr fc [] xs
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Partial application}
-\begin{verbatim}
-take :: Int -> [a] -> [a]
-take 5 :: [a] -> [a]
+\begin{lstlisting}
+#check List.take
+#check List.take 5
 
-foldr :: (a -> b -> b) -> b -> [a] -> b
-foldr (+) :: Int -> [Int] -> Int
-foldr (+) 0 :: [Int] -> Int
-\end{verbatim}
+#check foldRight
+#check foldRight (· + ·)
+#check foldRight (· * ·) 1
+\end{lstlisting}
   \begin{itemize}
   \item Partial application $=$ function application with ``too few'' arguments
   \item Result is a function
@@ -290,19 +314,19 @@ foldr (+) 0 :: [Int] -> Int
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Operator sections}
-\begin{verbatim}
+\begin{lstlisting}
 -- subtraction
-(-) :: Int -> Int -> Int
+(· - ·) : Int -> Int -> Int
 -- subtract one
-(- 1) :: Int -> Int
+(· - 1) : Int -> Int
 -- subtract from one
-(1 -) :: Int -> Int
+(1 - ·) : Int -> Int
 
 -- less than 0
-(< 0) :: Int -> Bool
+(· < 0) : Int -> Bool
 -- greater than 0
-(0 <) :: Int -> Bool
-\end{verbatim}
+(0 < ·) : Int -> Bool
+\end{lstlisting}
   can be done with every infix function
 \end{frame}
 %----------------------------------------------------------------------
@@ -312,23 +336,25 @@ foldr (+) 0 :: [Int] -> Int
     \begin{itemize}
     \item<+-> Remove spaces from string as in this
       example
-\begin{verbatim}
-removeSpaces "abc def \n ghi" == "abcdefghi"
-\end{verbatim}
-    \item<+-> In module \texttt{Data.Char}
-\begin{verbatim}
-isSpace :: Char -> Bool
-\end{verbatim}
+\begin{lstlisting}
+removeWhitespace "abc def \n ghi" == "abcdefghi"
+\end{lstlisting}
+    \item<+-> In module \texttt{Char}
+\begin{lstlisting}
+Char.isWhitespace : Char -> Bool
+\end{lstlisting}
     \item<+-> yields definition
-\begin{verbatim}
-removeSpaces xs = filter (not . isSpace) xs
-\end{verbatim}
-    \item<+-> Operator ``\texttt{.}'' is function composition defined by
-\begin{verbatim}
-(f . g) x = f (g x)
-\end{verbatim}
-    \item<+-> What's the type of \texttt{(.)}?
-    \item<+-> \texttt{(.) :: (b -> c) -> (a -> b) -> (a -> c)}
+\begin{lstlisting}
+def removeWhitespace (s : String) : String :=
+  (s.toList.filter (not ∘ Char.isWhitespace)).toString
+\end{lstlisting}
+    \item<+-> Operator ``\lstinline{∘}'' is function composition defined as
+      notation on top of \lstinline{Function.comp}.
+\begin{lstlisting}
+def compose {α β γ : Type} (f : β → γ) (g : α → β) : α → γ :=
+  fun x => f (g x)
+infixr :90 " ∘ " => compose
+\end{lstlisting}
     \end{itemize}
   \end{block}
 \end{frame}
@@ -337,31 +363,30 @@ removeSpaces xs = filter (not . isSpace) xs
   \frametitle{Anonymous functions}
   \begin{itemize}
   \item<+-> Usual function definition
-\begin{verbatim}
-snoc x ys = ys++[x]
-\end{verbatim}
+\begin{lstlisting}
+def snoc (x : α) (xs : List α) : List α := xs ++ [x]
+\end{lstlisting}
   \item<+->
-  Alternative: define \texttt{snoc} using an anonymous function aka
+  Alternative: define using an anonymous function aka
   \href{https://en.wikipedia.org/wiki/Anonymous_function}{lambda
     expression} 
-\begin{verbatim}
-snoc = \ x ys -> ys++[x]
-\end{verbatim}
-  Nowadays, the Unicode lambda can also be used
+\begin{lstlisting}
+def snoc' : α → List α → List α :=
+  fun x xs => xs ++ [x]
+\end{lstlisting}
 \item<+->
   Often for function used in one place as in
-\begin{verbatim}
-f3 xs = foldr snoc [] xs
-  where snoc x ys = ys++[x]
-\end{verbatim}
+\begin{lstlisting}
+def f3 : List α → List α := foldRight snoc []
+\end{lstlisting}
 \item<+-> Equivalently replace \texttt{snoc} by its definition
-\begin{verbatim}
-f3' xs = foldr (\ x ys -> ys++[x]) [] xs
-\end{verbatim}
+\begin{lstlisting}
+def f3' : List α → List α := foldRight (fun x xs => xs ++ [x]) []
+\end{lstlisting}
 \item<+-> Shorten more using partial application
-\begin{verbatim}
-f3'' xs = foldr (\ x -> (++[x])) [] xs
-\end{verbatim}
+\begin{lstlisting}
+def f3'' : List α → List α := foldRight (fun x => (· ++ [x])) []
+\end{lstlisting}
 \end{itemize}
 \end{frame}
 %----------------------------------------------------------------------
@@ -369,16 +394,16 @@ f3'' xs = foldr (\ x -> (++[x])) [] xs
   \frametitle{Eta conversion}
   \begin{enumerate}
   \item A number of definitions have the form
-\begin{verbatim}
-f x = g x
-\end{verbatim}
+\begin{lstlisting}
+def f (x : A) : B := g x
+\end{lstlisting}
     where \texttt{x} does not occur in \texttt{g}
   \item 
     In such cases, the formal parameter \texttt{x} is redundant:
-\begin{verbatim}
-f = g
-\end{verbatim}
-    is an equivalent definition.
+\begin{lstlisting}
+def f : A -> B := g
+\end{lstlisting}
+    is an equivalent definition \textbf{if} \lstinline{g} is terminating.
   \item The transformation from (1) to (2) is called \textbf{eta reduction}.\footnote{Reverse transformation: \textbf{eta expansion}; both directions: \textbf{eta conversion}}
   \item The typing of an eta-reduced definition is more restricted.
 \end{enumerate}
@@ -386,54 +411,50 @@ f = g
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Examples for eta-reduced definitions}
-\begin{verbatim}
-sum = foldr (+) 0
-product = foldr (*) 1
-or = foldr (||) False
-and = foldr (&&) True
-concat = foldr (++) []
-removeSpaces = filter (not . isSpace)
-\end{verbatim}
+\begin{lstlisting}
+def sum' : (xs : List Nat) → Nat := foldRight (· + ·) 0
+def prod' : (xs : List Nat) → Nat := foldRight (· * ·) 1
+\end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Exercises}
-\begin{verbatim}
-takeLine :: String -> String
--- takeLine "abc\ndef\nghi\n" == "abc"
+% \begin{frame}[fragile]
+%   \frametitle{Exercises}
+% \begin{verbatim}
+% takeLine : String -> String
+% -- takeLine "abc\ndef\nghi\n" == "abc"
 
-takeWhile' :: (a -> Bool) -> [a] -> [a]
-dropWhile' :: (a -> Bool) -> [a] -> [a]
-\end{verbatim}
-\end{frame}
+% takeWhile' : (a -> Bool) -> [a] -> [a]
+% dropWhile' : (a -> Bool) -> [a] -> [a]
+% \end{verbatim}
+% \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Exercises}
-\begin{verbatim}
-lines :: String -> [String]
--- lines "abc\ndef\nghi\n" == ["abc", "def", "ghi"]
+% \begin{frame}[fragile]
+%   \frametitle{Exercises}
+% \begin{verbatim}
+% lines : String -> [String]
+% -- lines "abc\ndef\nghi\n" == ["abc", "def", "ghi"]
 
-segments' :: (a -> Bool) -> [a] -> [[a]]
+% segments' : (a -> Bool) -> [a] -> [[a]]
 
-words :: String -> [String]
--- words "abc def  ghi" == ["abc","def","ghi"]
-\end{verbatim}
-\end{frame}
+% words : String -> [String]
+% -- words "abc def  ghi" == ["abc","def","ghi"]
+% \end{verbatim}
+% \end{frame}
 %----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Exercises}
-  Define a function that counts how many times words occur in a text and displays each word with its count.
-\begin{verbatim}
-wordCounts :: String -> [String]
-\end{verbatim}
-  Example use
-\begin{verbatim}
-*Main> putStr (wordCounts "hello clouds\nhello sky")
-clouds: 1
-hello: 2
-sky: 1
-\end{verbatim}
-\end{frame}
+% \begin{frame}[fragile]
+%   \frametitle{Exercises}
+%   Define a function that counts how many times words occur in a text and displays each word with its count.
+% \begin{verbatim}
+% wordCounts : String -> [String]
+% \end{verbatim}
+%   Example use
+% \begin{verbatim}
+% *Main> putStr (wordCounts "hello clouds\nhello sky")
+% clouds: 1
+% hello: 2
+% sky: 1
+% \end{verbatim}
+% \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Wrapup}

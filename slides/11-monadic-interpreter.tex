@@ -21,14 +21,18 @@
 
 \begin{frame}[fragile]
   \frametitle{A simple expression language}
+  \framesubtitle{Abstract syntax (AST)}
 \begin{block}{Definition}
 \begin{lstlisting}
-data Term  = Con Integer
-           | Bin Term Op Term  
-             deriving (Eq, Show)
-           
-data Op    = Add | Sub | Mul | Div
-             deriving (Eq, Show)
+inductive Op where
+  | add : Op
+  | sub : Op
+  | mul : Op
+  | div : Op
+
+inductive Term where
+  | con : Nat → Term
+  | bin : Term → Op → Term → Term
 \end{lstlisting}  
 \end{block}
 \end{frame}             
@@ -37,14 +41,15 @@ data Op    = Add | Sub | Mul | Div
   \frametitle{A simple interpreter}
 \begin{block}{Evaluation}
 \begin{lstlisting}
-eval              :: Term -> Integer
-eval (Con n)      =  n
-eval (Bin t op u) =  sys op (eval t) (eval u)
+def opEval : Op → Nat → Nat → Nat
+  | .add, x, y => x + y
+  | .sub, x, y => x - y
+  | .mul, x, y => x * y
+  | .div, x, y => x / y
 
-sys Add       =  (+)         
-sys Sub       =  (-)
-sys Mul       =  (*)         
-sys Div       =  div
+def eval : Term → Nat
+  | .con n => n
+  | .bin t1 op t2 => opEval op (eval t1) (eval t2)
 \end{lstlisting}  
 \end{block}
 \end{frame}             
@@ -73,12 +78,14 @@ sys Div       =  div
     \end{itemize}
   \item But it would be better to have an error message
 \begin{lstlisting}
-data Exception a = Raise String
-                 | Return a
+inductive Result α where
+  | return : α → Result α
+  | raise : String → Result α
 \end{lstlisting}
-  \item Equivalently we might use the  predefined type \lstinline{Either a b}
+  \item Equivalently we might use the  predefined type \lstinline{Sum α β} (or
+    \lstinline{α ⊕ β})
 \begin{lstlisting}
-type Exception' a = Either String a
+abbrev Result' α := String ⊕ α
 \end{lstlisting}
   \end{itemize}
 \end{frame}
@@ -87,18 +94,17 @@ type Exception' a = Either String a
   \frametitle{Interpreter with error handling}
   \begin{block}{Exception}
 \begin{lstlisting}
-eval              :: Term -> Exception Integer
-eval (Con n)      = Return n
-eval (Bin t op u) = case eval t of
-                     Raise  s -> Raise s
-                     Return v -> case eval u of
-                      Raise  s -> Raise s
-                      Return w ->
-                        if (op == Div && w == 0)
-                        then  
-                          Raise "div by zero"
-                        else                                  
-                          Return (sys op v w)
+def evalExc : Term → Exc Nat
+  | .con n => Exc.return n
+  | .bin t1 op t2 =>
+    match evalExc t1, evalExc t2 with
+    | Exc.raise msg, _ => Exc.raise msg
+    | _, Exc.raise msg => Exc.raise msg
+    | Exc.return v1, Exc.return v2 =>
+      if op == .div && v2 == 0 then
+        Exc.raise "division by zero"
+      else
+        Exc.return (opEval op v1 v2)
 \end{lstlisting}
 \end{block}     
 \end{frame}
@@ -110,9 +116,18 @@ eval (Bin t op u) = case eval t of
   \item Each step of the computation should be documented
   \item Such a computation returns the computed value \textbf{and} the
     trace
-  \item Could be expressed with the following type
+  \item Could be expressed with the following structure type:
 \begin{lstlisting}
-newtype Trace a = Trace (a, String)
+structure Trace α where
+  trace ::
+  val : α
+  log : String
+open Trace
+
+def trace' : α → String → Trace α
+  | val, log => { val := val, log := log }
+def trace'' : α → String → Trace α
+  | val, log => ⟨ val, log ⟩ 
 \end{lstlisting}
   \end{itemize}
 \end{frame}
@@ -121,16 +136,13 @@ newtype Trace a = Trace (a, String)
   \frametitle{Interpreter with tracing}
   \begin{block}{Trace}
 \begin{lstlisting}
-eval :: Term -> Trace Integer
-eval e@(Con n)      = Trace (n, trace e n)
-eval e@(Bin t op u) = 
-   let Trace (v, x) = eval t in
-   let Trace (w, y) = eval u in
-   let r = sys op v w in
-   Trace (r, x ++ y ++ trace e r)
-
-trace t n = "eval (" ++ show t ++ ") = "
-              ++ show n ++ "\n"
+def evalTrace : Term → Trace Nat
+  | .con n => trace n s!"con {n}"
+  | .bin t1 op t2 =>
+    let r1 := evalTrace t1
+    let r2 := evalTrace t2
+    let v := opEval op r1.val r2.val
+    trace v s!"evaluated {r1.val} {op} {r2.val} = {v}"
 \end{lstlisting}  
 \end{block}
 \end{frame}
@@ -145,7 +157,12 @@ trace t n = "eval (" ++ show t ++ ") = "
     counter
   \item A type like the following would do
 \begin{lstlisting}
-newtype Count a = Count { exCount :: Int -> (a, Int) }
+structure Count α where
+  count ::
+  exCount : Nat → α × Nat
+open Count
+
+def tick : Count Unit := ⟨ fun n => ((), n+1) ⟩
 \end{lstlisting}
   \end{itemize}
 \end{frame}
@@ -154,11 +171,16 @@ newtype Count a = Count { exCount :: Int -> (a, Int) }
   \frametitle{Interpreter with reduction count}\small
   \begin{block}{Count}
 \begin{lstlisting}
-eval              :: Term -> Count Integer
-eval (Con n)      = Count $ \i -> (n, i)
-eval (Bin t op u) = Count $ \i -> let (v, j) = exCount (eval t) i in    
-                                  let (w, k) = exCount (eval u) j in
-                                  (sys op v w, k + 1)
+def evalCount : Term → Count Nat
+  | .con n => ⟨ fun c => (n, c) ⟩
+  | .bin t1 op t2 =>
+    let r1 := evalCount t1
+    let r2 := evalCount t2
+    ⟨ fun c =>
+      let (v1, c1) := r1.exCount c
+      let (v2, c2) := r2.exCount c1
+      let v := opEval op v1 v2
+      (v, c2 + 1) ⟩
 \end{lstlisting} 
 \end{block}
 \end{frame}            
@@ -166,60 +188,89 @@ eval (Bin t op u) = Count $ \i -> let (v, j) = exCount (eval t) i in
 \begin{frame}
   \frametitle{Monads}
   \begin{itemize}
-  \item There is an abstract concept of computation behind these
+  \item Abstract concept of \emph{computation} behind these
     examples: Monads
   \item Originates in category theory
   \item Mathematicians did not even bother to give it a proper name,
     they called it ``standard construction''
   \item Discovered for computations by Eugenio Moggi
   \item Popularized for programming by Phil Wadler
-  \item In Haskell: the \lstinline{Monad} type class
+  \item In Lean: the \lstinline{Monad} type class, organized in two subclasses,
+    \lstinline{Bind} and \lstinline{Applicative}.
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Building blocks of computations}
+  \begin{block}<+->{Composing computations: Bind}
+\begin{lstlisting}
+class Bind (m : Type → Type) where
+  bind : {α β : Type} → m α → (α → m β) → m β
+\end{lstlisting}
+    \begin{itemize}
+    \item Bind \lstinline{(. >>= .)} is for \textbf{composing} computations
+    \end{itemize}
+  \end{block}
+  \begin{block}{Trivial computation: Pure}
+\begin{lstlisting}
+class Pure (f : Type → Type) where
+  pure : {α : Type} → α → f α
+\end{lstlisting}
+    \begin{itemize}
+    \item Pure injects a value in a computation.
+    \item The resulting computation does nothing but return that value.
+    \end{itemize}
+  \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Monads to the rescue!}
 \begin{block}<+->{The type class Monad}
 \begin{lstlisting}
-class Monad m where
-  (>>=)  :: m a -> (a -> m b) -> m b
-  return :: a -> m a
-  fail   :: String -> m a
+class Monad (m : Type → Type) extends Pure m, Bind m
 \end{lstlisting}
-  Here, \texttt{m :: * -> *} is a variable that can stand for
+  Here, \lstinline{m : Type -> Type} is a variable that can stand for
   \texttt{IO}, \texttt{Gen}, and other \textbf{type constructors}. 
 \end{block}
 \begin{block}<+->{Purpose of the operations}
   \begin{itemize}
-  \item Bind \lstinline{(>>=)} is for \textbf{composing}
-    computations\\
-    In \lstinline{IO} composing means sequencing
-  \item \lstinline{return} is for injecting values into computations\\
-    A trivial computation that does nothing but return the value
+  \item Glue operations
+    \begin{itemize}
+    \item Bind \lstinline{(>>=)} is for \textbf{composing}
+      computations\\
+      In \lstinline{IO} composing means sequencing
+    \item \lstinline{pure} is for injecting values into computations\\
+      A trivial computation that does nothing but return the value
+    \end{itemize}
   \item Monads live for their other features!
+    \begin{itemize}
+    \item primitive IO operations
+    \item \lstinline{tick}, \lstinline{trace}, etc
+    \end{itemize}
   \end{itemize}
 \end{block}
 \end{frame}     
 
 
 \begin{frame}[fragile]
-  \frametitle{Monadic evaluator}
+  \frametitle{Monadic interpreter}
 \begin{exampleblock}<+->{Monadic interpreter}
 \begin{lstlisting}
-eval              :: Monad m => Term -> m Integer
-eval (Con n)      =  return n
-eval (Bin t op u) =  eval t  >>= \v ->
-                     eval u  >>= \w ->
-                     return (sys op v w)
+def evalM [Monad m] : Term → m Nat
+  | .con n => pure n
+  | .bin t1 op t2 =>
+    evalM t1 >>= fun v1 =>
+    evalM t2 >>= fun v2 =>
+    pure (opEval op v1 v2)
 \end{lstlisting}  
 \end{exampleblock}
   \begin{alertblock}<+->{The identity monad}
 \begin{lstlisting}
-newtype Id a = Id a
+abbrev Id (α : Type) := α
 
-instance Monad Id where
-    return x = Id x
-    x >>= f  = let Id y = x in f y
+instance : Monad Id where
+  pure x := x
+  bind x f := f x
 \end{lstlisting}  
 \end{alertblock}
 
@@ -241,13 +292,15 @@ instance Monad Exception where
 
 \begin{exampleblock}{Interpreter}
 \begin{lstlisting}
-eval             :: Term -> Exception Integer
-eval (Con n)      = return n
-eval (Bin t op u) = eval t  >>= \v ->
-                    eval u  >>= \w ->
-                    if (op == Div && w == 0) 
-                     then fail "div by zero"
-                    else return (sys op v w)
+def evalExcM : Term → Exc Nat
+  | .con n => pure n
+  | .bin t1 op t2 => do
+    let v1 ← evalExcM t1
+    let v2 ← evalExcM t2
+    if op == .div && v2 == 0 then
+      Exc.raise "division by zero"
+    else
+      pure (opEval op v1 v2)
 \end{lstlisting}  
 \end{exampleblock}
 \end{frame}             
@@ -258,14 +311,14 @@ eval (Bin t op u) = eval t  >>= \v ->
   \frametitle{A monad for tracing}
   \begin{alertblock}{Trace}
 \begin{lstlisting}
-instance Monad Trace where
-  return a = (a, "")
-  m >>= f  = let Trace (a, x) = m in
-             let Trace (b, y) = f a in
-             Trace (b, x ++ y)
+instance : Monad Trace where
+  pure x := trace x ""
+  bind x f :=
+    let r := f x.val
+    trace r.val (x.log ++ r.log)
 
-output   :: String -> Trace ()
-output s  = Trace ((), s)
+def output (msg : String) : Trace Unit :=
+  trace () msg
 \end{lstlisting}  
 \end{alertblock}
 \end{frame}
@@ -274,14 +327,16 @@ output s  = Trace ((), s)
  \frametitle{Monadic interpreter with tracing}
  \begin{exampleblock}{Evaluation}
 \begin{lstlisting}
-eval :: Term -> Trace Integer
-eval e@(Con n) = output (trace e n) >>
-                 return n
-eval e@(Bin t op u) = eval t >>= \v ->
-                      eval u >>= \w ->
-                      let r = sys op v w in
-                      output (trace e r) >>
-                      return r
+def evalTraceM : Term → Trace Nat
+  | .con n => do
+    output s!"con {n}"
+    pure n
+  | .bin t1 op t2 => do
+    let v1 ← evalTraceM t1
+    let v2 ← evalTraceM t2
+    let v := opEval op v1 v2
+    output s!"evaluated {v1} {op} {v2} = {v}"
+    pure v
 \end{lstlisting}
 \end{exampleblock}      
 \end{frame}             
@@ -290,21 +345,15 @@ eval e@(Bin t op u) = eval t >>= \v ->
 
 \begin{frame}[fragile]
   \frametitle{A monad for counting}
-  \framesubtitle{The state monad}
-  \begin{alertblock}{State}
+  \begin{alertblock}{Counting}
 \begin{lstlisting}
-data ST s a = ST (s -> (a, s))
-exST (ST sas) = sas
-
-instance Monad (ST s) where
-  return a = ST (\s -> (a, s))
-  m >>= f  = ST (\s -> let (a, s') = exST m s in
-                       exST (f a) s')
-
-type Count a = ST Int a
-
-incr :: Count ()
-incr =  ST (\i -> ((), i + 1))
+instance : Monad Count where
+  pure x := ⟨ fun c => (x, c) ⟩
+  bind x f :=
+    ⟨ fun c =>
+      let (v1, c1) := x.exCount c
+      let (v2, c2) := (f v1).exCount c1
+      (v2, c2 + 1) ⟩
 \end{lstlisting} 
 \end{alertblock}
 \end{frame}
@@ -314,12 +363,13 @@ incr =  ST (\i -> ((), i + 1))
   \framesubtitle{Implementation}
 \begin{exampleblock}{Evaluation}
 \begin{lstlisting}
-eval :: Term -> Count Integer
-eval (Con n)      =  return n
-eval (Bin t op u) =  eval t >>= \v ->
-                     eval u >>= \w ->
-                     incr   >>
-                     return (sys op v w)
+def evalCountM : Term → Count Nat
+  | .con n => pure n
+  | .bin t1 op t2 => do
+    let v1 ← evalCountM t1
+    let v2 ← evalCountM t2
+    tick
+    pure (opEval op v1 v2)
 \end{lstlisting} 
 \end{exampleblock}
 \end{frame}            
@@ -339,25 +389,31 @@ eval (Bin t op u) =  eval t >>= \v ->
 \begin{frame}[fragile]
   \frametitle{Not every type constructor can be a monad}
   \framesubtitle{Monad laws}
-  \begin{alertblock}{return is a left unit}
+  \begin{block}{Assume}
 \begin{lstlisting}
-return x >>= f        == f x
+x : α            f : α → m β             m : m α
+\end{lstlisting}
+  \end{block}
+  \begin{alertblock}{map lifts identify}
+\begin{lstlisting}
+∀ {m : Type → Type} {α : Type} (y : f α), map id y = y
 \end{lstlisting}
   \end{alertblock}
-  \begin{alertblock}{return is a right unit}
+  \begin{alertblock}{pure is a left unit}
 \begin{lstlisting}
-m >>= return          == m
+∀ {m : Type → Type} {α β : Type} (x : α) (f : α → m β), pure x >>= f = f x
 \end{lstlisting}
   \end{alertblock}
   \begin{alertblock}{bind is associative}
 \begin{lstlisting}
-m1 >>= \x -> (m2 >>= f) == (m1 >>= \x -> m2) >>= f
+∀ {m : Type → Type} {α β γ : Type u} (x : m α) (f : α → m β) (g : β → m γ),
+  x >>= f >>= g = x >>= fun x => f x >>= g
 \end{lstlisting}
   \end{alertblock}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{The Maybe monad}
+  \frametitle{The Option monad}
   \begin{block}{More useful than you think}
                 \begin{itemize}         
                         \item Computation that may or may not return a result
@@ -367,13 +423,16 @@ m1 >>= \x -> (m2 >>= f) == (m1 >>= \x -> m2) >>= f
 \pause
 \begin{block}{Definition (predefined)}
 \begin{lstlisting}
-data Maybe a = Nothing | Just a
+inductive Option (α : Type) where
+  | none : Option α
+  | some : α → Option α
 
-instance Monad Maybe where
-    return x       = Just x
-    
-    Nothing  >>= f = Nothing
-    (Just x) >>= f = f x
+instance : Monad Option where
+  pure x := Option.some x
+  bind x f :=
+    match x with
+    | Option.none => Option.none
+    | Option.some v => f v
 \end{lstlisting}  
 \end{block}
 \end{frame}             
@@ -389,16 +448,15 @@ instance Monad Maybe where
 \pause
 \begin{block}{Definition (predefined)}
 \begin{lstlisting}
-instance Monad [] where
-    return x = [x]
-    m >>= f  = concatMap f m
+def listBind : List α → (α → List β) → List β
+  | List.nil, _ => List.nil
+  | List.cons v vs, f => listAppend (f v) (listBind vs f)
+
+instance : Monad List where
+  pure x := List.cons x List.nil
+  bind x f := listBind x f
 \end{lstlisting}  
 \end{block}
-where 
-\begin{lstlisting}
-concatMap :: (a -> [b]) -> [a] -> [b]
-concatMap = undefined
-\end{lstlisting}
 \end{frame}             
 
 \begin{frame}[fragile]
@@ -413,8 +471,94 @@ concatMap = undefined
 \end{frame}
 
 \begin{frame}
+  \frametitle{Under the hood}
+  Lean's \lstinline{Monad} class has more interesting structure:
+  \begin{itemize}
+  \item Pure, Bind
+  \item Functors, Sequencing
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mapping and sequencing}
+\begin{lstlisting}
+class Functor (f : Type → Type) where
+  map : (α → β) → f α → f β
+\end{lstlisting}
+  \begin{itemize}
+  \item A \lstinline{Functor} is a type operator \lstinline{f} that has a \lstinline{map}
+    operator.
+  \item For lists, this is the well-known \lstinline{map}.
+  \item Notation: \verb|<$>|
+  \end{itemize}
+  Any instance \lstinline{f} of the \lstinline{Functor} class must respect the \emph{functor laws:}
+  \begin{itemize}
+  \item preserve identify: \lstinline{id_map} --- \lstinline|∀ (x : α), map id x = x|
+  \item preserve composition: \lstinline{comp_map} ---
+    \lstinline{∀ (g : α → β) (h : β → γ) (x : f α), map (h ∘ g) x = map h (map g x)}
+  \item cf.\ class \lstinline{LawfulFunctor}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Sequencing}
+\begin{lstlisting}
+class Seq (f : Type → Type) where
+  seq : f (α → β) → (Unit → f α) → f β
+\end{lstlisting}
+  \begin{itemize}
+  \item Function application lifted over \lstinline{f}.
+  \item Notation: \lstinline{g <*> x}
+  \end{itemize}
+\begin{lstlisting}  
+class SeqLeft (f : Type → Type) where
+  seqLeft : f α → (Unit → f β) → f α
+
+class SeqRight (f : Type → Type) where
+  seqRight : f α → (Unit → f β) → f β
+\end{lstlisting}
+  
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Simple computations: Applicative}
+\begin{lstlisting}
+class Applicative (f : Type u → Type v)
+    extends Functor f, Pure f, Seq f, SeqLeft f, SeqRight f where
+  map g x := seq (pure g) (fun _ => x)
+  seqLeft x y := seq (map (fun a _ => a) x) y
+  seqRight x y := seq (map (fun _ b => b) x) y
+\end{lstlisting}
+  \begin{itemize}
+  \item provides default implementations for \lstinline{map},
+    \lstinline{seqLeft}, and \lstinline{SeqRight}.
+  \item we can define an instance of \lstinline{Applicative} by implementing
+    \lstinline{pure} and \lstinline{seq} --- explicit instances of the
+    superclasses are not needed
+  \item we'll be back, later
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Real definition of the monad class}
+\begin{lstlisting}
+class Monad (m : Type u → Type v)
+    extends Applicative m, Bind m where
+  map f x := bind x (fun a => pure (f a))
+  seq f x := bind f (fun g => Functor.map g (x ()))
+  seqLeft x y := bind x (fun a => bind (y ()) (fun _ => pure a))
+  seqRight x y := bind x (fun _ => y ())
+\end{lstlisting}
+  \begin{itemize}
+  \item default implementations for \lstinline{map}, \lstinline{seq},
+    \lstinline{seqLeft}, and \lstinline{seqRight}.
+  \item Sufficient to implement \lstinline{pure} and \lstinline{bind} to obtain
+    an instance of \lstinline{Monad}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
   \frametitle{Challenges}
-  \begin{itemize}[<+->]
+  \begin{itemize}
   \item what if there are multiple effects?
   \item need to combine monads
   \item sequence matters (e.g., exception and state)

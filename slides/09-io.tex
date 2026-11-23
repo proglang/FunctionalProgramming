@@ -29,7 +29,7 @@
 -- sequence of function calls does not matter
 f () + g () == g () + f ()
 -- number of function calls does not matter
-f () + f ( ) == 2 * f ()
+f () + f () == 2 * f ()
 \end{lstlisting}
   \end{block}
 \end{frame}
@@ -39,18 +39,18 @@ f () + f ( ) == 2 * f ()
   \begin{alertblock}<+->{Bad example}
     Suppose we had 
 \begin{lstlisting}
-input :: () -> Integer
+input : Unit -> String
 \end{lstlisting}
     \begin{itemize}
     \item<+-> Consider
 \begin{lstlisting}
-let x = input () in
-x + x
+let x := input ()
+x ++ x
 \end{lstlisting}
     \item<+-> Expect to read one input and use it twice
     \item<+-> By substitutivity, this expression must behave like
 \begin{lstlisting}
-input () + input ()
+input () ++ input ()
 \end{lstlisting}
       which reads two inputs!
     \item<+-> VERY WRONG!!!
@@ -60,7 +60,7 @@ input () + input ()
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{The dilemma}
-  \begin{alertblock}<+->{Haskell is a pure language, but IO is a side effect}
+  \begin{alertblock}<+->{Lean is a pure language, but IO is a side effect}
   \end{alertblock}
   \begin{block}<+->{A contradiction?}
   \end{block}
@@ -76,44 +76,43 @@ input () + input ()
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
-  \frametitle{Haskell IO}
+  \frametitle{Lean IO}
 
 \begin{block}<+->{The main function}
   Top-level result of a program is an IO ``instruction''.
 \begin{lstlisting}
-main :: IO ()
-main = undefined
+def main : IO Unit := sorry
 \end{lstlisting}
   \begin{itemize}
   \item an instruction describes the \textbf{effect} of the program
   \item effect $=$ IO action, imperative state change, \dots
   \end{itemize}
 \end{block}
-% \begin{block}<+->{An instruction that returns a result}
-% \begin{lstlisting}
-% -- defined in the Prelude
-% readFile :: FileName -> IO String
-% \end{lstlisting}
-% \end{block}
+\begin{block}<+->{An instruction that returns a result}
+\begin{lstlisting}
+IO.getStdout : IO IO.FS.Stream
+\end{lstlisting}
+\end{block}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Kinds of instructions}
   \begin{block}<+->{Primitive instructions}
 \begin{lstlisting}
--- defined in the Prelude
-putChar   :: Char -> IO ()
-getChar   :: IO Char
-writeFile :: FileName -> String -> IO ()
-readFile  :: FileName -> IO String
+open IO.FS.Stream
+putStrLn : IO.FS.Stream → String → IO Unit
+getLine  : (self : IO.FS.Stream) → IO String
+IO.FS.readFile : (fname : System.FilePath) → IO String
+IO.FS.writeFile : (fname : System.FilePath) → (content : String) → IO Unit
 \end{lstlisting}
-and many more
+and many more (\lstinline|String| converts to \lstinline|System.FilePath|)
   \end{block}
   \begin{block}<+->{No op instruction}
 \begin{lstlisting}
-return :: a -> IO a
+pure : α → IO α
 \end{lstlisting}
-    The IO instruction \texttt{return 42} performs no IO, but yields the value 42.
+    The IO instruction \lstinline{pure 42} performs no IO, but yields the value
+    42.  \lstinline{return} is mostly synonymous to \lstinline{pure}.
   \end{block}
 \end{frame}
 %----------------------------------------------------------------------
@@ -122,36 +121,42 @@ return :: a -> IO a
   \begin{block}<+->{The bind operator \texttt{>>=}}
     Intuition:  next instruction may depend on the output of the previous one
 \begin{lstlisting}
-(>>=) :: IO a -> (a -> IO b) -> IO b
+bind : IO α → (α → IO β) → IO β
 \end{lstlisting}
-    The instruction \texttt{m >>= f}
+    The instruction \lstinline{bind m f} ( or infix \lstinline{m >>= f})
     \begin{itemize}
-    \item executes \texttt{m :: IO a} first
-    \item gets its result \texttt{x :: a}
-    \item applies \texttt{f :: a -> IO b} to the result
-    \item to obtain an instruction \texttt{f x :: IO b} that returns a \texttt{b}
+    \item executes \texttt{m : IO a} first
+    \item gets its result \texttt{x : a}
+    \item applies \texttt{f : a -> IO b} to the result
+    \item to obtain an instruction \texttt{f x : IO b} that returns a \texttt{b}
     \item and executes this instruction to return a \texttt{b}
     \end{itemize}
   \end{block}
-  \begin{block}<+->{Example}
+  \begin{exampleblock}<+->{Example}
 \begin{lstlisting}
-readFiles f1 f2 =
-   readFile f1 >>= \xs1 -> readFile f2 
+def readFiles (f1 f2 : System.FilePath) : IO String :=
+  readFile f1 >>= fun s1 => readFile f2 >>= fun s2 =>
+  pure (s1 ++ s2)
 \end{lstlisting}
-  \end{block}
+  \end{exampleblock}
 \end{frame}
 %----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{More convenient: \texttt{do} notation}
 \begin{lstlisting}
-copyFile source target =
-  undefined
+def readFiles' (f1 f2 : System.FilePath) : IO String := do
+  let s1 ← readFile f1
+  let s2 ← readFile f2
+  pure (s1 ++ s2)
 
-doTwice io =
-  undefined
+def copyFile (src dst : System.FilePath) : IO Unit :=
+  sorry
 
-doNot io =
-  undefined
+def doTwice (action : IO Unit) : IO Unit :=
+  sorry
+
+def doNot (action : IO Unit) : IO Unit :=
+  sorry
 \end{lstlisting}
 \end{frame}
 %----------------------------------------------------------------------
@@ -162,9 +167,9 @@ doNot io =
     \\ $\longrightarrow$
     \\ \texttt{\emph{lastinstruction}}
     \\[2ex]
-  \item \texttt{do \{ \emph{x} <- \emph{action1}; \emph{instructions} \}}
+  \item \texttt{do \{ let \emph{x} <- \emph{action1}; \emph{instructions} \}}
     \\ $\longrightarrow$
-    \\ \texttt{\emph{action1} >>= \textbackslash \emph{x} -> \texttt{do \{ \emph{instructions} \}}}
+    \\ \texttt{\emph{action1} >>= fun \emph{x} -> \texttt{do \{ \emph{instructions} \}}}
     \\[2ex]
   \item \texttt{do \{ \emph{action1}; \emph{instructions} \}}
     \\ $\longrightarrow$
@@ -202,54 +207,55 @@ doNot io =
   \end{block}
   \begin{alertblock}<+->{IO is a special case of a monad}
     \begin{itemize}
-    \item one very useful application for monad
-    \item built into Haskell
+    \item \lstinline{Monad} is a type class that abstracts an API for monads
+    \item \lstinline{IO} is one useful instance of \lstinline{Monad}
+    \item built into Lean
     \item but there's more to the concept
     \item many more instances to come!
     \end{itemize}
   \end{alertblock}
 \end{frame}
-%----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Hands-on task}
-  Define a function
-\begin{lstlisting}
-sortFile :: FilePath -> FilePath -> IO ()
+% %----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{Hands-on task}
+%   Define a function
+% \begin{lstlisting}
+% sortFile : FilePath -> FilePath -> IO Unit
 
--- sortFile inFile outFile 
--- reads inFile, sorts its lines, and writes the result to outFile
+% -- sortFile inFile outFile 
+% -- reads inFile, sorts its lines, and writes the result to outFile
 
--- recall
--- sort :: Ord a => [a] -> [a]
--- lines :: String -> [String]
--- unlines :: [String] -> String
-\end{lstlisting}
-\end{frame}
-%----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Utilities}
-\begin{lstlisting}
-sequence :: [IO a] -> IO [a]
-sequence_ :: [IO a] -> IO ()
-\end{lstlisting}
-\end{frame}
-%----------------------------------------------------------------------
-\begin{frame}[fragile]
-  \frametitle{Another hands-on task}
-  Define a function
-\begin{lstlisting}
-printTable :: [String] -> IO ()
+% -- recall
+% -- sort : Ord a => [a] -> [a]
+% -- lines : String -> [String]
+% -- unlines : [String] -> String
+% \end{lstlisting}
+% \end{frame}
+% %----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{Utilities}
+% \begin{lstlisting}
+% sequence : [IO a] -> IO [a]
+% sequence_ : [IO a] -> IO Unit
+% \end{lstlisting}
+% \end{frame}
+% %----------------------------------------------------------------------
+% \begin{frame}[fragile]
+%   \frametitle{Another hands-on task}
+%   Define a function
+% \begin{lstlisting}
+% printTable : [String] -> IO Unit
 
-{-
-printTable ["New York", "Rio", "Tokio"]
-outputs
-1: New York
-2: Rio
-3: Tokio
--} 
-\end{lstlisting}
-\end{frame}
-%----------------------------------------------------------------------
+% {-
+% printTable ["New York", "Rio", "Tokio"]
+% outputs
+% 1: New York
+% 2: Rio
+% 3: Tokio
+% -} 
+% \end{lstlisting}
+% \end{frame}
+% %----------------------------------------------------------------------
 %----------------------------------------------------------------------
 \begin{frame}
   \frametitle{Wrapup}
@@ -258,7 +264,7 @@ outputs
   \item A monad is an abstract data type of instructions returning results.
   \item The next instruction can depend on previous results.
   \item Instructions are just values.
-  \item Haskell's IO operations are instructions of the \texttt{IO} monad.
+  \item Lean's IO operations are instructions of the \texttt{IO} monad.
   \end{itemize}
   \end{alertblock}
 \end{frame}

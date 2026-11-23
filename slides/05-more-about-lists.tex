@@ -142,11 +142,11 @@ def unlines (ss : List String) : String :=
 \begin{frame}[fragile]
   \frametitle{Quicksort!}
 \begin{lstlisting}
-def qsort {α : Type} [LT α] [LE α] [DecidableLT α] [DecidableLE α] : List α → List α
+def qsort : List Nat → List Nat
   | [] => []
   | x :: xs =>
-    let smaller := xs.filter (fun y ↦ decide (y ≤ x))
-    let larger := xs.filter (fun y ↦ decide (y > x))
+    let smaller := xs.filter (fun y ↦ y ≤ x)
+    let larger := xs.filter (fun y ↦ y > x)
     qsort smaller ++ [x] ++ qsort larger
 \end{lstlisting}
   \dots{} is not accepted as is \dots
@@ -154,7 +154,7 @@ def qsort {α : Type} [LT α] [LE α] [DecidableLT α] [DecidableLE α] : List �
 % ----------------------------------------------------------------------
 \begin{frame}[fragile]
   \frametitle{Quicksort terminates \dots}
-  We have to explain Lean that it terminates (details later)
+  but we have to explain Lean that it terminates (details later)
 \begin{lstlisting}
 termination_by xs => xs.length
 decreasing_by
