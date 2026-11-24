@@ -135,14 +135,22 @@ def evalExcM : Term → Exc Nat
     else
       pure (opEval op v1 v2)
 
+
+
+
+
 instance : Monad Trace where
   pure x := trace x ""
   bind x f :=
-    let r := f x.val
+    let r := f (x.val)
     trace r.val (x.log ++ r.log)
 
 def output (msg : String) : Trace Unit :=
   trace () msg
+
+
+
+
 
 def evalTraceM : Term → Trace Nat
   | .con n => do
